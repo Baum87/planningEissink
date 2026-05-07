@@ -5,7 +5,10 @@ export async function getMonteurs() {
 
   const [{ data: monteurs, error: e1 }, { data: toewijzingen, error: e2 }] =
     await Promise.all([
-      supabase.from('monteurs').select('*').order('achternaam'),
+      supabase
+        .from('monteurs')
+        .select('id, voornaam, achternaam, bedrijfsnaam, type, expertises, telefoon, woonplaats, created_at')
+        .order('achternaam'),
       supabase
         .from('toewijzingen')
         .select('monteur_id, datum_van, datum_tot, projecten(id, werknummer, omschrijving)')
@@ -19,7 +22,6 @@ export async function getMonteurs() {
   const tvMap = Object.fromEntries(toewijzingen.map((t) => [t.monteur_id, t]))
   return monteurs.map((m) => ({
     ...m,
-    naam: [m.voornaam, m.achternaam].filter(Boolean).join(' '),
     toewijzing_vandaag: tvMap[m.id] ?? null,
   }))
 }
