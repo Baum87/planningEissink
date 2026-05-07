@@ -3,14 +3,13 @@ import {
   getMonteurs,
   createMonteur,
   updateMonteur,
+  deleteMonteur,
   getGroepen,
   createGroep,
   updateGroepNaam,
   deleteGroep,
   setGroepLeden,
 } from '../services/monteursService'
-
-const TODAY = new Date().toISOString().split('T')[0]
 
 const EXPERTISE_OPTIES = ['Plafonds', 'Wanden', 'Systeemwanden', 'Afsmeren', 'Overig']
 const FILTER_OPTIES = ['Allemaal', ...EXPERTISE_OPTIES]
@@ -31,30 +30,28 @@ function avatarKleur(naam = '') {
 }
 
 function initialen(naam = '') {
-  return naam
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((w) => w[0])
-    .join('')
-    .toUpperCase()
-}
-
-function formatDatum(dateStr) {
-  if (!dateStr) return null
-  return new Date(dateStr + 'T00:00:00').toLocaleDateString('nl-NL', {
-    day: 'numeric',
-    month: 'short',
-  })
+  return naam.trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase()
 }
 
 const LEEG_MONTEUR = {
-  naam: '',
-  type: 'eigen',
+  voornaam: '',
+  achternaam: '',
+  bedrijfsnaam: '',
+  type: 'Eissink',
   expertises: [],
   telefoon: '',
   woonplaats: '',
 }
+
+const KOLOMMEN = [
+  { veld: 'voornaam',     label: 'Voornaam'     },
+  { veld: 'achternaam',   label: 'Achternaam'   },
+  { veld: 'bedrijfsnaam', label: 'Bedrijfsnaam' },
+  { veld: 'type',         label: 'Type'         },
+  { veld: 'expertises',   label: 'Expertise'    },
+  { veld: 'telefoon',     label: 'Telefoon'     },
+  { veld: 'woonplaats',   label: 'Woonplaats'   },
+]
 
 // ─── Hoofdpagina ──────────────────────────────────────────────────────────────
 
@@ -65,8 +62,10 @@ export default function Monteurs() {
   const [error, setError] = useState(null)
   const [zoek, setZoek] = useState('')
   const [filter, setFilter] = useState('Allemaal')
+  const [sort, setSort] = useState({ veld: 'achternaam', dir: 'asc' })
   const [monteurModal, setMonteurModal] = useState(null)
   const [groepModal, setGroepModal] = useState(null)
+  const [verwijderBevestig, setVerwijderBevestig] = useState(null)
 
   async function laad() {
     setLoading(true)
@@ -91,7 +90,9 @@ export default function Monteurs() {
     return monteurs.filter((m) => {
       const matchZoek =
         !q ||
-        m.naam?.toLowerCase().includes(q) ||
+        m.voornaam?.toLowerCase().includes(q) ||
+        m.achternaam?.toLowerCase().includes(q) ||
+        m.bedrijfsnaam?.toLowerCase().includes(q) ||
         m.expertises?.some((e) => e.toLowerCase().includes(q))
       const matchFilter =
         filter === 'Allemaal' ||
@@ -99,6 +100,34 @@ export default function Monteurs() {
       return matchZoek && matchFilter
     })
   }, [monteurs, zoek, filter])
+
+  const gesorteerd = useMemo(() => {
+    const { veld, dir } = sort
+    return [...gefilterd].sort((a, b) => {
+      const av = veld === 'expertises' ? (a.expertises ?? []).join(', ') : (a[veld] ?? '')
+      const bv = veld === 'expertises' ? (b.expertises ?? []).join(', ') : (b[veld] ?? '')
+      const cmp = String(av).localeCompare(String(bv), 'nl')
+      return dir === 'asc' ? cmp : -cmp
+    })
+  }, [gefilterd, sort])
+
+  function toggleSort(veld) {
+    setSort((prev) =>
+      prev.veld === veld
+        ? { veld, dir: prev.dir === 'asc' ? 'desc' : 'asc' }
+        : { veld, dir: 'asc' }
+    )
+  }
+
+  async function handleVerwijder(id) {
+    try {
+      await deleteMonteur(id)
+      setVerwijderBevestig(null)
+      await laad()
+    } catch (err) {
+      alert('Verwijderen mislukt: ' + err.message)
+    }
+  }
 
   return (
     <div>
@@ -134,10 +163,10 @@ export default function Monteurs() {
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <input
           type="search"
-          placeholder="Zoek op naam of expertise…"
+          placeholder="Zoek op naam, bedrijf of expertise…"
           value={zoek}
           onChange={(e) => setZoek(e.target.value)}
-          className="w-64 px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors"
+          className="w-72 px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors"
         />
         <div className="flex gap-1.5 flex-wrap">
           {FILTER_OPTIES.map((opt) => (
@@ -174,25 +203,112 @@ export default function Monteurs() {
         </div>
       )}
 
-      {/* ── Grid ────────────────────────────────────────────────────── */}
+      {/* ── Tabel ───────────────────────────────────────────────────── */}
       {!loading && !error && (
-        <div
-          className="grid gap-3"
-          style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(190px, 1fr))' }}
-        >
-          {gefilterd.length === 0 ? (
-            <div className="col-span-full py-10 text-center text-sm text-gray-400">
-              Geen monteurs gevonden
-            </div>
-          ) : (
-            gefilterd.map((m) => (
-              <MonteurKaart
-                key={m.id}
-                monteur={m}
-                onBewerk={() => setMonteurModal({ mode: 'bewerk', monteur: m })}
-              />
-            ))
-          )}
+        <div className="border border-gray-200 rounded-xl overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-200 bg-gray-50">
+                {KOLOMMEN.map((k) => (
+                  <th
+                    key={k.veld}
+                    onClick={() => toggleSort(k.veld)}
+                    className="px-4 py-2.5 text-left font-medium text-gray-500 cursor-pointer select-none hover:text-gray-900 transition-colors whitespace-nowrap"
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      {k.label}
+                      {sort.veld === k.veld && (
+                        <span className="text-gray-800 text-xs">
+                          {sort.dir === 'asc' ? '↑' : '↓'}
+                        </span>
+                      )}
+                    </span>
+                  </th>
+                ))}
+                <th className="w-20 px-4 py-2.5" />
+              </tr>
+            </thead>
+            <tbody>
+              {gesorteerd.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={KOLOMMEN.length + 1}
+                    className="px-4 py-12 text-center text-gray-400"
+                  >
+                    Geen monteurs gevonden
+                  </td>
+                </tr>
+              ) : (
+                gesorteerd.map((m) => (
+                  <tr
+                    key={m.id}
+                    className="border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors"
+                  >
+                    <td className="px-4 py-3 text-gray-600">{m.voornaam || '—'}</td>
+                    <td className="px-4 py-3 font-medium text-gray-900">{m.achternaam}</td>
+                    <td className="px-4 py-3 text-gray-600">{m.bedrijfsnaam || '—'}</td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${
+                          m.type === 'Eissink'
+                            ? 'bg-blue-50 text-blue-700'
+                            : 'bg-gray-100 text-gray-600'
+                        }`}
+                      >
+                        {m.type}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-gray-600">
+                      {(m.expertises ?? []).length > 0 ? m.expertises.join(', ') : '—'}
+                    </td>
+                    <td className="px-4 py-3 text-gray-600">{m.telefoon || '—'}</td>
+                    <td className="px-4 py-3 text-gray-600">{m.woonplaats || '—'}</td>
+                    <td className="px-4 py-3 text-right">
+                      {verwijderBevestig === m.id ? (
+                        <span className="inline-flex items-center gap-2">
+                          <span className="text-xs text-gray-500">Zeker?</span>
+                          <button
+                            onClick={() => handleVerwijder(m.id)}
+                            className="text-xs font-medium text-red-600 hover:text-red-700 transition-colors"
+                          >
+                            Ja
+                          </button>
+                          <button
+                            onClick={() => setVerwijderBevestig(null)}
+                            className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                          >
+                            Nee
+                          </button>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-3">
+                          <button
+                            onClick={() => setMonteurModal({ mode: 'bewerk', monteur: m })}
+                            title="Bewerken"
+                            className="text-gray-300 hover:text-gray-700 transition-colors"
+                          >
+                            <EditIcon />
+                          </button>
+                          <button
+                            onClick={() => setVerwijderBevestig(m.id)}
+                            title="Verwijderen"
+                            className="text-gray-300 hover:text-red-500 transition-colors"
+                          >
+                            <TrashIcon />
+                          </button>
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+
+          {/* Totaalbalk */}
+          <div className="px-4 py-3 border-t border-gray-200 bg-gray-50 text-sm text-gray-500">
+            <span className="font-medium text-gray-900">{gesorteerd.length}</span> monteurs
+          </div>
         </div>
       )}
 
@@ -241,104 +357,19 @@ function GroepKaart({ groep, monteurs, onBeheer }) {
   )
 }
 
-// ─── MonteurKaart ─────────────────────────────────────────────────────────────
-
-function MonteurKaart({ monteur, onBewerk }) {
-  const [bg, fg] = avatarKleur(monteur.naam)
-  const tv = monteur.toewijzing_vandaag
-
-  return (
-    <div className="relative border border-gray-200 rounded-xl bg-white p-4 flex flex-col gap-3 hover:border-gray-300 transition-colors">
-      <button
-        onClick={onBewerk}
-        title="Bewerken"
-        className="absolute top-3 right-3 text-gray-300 hover:text-gray-600 transition-colors"
-      >
-        <EditIcon />
-      </button>
-
-      {/* Avatar + naam */}
-      <div className="flex items-center gap-3 pr-5">
-        <div
-          className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0"
-          style={{ backgroundColor: bg, color: fg }}
-        >
-          {initialen(monteur.naam)}
-        </div>
-        <div className="min-w-0">
-          <div className="text-sm font-semibold text-gray-900 leading-tight truncate">
-            {monteur.naam}
-          </div>
-          <span
-            className={`text-xs ${
-              monteur.type === 'eigen' ? 'text-blue-500' : 'text-gray-400'
-            }`}
-          >
-            {monteur.type}
-          </span>
-        </div>
-      </div>
-
-      {/* Expertises */}
-      {(monteur.expertises ?? []).length > 0 && (
-        <div className="flex flex-wrap gap-1">
-          {monteur.expertises.map((e) => (
-            <span
-              key={e}
-              className="px-2 py-0.5 text-xs bg-gray-100 text-gray-600 rounded-full"
-            >
-              {e}
-            </span>
-          ))}
-        </div>
-      )}
-
-      {/* Telefoon + woonplaats */}
-      <div className="space-y-1 text-xs text-gray-500">
-        {monteur.telefoon && (
-          <div className="flex items-center gap-1.5">
-            <PhoneIcon />
-            <span>{monteur.telefoon}</span>
-          </div>
-        )}
-        {monteur.woonplaats && (
-          <div className="flex items-center gap-1.5">
-            <PinIcon />
-            <span>{monteur.woonplaats}</span>
-          </div>
-        )}
-      </div>
-
-      {/* Planningsstatus */}
-      <div className="pt-2 border-t border-gray-100">
-        {tv ? (
-          <div>
-            <div className="text-xs font-medium text-gray-900 truncate">
-              {tv.projecten?.werknummer} — {tv.projecten?.omschrijving}
-            </div>
-            <div className="text-xs text-gray-400 mt-0.5">
-              t/m {formatDatum(tv.datum_tot)}
-            </div>
-          </div>
-        ) : (
-          <div className="text-xs text-gray-400">Niet ingepland</div>
-        )}
-      </div>
-    </div>
-  )
-}
-
 // ─── MonteurModal ─────────────────────────────────────────────────────────────
 
 function MonteurModal({ modal, onClose, onOpgeslagen }) {
   const [formulier, setFormulier] = useState(() =>
     modal.mode === 'bewerk'
       ? {
-          naam: modal.monteur.naam ?? '',
-          type: modal.monteur.type ?? 'eigen',
-          expertises: modal.monteur.expertises ?? [],
-          telefoon: modal.monteur.telefoon ?? '',
-          woonplaats: modal.monteur.woonplaats ?? '',
+          voornaam:     modal.monteur.voornaam     ?? '',
+          achternaam:   modal.monteur.achternaam   ?? '',
+          bedrijfsnaam: modal.monteur.bedrijfsnaam ?? '',
+          type:         modal.monteur.type         ?? 'Eissink',
+          expertises:   modal.monteur.expertises   ?? [],
+          telefoon:     modal.monteur.telefoon     ?? '',
+          woonplaats:   modal.monteur.woonplaats   ?? '',
         }
       : { ...LEEG_MONTEUR }
   )
@@ -357,10 +388,19 @@ function MonteurModal({ modal, onClose, onOpgeslagen }) {
     e.preventDefault()
     setBezig(true)
     try {
+      const payload = {
+        voornaam:     formulier.voornaam     || null,
+        achternaam:   formulier.achternaam,
+        bedrijfsnaam: formulier.bedrijfsnaam || null,
+        type:         formulier.type,
+        expertises:   formulier.expertises,
+        telefoon:     formulier.telefoon     || null,
+        woonplaats:   formulier.woonplaats   || null,
+      }
       if (modal.mode === 'nieuw') {
-        await createMonteur(formulier)
+        await createMonteur(payload)
       } else {
-        await updateMonteur(modal.monteur.id, formulier)
+        await updateMonteur(modal.monteur.id, payload)
       }
       onOpgeslagen()
       onClose()
@@ -377,24 +417,43 @@ function MonteurModal({ modal, onClose, onOpgeslagen }) {
         {modal.mode === 'nieuw' ? 'Nieuwe monteur' : 'Monteur bewerken'}
       </h2>
       <form onSubmit={handleOpslaan} className="space-y-4">
-        <Veld label="Naam" vereist>
+        <div className="grid grid-cols-2 gap-3">
+          <Veld label="Voornaam">
+            <input
+              value={formulier.voornaam}
+              onChange={(e) => setFormulier((f) => ({ ...f, voornaam: e.target.value }))}
+              className={INVOER}
+              placeholder="Voornaam"
+            />
+          </Veld>
+          <Veld label="Achternaam" vereist>
+            <input
+              required
+              value={formulier.achternaam}
+              onChange={(e) => setFormulier((f) => ({ ...f, achternaam: e.target.value }))}
+              className={INVOER}
+              placeholder="Achternaam"
+            />
+          </Veld>
+        </div>
+
+        <Veld label="Bedrijfsnaam">
           <input
-            required
-            value={formulier.naam}
-            onChange={(e) => setFormulier((f) => ({ ...f, naam: e.target.value }))}
+            value={formulier.bedrijfsnaam}
+            onChange={(e) => setFormulier((f) => ({ ...f, bedrijfsnaam: e.target.value }))}
             className={INVOER}
-            placeholder="Volledige naam"
+            placeholder="Bedrijfsnaam (optioneel)"
           />
         </Veld>
 
         <Veld label="Type">
           <div className="flex gap-2">
-            {['eigen', 'zzp'].map((t) => (
+            {['Eissink', 'Onderaannemer'].map((t) => (
               <button
                 key={t}
                 type="button"
                 onClick={() => setFormulier((f) => ({ ...f, type: t }))}
-                className={`px-4 py-2 text-sm rounded-lg border capitalize transition-colors ${
+                className={`px-4 py-2 text-sm rounded-lg border transition-colors ${
                   formulier.type === t
                     ? 'bg-gray-900 text-white border-gray-900'
                     : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
@@ -430,9 +489,7 @@ function MonteurModal({ modal, onClose, onOpgeslagen }) {
             <input
               type="tel"
               value={formulier.telefoon}
-              onChange={(e) =>
-                setFormulier((f) => ({ ...f, telefoon: e.target.value }))
-              }
+              onChange={(e) => setFormulier((f) => ({ ...f, telefoon: e.target.value }))}
               className={INVOER}
               placeholder="06-12345678"
             />
@@ -440,9 +497,7 @@ function MonteurModal({ modal, onClose, onOpgeslagen }) {
           <Veld label="Woonplaats">
             <input
               value={formulier.woonplaats}
-              onChange={(e) =>
-                setFormulier((f) => ({ ...f, woonplaats: e.target.value }))
-              }
+              onChange={(e) => setFormulier((f) => ({ ...f, woonplaats: e.target.value }))}
               className={INVOER}
             />
           </Veld>
@@ -540,19 +595,14 @@ function GroepModal({ modal, monteurs, onClose, onOpgeslagen }) {
         <Veld label="Leden">
           <div className="space-y-0.5">
             {leden.length === 0 && (
-              <p className="text-xs text-gray-400 py-1">
-                Nog geen leden toegevoegd.
-              </p>
+              <p className="text-xs text-gray-400 py-1">Nog geen leden toegevoegd.</p>
             )}
             {leden.map((id) => {
               const m = monteurs.find((x) => x.id === id)
               if (!m) return null
               const [bg, fg] = avatarKleur(m.naam)
               return (
-                <div
-                  key={id}
-                  className="flex items-center justify-between py-1.5"
-                >
+                <div key={id} className="flex items-center justify-between py-1.5">
                   <div className="flex items-center gap-2">
                     <div
                       className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0"
@@ -695,12 +745,12 @@ function EditIcon() {
   )
 }
 
-function PhoneIcon() {
+function TrashIcon() {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      width="11"
-      height="11"
+      width="14"
+      height="14"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -708,26 +758,11 @@ function PhoneIcon() {
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.41 2 2 0 0 1 3.6 1.23h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.83a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
-    </svg>
-  )
-}
-
-function PinIcon() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="11"
-      height="11"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-      <circle cx="12" cy="10" r="3" />
+      <polyline points="3 6 5 6 21 6" />
+      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+      <path d="M10 11v6" />
+      <path d="M14 11v6" />
+      <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
     </svg>
   )
 }

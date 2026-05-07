@@ -1,12 +1,11 @@
 import { supabase } from '../lib/supabase'
 
-// Monteurs ophalen met actieve toewijzing van vandaag erbij
 export async function getMonteurs() {
   const today = new Date().toISOString().split('T')[0]
 
   const [{ data: monteurs, error: e1 }, { data: toewijzingen, error: e2 }] =
     await Promise.all([
-      supabase.from('monteurs').select('*').order('naam'),
+      supabase.from('monteurs').select('*').order('achternaam'),
       supabase
         .from('toewijzingen')
         .select('monteur_id, datum_van, datum_tot, projecten(id, werknummer, omschrijving)')
@@ -18,7 +17,11 @@ export async function getMonteurs() {
   if (e2) throw e2
 
   const tvMap = Object.fromEntries(toewijzingen.map((t) => [t.monteur_id, t]))
-  return monteurs.map((m) => ({ ...m, toewijzing_vandaag: tvMap[m.id] ?? null }))
+  return monteurs.map((m) => ({
+    ...m,
+    naam: [m.voornaam, m.achternaam].filter(Boolean).join(' '),
+    toewijzing_vandaag: tvMap[m.id] ?? null,
+  }))
 }
 
 export async function createMonteur(monteur) {
