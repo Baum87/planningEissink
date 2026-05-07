@@ -33,6 +33,10 @@ function initialen(naam = '') {
   return naam.trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase()
 }
 
+function monteurNaam(m) {
+  return [m.voornaam, m.achternaam].filter(Boolean).join(' ')
+}
+
 const LEEG_MONTEUR = {
   voornaam: '',
   achternaam: '',
@@ -336,7 +340,7 @@ export default function Monteurs() {
 
 function GroepKaart({ groep, monteurs, onBeheer }) {
   const leden = (groep.groep_leden ?? [])
-    .map((gl) => monteurs.find((m) => m.id === gl.monteur_id)?.naam)
+    .map((gl) => { const m = monteurs.find((x) => x.id === gl.monteur_id); return m ? monteurNaam(m) : null })
     .filter(Boolean)
 
   return (
@@ -600,7 +604,8 @@ function GroepModal({ modal, monteurs, onClose, onOpgeslagen }) {
             {leden.map((id) => {
               const m = monteurs.find((x) => x.id === id)
               if (!m) return null
-              const [bg, fg] = avatarKleur(m.naam)
+              const nm = monteurNaam(m)
+              const [bg, fg] = avatarKleur(nm)
               return (
                 <div key={id} className="flex items-center justify-between py-1.5">
                   <div className="flex items-center gap-2">
@@ -608,9 +613,9 @@ function GroepModal({ modal, monteurs, onClose, onOpgeslagen }) {
                       className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0"
                       style={{ backgroundColor: bg, color: fg }}
                     >
-                      {initialen(m.naam)}
+                      {initialen(nm)}
                     </div>
-                    <span className="text-sm text-gray-900">{m.naam}</span>
+                    <span className="text-sm text-gray-900">{nm}</span>
                   </div>
                   <button
                     type="button"
@@ -635,7 +640,7 @@ function GroepModal({ modal, monteurs, onClose, onOpgeslagen }) {
               <option value="">Monteur toevoegen…</option>
               {beschikbaar.map((m) => (
                 <option key={m.id} value={m.id}>
-                  {m.naam}
+                  {monteurNaam(m)}
                 </option>
               ))}
             </select>

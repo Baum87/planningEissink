@@ -81,6 +81,10 @@ function isoWeek(d) {
   return Math.ceil(((t - y) / 86400000 + 1) / 7)
 }
 
+function monteurNaam(m) {
+  return [m.voornaam, m.achternaam].filter(Boolean).join(' ')
+}
+
 function fDag(d) {
   return d.toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit' })
 }
@@ -203,7 +207,7 @@ export default function Planning() {
 
   const rijen = useMemo(() => {
     const q = zoek.trim().toLowerCase()
-    const match = (m) => !q || m.naam?.toLowerCase().includes(q)
+    const match = (m) => !q || monteurNaam(m).toLowerCase().includes(q)
 
     const eigen = monteurs.filter((m) => m.type === 'eigen' && match(m) && !groepLedenIds.has(m.id))
     const zzp   = monteurs.filter((m) => m.type === 'zzp'   && match(m) && !groepLedenIds.has(m.id))
@@ -477,7 +481,7 @@ export default function Planning() {
               // ── Monteur rij (eigen/zzp en groeplid) ──────────────────────
               const monteur = rij.monteur
               const isGroeplid = rij.type === 'groeplid'
-              const [avgBg, avgFg] = avatarKleur(monteur.naam)
+              const [avgBg, avgFg] = avatarKleur(monteurNaam(monteur))
 
               return (
                 <div
@@ -496,11 +500,11 @@ export default function Planning() {
                       className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0"
                       style={{ backgroundColor: avgBg, color: avgFg }}
                     >
-                      {initialen(monteur.naam)}
+                      {initialen(monteurNaam(monteur))}
                     </div>
                     <div className="min-w-0">
                       <div className="text-xs font-medium text-gray-900 truncate leading-tight">
-                        {monteur.naam}
+                        {monteurNaam(monteur)}
                       </div>
                       <div className="text-[10px] text-gray-400 truncate leading-tight">
                         {(monteur.expertises ?? []).slice(0, 1).join(', ') || monteur.type}
@@ -621,7 +625,7 @@ function InplanModal({ modal, projecten, onInplannen, onBewerken, onVerwijder, o
   const [tot, setTot] = useState(isBewerk ? modal.tv.datum_tot : dag)
   const [bezig, setBezig] = useState(false)
 
-  const [avgBg, avgFg] = avatarKleur(isGroep ? modal.groep.naam : modal.monteur.naam)
+  const [avgBg, avgFg] = avatarKleur(isGroep ? modal.groep.naam : monteurNaam(modal.monteur))
   const bewerkKleur = isBewerk ? projKleur(modal.tv.project_id) : null
 
   async function handleOpslaan(e) {
@@ -673,7 +677,7 @@ function InplanModal({ modal, projecten, onInplannen, onBewerken, onVerwijder, o
               className="text-xs mt-0.5"
               style={{ color: bewerkKleur.fg, opacity: 0.7 }}
             >
-              {modal.monteur.naam} · {fBereik(modal.tv.datum_van, modal.tv.datum_tot)}
+              {monteurNaam(modal.monteur)} · {fBereik(modal.tv.datum_van, modal.tv.datum_tot)}
             </div>
           </div>
         ) : (
@@ -684,7 +688,7 @@ function InplanModal({ modal, projecten, onInplannen, onBewerken, onVerwijder, o
             >
               {isGroep
                 ? modal.groep.naam.slice(0, 2).toUpperCase()
-                : initialen(modal.monteur.naam)}
+                : initialen(monteurNaam(modal.monteur))}
             </div>
             <div>
               {isGroep ? (
@@ -698,7 +702,7 @@ function InplanModal({ modal, projecten, onInplannen, onBewerken, onVerwijder, o
                 </>
               ) : (
                 <>
-                  <div className="text-sm font-semibold text-gray-900">{modal.monteur.naam}</div>
+                  <div className="text-sm font-semibold text-gray-900">{monteurNaam(modal.monteur)}</div>
                   <div className="text-xs text-gray-400 capitalize">{fDatumLang(dag)}</div>
                 </>
               )}
