@@ -100,8 +100,8 @@ export default function Overzicht() {
 
   // ── Datum berekeningen ──────────────────────────────────────────────────────
 
-  const aantalDagen = toonZesWeken ? 42 : 21
-  const dagBreedte = toonZesWeken ? 55 : DAG_B
+  const aantalDagen = toonZesWeken ? 56 : 21
+  const dagBreedte = toonZesWeken ? 40 : DAG_B
 
   const alleDagen = useMemo(
     () => Array.from({ length: aantalDagen }, (_, i) => plusDagen(startDatum, i)),
@@ -274,7 +274,7 @@ export default function Overzicht() {
 
         <div className="ml-auto flex items-center gap-4">
           <label className="flex items-center gap-2 cursor-pointer select-none">
-            <span className="text-sm text-gray-500">6 weken</span>
+            <span className="text-sm text-gray-500">8 weken</span>
             <button
               type="button"
               role="switch"
