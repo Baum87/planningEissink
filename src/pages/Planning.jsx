@@ -168,7 +168,6 @@ export default function Planning({ onNavigate }) {
   const [modal, setModal] = useState(null)
   const [monteurPopup, setMonteurPopup] = useState(null)
   const [toonZesWeken, setToonZesWeken] = useState(false)
-  const [celPopup, setCelPopup] = useState(null)
 
   // ── Datum berekeningen ──────────────────────────────────────────────────────
 
@@ -377,22 +376,8 @@ export default function Planning({ onNavigate }) {
     await laad()
   }
 
-  async function handleBewerken(id, monteurId, projectId, van, tot) {
-    await deleteToewijzing(id)
-    await createToewijzing({ monteur_id: monteurId, project_id: projectId, datum_van: van, datum_tot: tot }, skipDagen)
-    setModal(null)
-    await laad()
-  }
-
   async function handleVerwijder(id) {
     await deleteToewijzing(id)
-    setModal(null)
-    await laad()
-  }
-
-  async function handleWijzigPeriode(ids, monteurId, projectId, vanNieuw, totNieuw) {
-    await Promise.all(ids.map((id) => deleteToewijzing(id)))
-    await createToewijzing({ monteur_id: monteurId, project_id: projectId, datum_van: vanNieuw, datum_tot: totNieuw }, skipDagen)
     setModal(null)
     await laad()
   }
@@ -702,7 +687,7 @@ export default function Planning({ onNavigate }) {
                             return (
                               <div
                                 key={tv.id}
-                                onClick={() => setCelPopup({ monteur, dagStr, tv })}
+                                onClick={() => openModal(monteur, dagStr, tv)}
                                 title={`${tv.projecten?.werknummer} — ${tv.projecten?.omschrijving}`}
                                 className="cursor-pointer flex flex-col justify-center overflow-hidden"
                                 style={{
@@ -796,13 +781,12 @@ export default function Planning({ onNavigate }) {
         <InplanModal
           modal={modal}
           projecten={projecten}
+          kanInplannen={kanInplannen}
           onInplannen={handleInplannen}
-          onBewerken={handleBewerken}
           onVerwijder={handleVerwijder}
           onClose={() => setModal(null)}
           onNaarProjecten={onNavigate ? () => { setModal(null); onNavigate('projecten') } : undefined}
           periodeData={periodeData}
-          onWijzigPeriode={handleWijzigPeriode}
           onVerwijderPeriode={handleVerwijderPeriode}
         />
       )}
@@ -815,21 +799,6 @@ export default function Planning({ onNavigate }) {
         />
       )}
 
-      {/* Cel info popup */}
-      {celPopup && (
-        <CelInfoPopup
-          monteur={celPopup.monteur}
-          dagStr={celPopup.dagStr}
-          tv={celPopup.tv}
-          kanInplannen={kanInplannen}
-          onBewerken={() => {
-            const { monteur, dagStr, tv } = celPopup
-            setCelPopup(null)
-            openModal(monteur, dagStr, tv)
-          }}
-          onClose={() => setCelPopup(null)}
-        />
-      )}
     </div>
   )
 }
@@ -902,78 +871,6 @@ function MonteurPopup({ monteur, onClose }) {
               <span className="text-sm text-gray-900">—</span>
             )}
           </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ─── CelInfoPopup ─────────────────────────────────────────────────────────────
-
-function CelInfoPopup({ monteur, dagStr, tv, kanInplannen, onBewerken, onClose }) {
-  const kleur = projKleur(tv.project_id)
-  const naam = [monteur.voornaam, monteur.achternaam].filter(Boolean).join(' ')
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/25"
-      onClick={onClose}
-    >
-      <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="p-5 pb-4" style={{ backgroundColor: kleur.bg }}>
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0 flex-1">
-              <div className="text-sm font-bold truncate" style={{ color: kleur.fg }}>
-                {tv.projecten?.werknummer}
-                {tv.projecten?.projectleider_initialen && (
-                  <span className="font-normal opacity-75">
-                    {' · '}{tv.projecten.projectleider_initialen}
-                  </span>
-                )}
-              </div>
-              <div className="text-xs mt-0.5 truncate" style={{ color: kleur.fg, opacity: 0.8 }}>
-                {tv.projecten?.omschrijving}
-              </div>
-            </div>
-            <button
-              onClick={onClose}
-              className="shrink-0 text-sm leading-none mt-0.5 hover:opacity-50 transition-opacity"
-              style={{ color: kleur.fg }}
-            >
-              ✕
-            </button>
-          </div>
-        </div>
-        <div className="px-5 py-4 space-y-2.5">
-          <div className="flex items-baseline gap-3">
-            <span className="text-xs font-medium text-gray-400 uppercase tracking-wide w-20 shrink-0">Monteur</span>
-            <span className="text-sm text-gray-900">{naam || '—'}</span>
-          </div>
-          <div className="flex items-baseline gap-3">
-            <span className="text-xs font-medium text-gray-400 uppercase tracking-wide w-20 shrink-0">Datum</span>
-            <span className="text-sm text-gray-900 capitalize">{fDatumLang(dagStr)}</span>
-          </div>
-        </div>
-        <div className="px-5 pb-5 flex justify-end gap-2 border-t border-gray-100 pt-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 text-sm text-gray-500 hover:text-gray-900 transition-colors"
-          >
-            Sluiten
-          </button>
-          {kanInplannen && (
-            <button
-              type="button"
-              onClick={onBewerken}
-              className="px-4 py-2 text-sm font-medium bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition-colors"
-            >
-              Bewerken
-            </button>
-          )}
         </div>
       </div>
     </div>
@@ -1104,92 +1001,133 @@ function ProjectZoeker({ projecten, value, onChange, onNieuwProject }) {
 
 // ─── InplanModal ──────────────────────────────────────────────────────────────
 
-function InplanModal({
-  modal, projecten, onInplannen, onBewerken, onVerwijder, onClose, onNaarProjecten,
-  periodeData, onWijzigPeriode, onVerwijderPeriode,
-}) {
+function InplanModal({ modal, projecten, kanInplannen, onInplannen, onVerwijder, onClose, onNaarProjecten, periodeData, onVerwijderPeriode }) {
   const isBewerk = modal.type === 'bewerk'
   const isGroep  = modal.type === 'groep'
   const { dag } = modal
 
-  const [projectId, setProjectId] = useState(isBewerk ? modal.tv.project_id : '')
+  const [projectId, setProjectId] = useState('')
   const [van, setVan] = useState(dag)
   const [tot, setTot] = useState(dag)
   const [bezig, setBezig] = useState(false)
+  const [periodeConfirm, setPeriodeConfirm] = useState(false)
 
-  const [periodeActie, setPeriodeActie] = useState(null)
-  const [periodeVan, setPeriodeVan] = useState(periodeData?.van ?? dag)
-  const [periodeTot, setPeriodeTot] = useState(periodeData?.tot ?? dag)
+  const [avgBg, avgFg] = avatarKleur(isGroep ? modal.groep?.naam ?? '' : monteurNaam(modal.monteur ?? {}))
 
-  const [avgBg, avgFg] = avatarKleur(isGroep ? modal.groep.naam : monteurNaam(modal.monteur))
+  const heeftPeriode = isBewerk && periodeData && periodeData.aantalDagen > 1
 
-  const toonPeriode = isBewerk && periodeData && periodeData.aantalDagen > 1
-
-  async function handleOpslaan(e) {
-    e.preventDefault()
+  async function handleVerwijderDag() {
     setBezig(true)
-    try {
-      if (isBewerk) {
-        await onBewerken(modal.tv.id, modal.tv.monteur_id, projectId, van, tot)
-      } else {
-        await onInplannen(projectId, van, tot)
-      }
-    } catch (err) {
-      alert('Opslaan mislukt: ' + err.message)
-    } finally {
-      setBezig(false)
-    }
-  }
-
-  async function handleVerwijder() {
-    setBezig(true)
-    try {
-      await onVerwijder(modal.tv.id)
-    } catch (err) {
-      alert('Verwijderen mislukt: ' + err.message)
-    } finally {
-      setBezig(false)
-    }
-  }
-
-  async function handleWijzigPeriodeOpslaan(e) {
-    e.preventDefault()
-    setBezig(true)
-    try {
-      await onWijzigPeriode(periodeData.ids, modal.tv.monteur_id, modal.tv.project_id, periodeVan, periodeTot)
-    } catch (err) {
-      alert('Opslaan mislukt: ' + err.message)
-    } finally {
-      setBezig(false)
-    }
+    try { await onVerwijder(modal.tv.id) }
+    catch (err) { alert('Verwijderen mislukt: ' + err.message); setBezig(false) }
   }
 
   async function handleVerwijderPeriode() {
     setBezig(true)
-    try {
-      await onVerwijderPeriode(periodeData.ids)
-    } catch (err) {
-      alert('Verwijderen mislukt: ' + err.message)
-    } finally {
-      setBezig(false)
-    }
+    try { await onVerwijderPeriode(periodeData.ids) }
+    catch (err) { alert('Verwijderen mislukt: ' + err.message); setBezig(false) }
+  }
+
+  // ── Modus 1: bestaande toewijzing bekijken ─────────────────────────────────
+  if (isBewerk) {
+    const kleur   = projKleur(modal.tv.project_id)
+    const project = modal.tv.projecten
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/25" onClick={onClose}>
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden" onClick={(e) => e.stopPropagation()}>
+
+          {/* Header */}
+          <div className="flex items-center gap-3 p-5 pb-4 border-b border-gray-100">
+            <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold shrink-0" style={{ backgroundColor: avgBg, color: avgFg }}>
+              {initialen(monteurNaam(modal.monteur))}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-semibold text-gray-900 truncate">{monteurNaam(modal.monteur)}</div>
+              <div className="text-xs text-gray-400 capitalize">{fDatumLang(dag)}</div>
+            </div>
+            <button onClick={onClose} className="text-gray-300 hover:text-gray-600 transition-colors shrink-0 text-base leading-none ml-2">✕</button>
+          </div>
+
+          {/* Inhoud */}
+          <div className="p-5 space-y-3">
+            {/* Project badge */}
+            <div className="rounded-xl p-4" style={{ backgroundColor: kleur.bg }}>
+              <div className="text-xs font-bold leading-snug" style={{ color: kleur.fg }}>
+                {project?.werknummer}
+                {project?.projectleider_initialen && (
+                  <span className="font-normal opacity-75"> · {project.projectleider_initialen}</span>
+                )}
+              </div>
+              <div className="text-sm mt-0.5 leading-snug font-medium" style={{ color: kleur.fg }}>
+                {project?.omschrijving}
+              </div>
+              {project?.plaats && (
+                <div className="text-xs mt-1.5" style={{ color: kleur.fg, opacity: 0.65 }}>{project.plaats}</div>
+              )}
+            </div>
+
+            {/* Periode info */}
+            {heeftPeriode && (
+              <p className="text-xs text-gray-500">
+                Ingepland van{' '}
+                <span className="font-medium text-gray-700">{fBereikLang(periodeData.van, periodeData.tot)}</span>
+                {' '}
+                <span className="text-gray-400">({periodeData.aantalDagen} dagen)</span>
+              </p>
+            )}
+          </div>
+
+          {/* Knoppen — alleen voor beheerder/planner */}
+          {kanInplannen && (
+            <div className="px-5 pb-5 flex flex-col gap-2">
+              {heeftPeriode && (
+                periodeConfirm ? (
+                  <div className="flex items-center gap-2 px-4 py-2.5 bg-red-50 rounded-xl border border-red-100">
+                    <span className="text-xs text-red-600 flex-1">Zeker? {periodeData.aantalDagen} dagen verwijderen</span>
+                    <button type="button" onClick={handleVerwijderPeriode} disabled={bezig} className="text-xs font-semibold text-red-600 hover:text-red-800 px-2 transition-colors">Ja</button>
+                    <span className="text-gray-300 text-xs select-none">·</span>
+                    <button type="button" onClick={() => setPeriodeConfirm(false)} className="text-xs text-gray-500 hover:text-gray-700 px-2 transition-colors">Nee</button>
+                  </div>
+                ) : (
+                  <button type="button" onClick={() => setPeriodeConfirm(true)} disabled={bezig}
+                    className="w-full px-4 py-2.5 text-sm text-red-400 border border-red-100 rounded-xl hover:bg-red-50 transition-colors text-left">
+                    Verwijder periode <span className="text-xs text-red-300">({periodeData.aantalDagen} dagen)</span>
+                  </button>
+                )
+              )}
+              <div className="flex gap-2">
+                <button type="button" onClick={handleVerwijderDag} disabled={bezig}
+                  className="flex-1 px-4 py-2.5 text-sm text-red-400 border border-red-100 rounded-xl hover:bg-red-50 transition-colors disabled:opacity-50">
+                  {bezig ? 'Verwijderen…' : 'Verwijder dag'}
+                </button>
+                <button type="button" disabled
+                  className="flex-1 px-4 py-2.5 text-sm text-gray-300 border border-gray-100 rounded-xl cursor-not-allowed">
+                  Wijzigen
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  // ── Nieuw / Groep: toewijzing aanmaken ─────────────────────────────────────
+  async function handleInplannen(e) {
+    e.preventDefault()
+    setBezig(true)
+    try { await onInplannen(projectId, van, tot) }
+    catch (err) { alert('Opslaan mislukt: ' + err.message) }
+    finally { setBezig(false) }
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/25"
-      onClick={onClose}
-    >
-      <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 overflow-y-auto max-h-[90vh]"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header — altijd monteur/groep weergave */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/25" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 overflow-y-auto max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+        {/* Header */}
         <div className="flex items-center gap-3 p-5 pb-4">
-          <div
-            className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold shrink-0"
-            style={{ backgroundColor: avgBg, color: avgFg }}
-          >
+          <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold shrink-0" style={{ backgroundColor: avgBg, color: avgFg }}>
             {isGroep ? modal.groep.naam.slice(0, 2).toUpperCase() : initialen(monteurNaam(modal.monteur))}
           </div>
           <div>
@@ -1207,162 +1145,33 @@ function InplanModal({
           </div>
         </div>
 
-        {/* Body */}
-        <form onSubmit={handleOpslaan} className="px-5 pb-5 space-y-3">
-          {/* Project selector — altijd zichtbaar */}
+        <form onSubmit={handleInplannen} className="px-5 pb-5 space-y-3">
           <div>
             <label className="block text-xs text-gray-500 mb-1">Project</label>
-            <ProjectZoeker
-              projecten={projecten}
-              value={projectId}
-              onChange={setProjectId}
-              onNieuwProject={!isBewerk ? onNaarProjecten : undefined}
-            />
+            <ProjectZoeker projecten={projecten} value={projectId} onChange={setProjectId} onNieuwProject={onNaarProjecten} />
           </div>
-
-          {/* Datums */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs text-gray-500 mb-1">Van</label>
-              <input
-                type="date"
-                required
-                value={van}
-                onChange={(e) => { setVan(e.target.value); if (e.target.value > tot) setTot(e.target.value) }}
-                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors"
-              />
+              <input type="date" required value={van} onChange={(e) => { setVan(e.target.value); if (e.target.value > tot) setTot(e.target.value) }}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors" />
             </div>
             <div>
               <label className="block text-xs text-gray-500 mb-1">Tot</label>
-              <input
-                type="date"
-                required
-                value={tot}
-                min={van}
-                onChange={(e) => setTot(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors"
-              />
+              <input type="date" required value={tot} min={van} onChange={(e) => setTot(e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors" />
             </div>
           </div>
-
-          {/* Knoppen */}
           <div className="flex items-center justify-end gap-2 pt-1">
-            {isBewerk && (
-              <button
-                type="button"
-                onClick={handleVerwijder}
-                disabled={bezig}
-                className="px-4 py-2 text-sm text-red-400 hover:text-red-600 transition-colors mr-auto"
-              >
-                Verwijderen
-              </button>
-            )}
             <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-gray-500 hover:text-gray-900 transition-colors">
               Annuleren
             </button>
-            <button
-              type="submit"
-              disabled={bezig || !projectId}
-              className="px-4 py-2 text-sm font-medium bg-gray-900 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 transition-colors"
-            >
-              {bezig ? 'Opslaan…' : isGroep ? `${modal.leden.length} leden inplannen` : 'Opslaan'}
+            <button type="submit" disabled={bezig || !projectId}
+              className="px-4 py-2 text-sm font-medium bg-gray-900 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 transition-colors">
+              {bezig ? 'Opslaan…' : isGroep ? `${modal.leden.length} leden inplannen` : 'Inplannen'}
             </button>
           </div>
         </form>
-
-        {/* Periode sectie */}
-        {toonPeriode && (
-          <div className="mx-5 mb-5 border border-gray-100 rounded-xl overflow-hidden">
-            <div className="px-4 py-3 bg-gray-50 border-b border-gray-100">
-              <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
-                Meer dagen op dit project
-              </div>
-              <div className="text-sm text-gray-900 leading-snug">{fBereikLang(periodeData.van, periodeData.tot)}</div>
-              <div className="text-xs text-gray-400">{periodeData.aantalDagen} werkdagen</div>
-            </div>
-
-            {periodeActie === null && (
-              <div className="flex gap-2 p-3">
-                <button
-                  type="button"
-                  onClick={() => { setPeriodeActie('wijzig'); setPeriodeVan(periodeData.van); setPeriodeTot(periodeData.tot) }}
-                  className="flex-1 px-3 py-2 text-xs font-medium border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-gray-700"
-                >
-                  Wijzig hele periode
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPeriodeActie('verwijder')}
-                  className="flex-1 px-3 py-2 text-xs font-medium border border-red-100 rounded-lg hover:bg-red-50 transition-colors text-red-500"
-                >
-                  Verwijder hele periode
-                </button>
-              </div>
-            )}
-
-            {periodeActie === 'wijzig' && (
-              <form onSubmit={handleWijzigPeriodeOpslaan} className="p-3 space-y-2.5">
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">Van</label>
-                    <input
-                      type="date"
-                      required
-                      value={periodeVan}
-                      onChange={(e) => { setPeriodeVan(e.target.value); if (e.target.value > periodeTot) setPeriodeTot(e.target.value) }}
-                      className="w-full px-2 py-1.5 text-xs border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">Tot</label>
-                    <input
-                      type="date"
-                      required
-                      value={periodeTot}
-                      min={periodeVan}
-                      onChange={(e) => setPeriodeTot(e.target.value)}
-                      className="w-full px-2 py-1.5 text-xs border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors"
-                    />
-                  </div>
-                </div>
-                <div className="flex gap-2 justify-end">
-                  <button type="button" onClick={() => setPeriodeActie(null)} className="px-3 py-1.5 text-xs text-gray-500 hover:text-gray-900 transition-colors">
-                    Annuleren
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={bezig}
-                    className="px-3 py-1.5 text-xs font-medium bg-gray-900 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50 transition-colors"
-                  >
-                    {bezig ? 'Opslaan…' : 'Periode opslaan'}
-                  </button>
-                </div>
-              </form>
-            )}
-
-            {periodeActie === 'verwijder' && (
-              <div className="p-3 space-y-2.5">
-                <p className="text-xs text-gray-600">
-                  Verwijder alle {periodeData.aantalDagen} dagen van{' '}
-                  <span className="font-medium">{monteurNaam(modal.monteur)}</span> op dit project?
-                </p>
-                <div className="flex gap-2 justify-end">
-                  <button type="button" onClick={() => setPeriodeActie(null)} className="px-3 py-1.5 text-xs text-gray-500 hover:text-gray-900 transition-colors">
-                    Annuleren
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleVerwijderPeriode}
-                    disabled={bezig}
-                    className="px-3 py-1.5 text-xs font-medium bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50 transition-colors"
-                  >
-                    {bezig ? 'Verwijderen…' : `${periodeData.aantalDagen} dagen verwijderen`}
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
       </div>
     </div>
   )
