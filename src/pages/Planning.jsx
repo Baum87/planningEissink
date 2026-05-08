@@ -209,8 +209,8 @@ export default function Planning() {
     const q = zoek.trim().toLowerCase()
     const match = (m) => !q || monteurNaam(m).toLowerCase().includes(q)
 
-    const eigen = monteurs.filter((m) => m.type === 'eigen' && match(m) && !groepLedenIds.has(m.id))
-    const zzp   = monteurs.filter((m) => m.type === 'zzp'   && match(m) && !groepLedenIds.has(m.id))
+    const eigen = monteurs.filter((m) => m.type === 'Eissink'       && match(m) && !groepLedenIds.has(m.id))
+    const zzp   = monteurs.filter((m) => m.type === 'Onderaannemer' && match(m) && !groepLedenIds.has(m.id))
 
     const groepRijen = groepen.flatMap((g) => {
       const leden = (g.groep_leden ?? [])
