@@ -62,7 +62,7 @@ const KOLOMMEN = [
 
 export default function Monteurs() {
   const { rol } = useAuth()
-  const kanBewerken = rol !== 'projectleider'
+  const kanBewerken = rol === 'beheerder' || rol === 'planner'
 
   const [monteurs, setMonteurs] = useState([])
   const [groepen, setGroepen] = useState([])

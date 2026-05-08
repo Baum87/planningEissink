@@ -51,7 +51,7 @@ function berekenMandagen(toewijzingen) {
 
 export default function Projecten() {
   const { rol } = useAuth()
-  const kanBewerken = rol !== 'projectleider'
+  const kanBewerken = rol === 'beheerder' || rol === 'planner'
 
   const [projecten, setProjecten] = useState([])
   const [loading, setLoading] = useState(true)

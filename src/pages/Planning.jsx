@@ -112,7 +112,7 @@ function fBereik(van, tot) {
 
 export default function Planning() {
   const { rol, initialen: eigenInitialen } = useAuth()
-  const kanInplannen = rol !== 'projectleider'
+  const kanInplannen = rol === 'beheerder' || rol === 'planner'
 
   const [startDatum, setStartDatum] = useState(() => getMaandag(new Date()))
   const [toonWeekend, setToonWeekend] = useState(false)
@@ -659,7 +659,9 @@ export default function Planning() {
 
           {!loading && rijen.length === 0 && (
             <div className="py-12 text-center text-sm text-gray-400">
-              Geen monteurs gevonden
+              {filterProjectleider
+                ? `Geen monteurs ingepland op projecten van ${filterProjectleider} in deze periode`
+                : 'Geen monteurs gevonden'}
             </div>
           )}
         </div>
@@ -713,9 +715,7 @@ function MonteurPopup({ monteur, onClose }) {
           </div>
           <div className="min-w-0 flex-1">
             <div className="text-sm font-semibold text-gray-900 truncate">{naam || '—'}</div>
-            {monteur.bedrijfsnaam && (
-              <div className="text-xs text-gray-400 truncate">{monteur.bedrijfsnaam}</div>
-            )}
+            <div className="text-xs text-gray-400 truncate">{monteur.type || ''}</div>
           </div>
           <button
             onClick={onClose}
@@ -727,20 +727,23 @@ function MonteurPopup({ monteur, onClose }) {
 
         {/* Details */}
         <div className="p-5 space-y-3">
-          <Regel label="Type" waarde={monteur.type || '—'} />
-          <Regel label="Telefoon" waarde={monteur.telefoon || '—'} />
+          <Regel label="Bedrijf"    waarde={monteur.bedrijfsnaam || '—'} />
+          <Regel label="Type"       waarde={monteur.type || '—'} />
+          <Regel label="Telefoon"   waarde={monteur.telefoon || '—'} />
           <Regel label="Woonplaats" waarde={monteur.woonplaats || '—'} />
-          {monteur.toewijzing_vandaag && (
-            <Regel
-              label="Vandaag"
-              waarde={`${monteur.toewijzing_vandaag.projecten?.werknummer} — ${monteur.toewijzing_vandaag.projecten?.omschrijving}`}
-            />
-          )}
-          {(monteur.expertises ?? []).length > 0 && (
-            <div>
-              <div className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1.5">
-                Expertises
-              </div>
+          <Regel
+            label="Vandaag"
+            waarde={
+              monteur.toewijzing_vandaag
+                ? `${monteur.toewijzing_vandaag.projecten?.werknummer} — ${monteur.toewijzing_vandaag.projecten?.omschrijving}`
+                : '—'
+            }
+          />
+          <div>
+            <div className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1.5">
+              Expertises
+            </div>
+            {(monteur.expertises ?? []).length > 0 ? (
               <div className="flex flex-wrap gap-1.5">
                 {monteur.expertises.map((ex) => (
                   <span
@@ -751,8 +754,10 @@ function MonteurPopup({ monteur, onClose }) {
                   </span>
                 ))}
               </div>
-            </div>
-          )}
+            ) : (
+              <span className="text-sm text-gray-900">—</span>
+            )}
+          </div>
         </div>
       </div>
     </div>

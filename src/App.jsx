@@ -49,8 +49,10 @@ function AppInner() {
               </button>
             ))}
             <div className="ml-auto flex items-center gap-4">
-              {rol && (
-                <span className="text-xs text-gray-400 capitalize">{rol}</span>
+              {(user?.user_metadata?.naam || user?.email) && (
+                <span className="text-xs text-gray-400">
+                  {user.user_metadata?.naam || user.email}
+                </span>
               )}
               <button
                 onClick={uitloggen}
