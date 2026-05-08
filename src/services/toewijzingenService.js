@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase'
 export async function getToewijzingen(van, tot) {
   const { data, error } = await supabase
     .from('toewijzingen')
-    .select('*, projecten(id, werknummer, omschrijving)')
+    .select('*, projecten(id, werknummer, omschrijving, projectleider_initialen)')
     .lte('datum_van', tot)
     .gte('datum_tot', van)
   if (error) throw error

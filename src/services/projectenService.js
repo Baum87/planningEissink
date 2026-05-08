@@ -44,7 +44,7 @@ export async function deleteProject(id) {
   if (error) throw error
 }
 
-export async function getProjectleiderInitialen() {
+export async function getUniekePLInitialen() {
   const { data, error } = await supabase
     .from('projecten')
     .select('projectleider_initialen')

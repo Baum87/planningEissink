@@ -57,6 +57,7 @@ export default function Projecten() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [zoek, setZoek] = useState('')
+  const [filterPL, setFilterPL] = useState('')
   const [sort, setSort] = useState({ veld: 'created_at', dir: 'desc' })
   const [modal, setModal] = useState(null)
   const [formulier, setFormulier] = useState(LEEG)
@@ -91,16 +92,22 @@ export default function Projecten() {
     [projecten]
   )
 
+  const alleInitialen = useMemo(
+    () => [...new Set(projecten.map((p) => p.projectleider_initialen).filter(Boolean))].sort(),
+    [projecten]
+  )
+
   const gefilterd = useMemo(() => {
     const q = zoek.trim().toLowerCase()
-    if (!q) return verrijkt
     return verrijkt.filter(
       (p) =>
-        p.werknummer?.toLowerCase().includes(q) ||
-        p.omschrijving?.toLowerCase().includes(q) ||
-        p.opdrachtgever?.toLowerCase().includes(q)
+        (!filterPL || p.projectleider_initialen === filterPL) &&
+        (!q ||
+          p.werknummer?.toLowerCase().includes(q) ||
+          p.omschrijving?.toLowerCase().includes(q) ||
+          p.opdrachtgever?.toLowerCase().includes(q))
     )
-  }, [verrijkt, zoek])
+  }, [verrijkt, zoek, filterPL])
 
   const gesorteerd = useMemo(() => {
     const { veld, dir } = sort
@@ -172,22 +179,34 @@ export default function Projecten() {
   return (
     <div>
       {/* Toolbar */}
-      <div className="flex items-center justify-between mb-4 gap-3">
+      <div className="flex items-center mb-4 gap-3 flex-wrap">
         <input
           type="search"
           placeholder="Zoek op werknummer, omschrijving of opdrachtgever…"
           value={zoek}
           onChange={(e) => setZoek(e.target.value)}
-          className="w-96 px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors"
+          className="w-80 px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors"
         />
-        {kanBewerken && (
-          <button
-            onClick={openNieuw}
-            className="px-4 py-2 text-sm font-medium bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition-colors whitespace-nowrap"
-          >
-            + Nieuw project
-          </button>
-        )}
+        <select
+          value={filterPL}
+          onChange={(e) => setFilterPL(e.target.value)}
+          className="px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors bg-white text-gray-600"
+        >
+          <option value="">Alle PL</option>
+          {alleInitialen.map((ini) => (
+            <option key={ini} value={ini}>{ini}</option>
+          ))}
+        </select>
+        <div className="ml-auto">
+          {kanBewerken && (
+            <button
+              onClick={openNieuw}
+              className="px-4 py-2 text-sm font-medium bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition-colors whitespace-nowrap"
+            >
+              + Nieuw project
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Fout */}
@@ -247,8 +266,13 @@ export default function Projecten() {
                     key={p.id}
                     className="border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors"
                   >
-                    <td className="px-4 py-3 font-mono text-xs text-gray-700">
+                    <td className="px-4 py-3 font-mono text-xs text-gray-700 whitespace-nowrap">
                       {p.werknummer}
+                      {p.projectleider_initialen && (
+                        <span className="ml-1.5 px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded text-[10px] font-sans font-medium non-italic">
+                          {p.projectleider_initialen}
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-gray-900 max-w-xs truncate">
                       {p.omschrijving}

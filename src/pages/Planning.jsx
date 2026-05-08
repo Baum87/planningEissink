@@ -111,7 +111,7 @@ function fBereik(van, tot) {
 // ─── Planning ─────────────────────────────────────────────────────────────────
 
 export default function Planning() {
-  const { rol, initialen: eigenInitialen } = useAuth()
+  const { rol } = useAuth()
   const kanInplannen = rol === 'beheerder' || rol === 'planner'
 
   const [startDatum, setStartDatum] = useState(() => getMaandag(new Date()))
@@ -125,9 +125,7 @@ export default function Planning() {
   const [uitgeklapt, setUitgeklapt] = useState(new Set())
   const [zoek, setZoek] = useState('')
   const [filterExpertise, setFilterExpertise] = useState('')
-  const [filterProjectleider, setFilterProjectleider] = useState(
-    () => (rol === 'projectleider' ? (eigenInitialen ?? '') : '')
-  )
+  const [filterProjectleider, setFilterProjectleider] = useState('')
   const [modal, setModal] = useState(null)
   const [monteurPopup, setMonteurPopup] = useState(null)
 
@@ -344,18 +342,16 @@ export default function Planning() {
           ))}
         </select>
 
-        {rol !== 'projectleider' && (
-          <select
-            value={filterProjectleider}
-            onChange={(e) => setFilterProjectleider(e.target.value)}
-            className="px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors bg-white text-gray-600"
-          >
-            <option value="">Alle projectleiders</option>
-            {alleInitialen.map((ini) => (
-              <option key={ini} value={ini}>{ini}</option>
-            ))}
-          </select>
-        )}
+        <select
+          value={filterProjectleider}
+          onChange={(e) => setFilterProjectleider(e.target.value)}
+          className="px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors bg-white text-gray-600"
+        >
+          <option value="">Alle PL</option>
+          {alleInitialen.map((ini) => (
+            <option key={ini} value={ini}>{ini}</option>
+          ))}
+        </select>
 
         <div className="flex items-center gap-0.5">
           <button
@@ -614,6 +610,11 @@ export default function Planning() {
                                       style={{ color: kleur.fg }}
                                     >
                                       {tv.projecten?.werknummer}
+                                      {tv.projecten?.projectleider_initialen && (
+                                        <span style={{ opacity: 0.75 }}>
+                                          {' · '}{tv.projecten.projectleider_initialen}
+                                        </span>
+                                      )}
                                     </div>
                                     <div
                                       className="text-[10px] leading-tight truncate"
@@ -819,6 +820,11 @@ function ProjectZoeker({ projecten, value, onChange }) {
         <div className="min-w-0 flex-1">
           <div className="text-xs font-semibold font-mono truncate leading-tight" style={{ color: kleur.fg }}>
             {geselecteerd.werknummer}
+            {geselecteerd.projectleider_initialen && (
+              <span className="font-sans font-medium">
+                {' · '}{geselecteerd.projectleider_initialen}
+              </span>
+            )}
           </div>
           <div className="text-xs truncate leading-tight" style={{ color: kleur.fg, opacity: 0.75 }}>
             {geselecteerd.omschrijving}
@@ -848,7 +854,14 @@ function ProjectZoeker({ projecten, value, onChange }) {
                 onClick={() => selecteer(p)}
                 className="w-full px-3 py-2 text-left hover:bg-gray-50 transition-colors"
               >
-                <span className="text-xs font-semibold font-mono text-gray-700">{p.werknummer}</span>
+                <span className="text-xs font-semibold font-mono text-gray-700">
+                  {p.werknummer}
+                  {p.projectleider_initialen && (
+                    <span className="font-sans font-medium text-gray-500">
+                      {' · '}{p.projectleider_initialen}
+                    </span>
+                  )}
+                </span>
                 <span className="text-xs text-gray-400 ml-2">{p.omschrijving}</span>
               </button>
             </li>

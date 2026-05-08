@@ -83,7 +83,7 @@ function fDatumLang(str) {
 // ─── Overzicht ────────────────────────────────────────────────────────────────
 
 export default function Overzicht() {
-  const { rol, initialen } = useAuth()
+  const { rol } = useAuth()
 
   const [startDatum, setStartDatum] = useState(() => getMaandag(new Date()))
   const [toonWeekend, setToonWeekend] = useState(false)
@@ -93,9 +93,7 @@ export default function Overzicht() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [popup, setPopup] = useState(null)
-  const [filterProjectleider, setFilterProjectleider] = useState(
-    () => (rol === 'projectleider' ? (initialen ?? '') : '')
-  )
+  const [filterProjectleider, setFilterProjectleider] = useState('')
 
   // ── Datum berekeningen ──────────────────────────────────────────────────────
 
@@ -241,18 +239,16 @@ export default function Overzicht() {
 
         <span className="text-sm font-semibold text-gray-700">{periodeLabel}</span>
 
-        {rol !== 'projectleider' && (
-          <select
-            value={filterProjectleider}
-            onChange={(e) => setFilterProjectleider(e.target.value)}
-            className="px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors bg-white text-gray-600"
-          >
-            <option value="">Alle projectleiders</option>
-            {alleInitialen.map((ini) => (
-              <option key={ini} value={ini}>{ini}</option>
-            ))}
-          </select>
-        )}
+        <select
+          value={filterProjectleider}
+          onChange={(e) => setFilterProjectleider(e.target.value)}
+          className="px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors bg-white text-gray-600"
+        >
+          <option value="">Alle PL</option>
+          {alleInitialen.map((ini) => (
+            <option key={ini} value={ini}>{ini}</option>
+          ))}
+        </select>
 
         <label className="ml-auto flex items-center gap-2 cursor-pointer select-none">
           <span className="text-sm text-gray-500">Weekend</span>
@@ -372,6 +368,11 @@ export default function Overzicht() {
                 >
                   <div className="text-xs font-semibold text-gray-900 font-mono truncate leading-tight">
                     {project.werknummer}
+                    {project.projectleider_initialen && (
+                      <span className="font-sans font-medium text-gray-500">
+                        {' · '}{project.projectleider_initialen}
+                      </span>
+                    )}
                   </div>
                   <div className="text-[10px] text-gray-400 truncate leading-tight">
                     {project.omschrijving}
