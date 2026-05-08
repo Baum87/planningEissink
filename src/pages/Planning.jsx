@@ -112,6 +112,7 @@ function fBereik(van, tot) {
 
 export default function Planning() {
   const { rol, initialen: eigenInitialen } = useAuth()
+  const kanInplannen = rol !== 'projectleider'
 
   const [startDatum, setStartDatum] = useState(() => getMaandag(new Date()))
   const [toonWeekend, setToonWeekend] = useState(false)
@@ -519,15 +520,19 @@ export default function Planning() {
                       return (
                         <div
                           key={dagStr}
-                          onClick={() => openGroepModal(rij.groep, rij.leden, dagStr)}
-                          className={`border-l border-gray-100 cursor-pointer group/cel flex items-center justify-center transition-colors ${
-                            isWeekend ? 'bg-gray-100/50 hover:bg-gray-100' : 'hover:bg-gray-100/60'
+                          onClick={kanInplannen ? () => openGroepModal(rij.groep, rij.leden, dagStr) : undefined}
+                          className={`border-l border-gray-100 flex items-center justify-center transition-colors ${
+                            kanInplannen ? 'cursor-pointer group/cel' : ''
+                          } ${
+                            isWeekend ? 'bg-gray-100/50 hover:bg-gray-100' : kanInplannen ? 'hover:bg-gray-100/60' : ''
                           }`}
                           style={{ flex: 1, minWidth: DAG_B, minHeight: 40 }}
                         >
-                          <span className="text-gray-300 opacity-0 group-hover/cel:opacity-100 transition-opacity text-lg leading-none select-none">
-                            +
-                          </span>
+                          {kanInplannen && (
+                            <span className="text-gray-300 opacity-0 group-hover/cel:opacity-100 transition-opacity text-lg leading-none select-none">
+                              +
+                            </span>
+                          )}
                         </div>
                       )
                     })}
@@ -590,9 +595,9 @@ export default function Planning() {
                             return (
                               <div
                                 key={tv.id}
-                                onClick={() => openModal(monteur, dagStr, tv)}
+                                onClick={kanInplannen ? () => openModal(monteur, dagStr, tv) : undefined}
                                 title={`${tv.projecten?.werknummer} — ${tv.projecten?.omschrijving}`}
-                                className="cursor-pointer flex flex-col justify-center overflow-hidden"
+                                className={`${kanInplannen ? 'cursor-pointer' : ''} flex flex-col justify-center overflow-hidden`}
                                 style={{
                                   width: `${100 / tvList.length}%`,
                                   height: '100%',
@@ -628,19 +633,23 @@ export default function Planning() {
                     return (
                       <div
                         key={dagStr}
-                        onClick={() => openModal(monteur, dagStr)}
-                        className={`border-l border-gray-100 cursor-pointer group/cel flex items-center justify-center transition-colors ${
+                        onClick={kanInplannen ? () => openModal(monteur, dagStr) : undefined}
+                        className={`border-l border-gray-100 flex items-center justify-center transition-colors ${
+                          kanInplannen ? 'cursor-pointer group/cel' : ''
+                        } ${
                           isVandaag
                             ? 'bg-blue-50/30'
                             : isWeekend
                             ? 'bg-gray-50'
-                            : 'hover:bg-gray-50'
+                            : kanInplannen ? 'hover:bg-gray-50' : ''
                         }`}
                         style={{ flex: 1, minWidth: DAG_B, height: ROW_H }}
                       >
-                        <span className="text-gray-300 opacity-0 group-hover/cel:opacity-100 transition-opacity text-xl leading-none select-none">
-                          +
-                        </span>
+                        {kanInplannen && (
+                          <span className="text-gray-300 opacity-0 group-hover/cel:opacity-100 transition-opacity text-xl leading-none select-none">
+                            +
+                          </span>
+                        )}
                       </div>
                     )
                   })}

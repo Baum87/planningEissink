@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { useAuth } from '../context/AuthContext'
 import {
   getProjectenMetStats,
   createProject,
@@ -49,6 +50,9 @@ function berekenMandagen(toewijzingen) {
 }
 
 export default function Projecten() {
+  const { rol } = useAuth()
+  const kanBewerken = rol !== 'projectleider'
+
   const [projecten, setProjecten] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -176,12 +180,14 @@ export default function Projecten() {
           onChange={(e) => setZoek(e.target.value)}
           className="w-96 px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors"
         />
-        <button
-          onClick={openNieuw}
-          className="px-4 py-2 text-sm font-medium bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition-colors whitespace-nowrap"
-        >
-          + Nieuw project
-        </button>
+        {kanBewerken && (
+          <button
+            onClick={openNieuw}
+            className="px-4 py-2 text-sm font-medium bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition-colors whitespace-nowrap"
+          >
+            + Nieuw project
+          </button>
+        )}
       </div>
 
       {/* Fout */}
@@ -263,13 +269,15 @@ export default function Projecten() {
                       {p.mandagen}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <button
-                        onClick={() => openBewerk(p)}
-                        title="Bewerken"
-                        className="text-gray-300 hover:text-gray-700 transition-colors"
-                      >
-                        <EditIcon />
-                      </button>
+                      {kanBewerken && (
+                        <button
+                          onClick={() => openBewerk(p)}
+                          title="Bewerken"
+                          className="text-gray-300 hover:text-gray-700 transition-colors"
+                        >
+                          <EditIcon />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))

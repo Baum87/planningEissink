@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { useAuth } from '../context/AuthContext'
 import {
   getMonteurs,
   createMonteur,
@@ -60,6 +61,9 @@ const KOLOMMEN = [
 // ─── Hoofdpagina ──────────────────────────────────────────────────────────────
 
 export default function Monteurs() {
+  const { rol } = useAuth()
+  const kanBewerken = rol !== 'projectleider'
+
   const [monteurs, setMonteurs] = useState([])
   const [groepen, setGroepen] = useState([])
   const [loading, setLoading] = useState(true)
@@ -139,12 +143,14 @@ export default function Monteurs() {
       <section className="mb-8">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-semibold text-gray-900">Groepen</h2>
-          <button
-            onClick={() => setGroepModal({ mode: 'nieuw' })}
-            className="text-sm text-gray-500 hover:text-gray-900 transition-colors"
-          >
-            + Nieuwe groep
-          </button>
+          {kanBewerken && (
+            <button
+              onClick={() => setGroepModal({ mode: 'nieuw' })}
+              className="text-sm text-gray-500 hover:text-gray-900 transition-colors"
+            >
+              + Nieuwe groep
+            </button>
+          )}
         </div>
 
         {!loading && groepen.length === 0 ? (
@@ -156,6 +162,7 @@ export default function Monteurs() {
                 key={g.id}
                 groep={g}
                 monteurs={monteurs}
+                kanBewerken={kanBewerken}
                 onBeheer={() => setGroepModal({ mode: 'bewerk', groep: g })}
               />
             ))}
@@ -187,12 +194,14 @@ export default function Monteurs() {
             </button>
           ))}
         </div>
-        <button
-          onClick={() => setMonteurModal({ mode: 'nieuw' })}
-          className="ml-auto px-4 py-2 text-sm font-medium bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition-colors whitespace-nowrap"
-        >
-          + Nieuwe monteur
-        </button>
+        {kanBewerken && (
+          <button
+            onClick={() => setMonteurModal({ mode: 'nieuw' })}
+            className="ml-auto px-4 py-2 text-sm font-medium bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition-colors whitespace-nowrap"
+          >
+            + Nieuwe monteur
+          </button>
+        )}
       </div>
 
       {/* ── Error / Loading ──────────────────────────────────────────── */}
@@ -229,7 +238,7 @@ export default function Monteurs() {
                     </span>
                   </th>
                 ))}
-                <th className="w-20 px-4 py-2.5" />
+                {kanBewerken && <th className="w-20 px-4 py-2.5" />}
               </tr>
             </thead>
             <tbody>
@@ -267,42 +276,44 @@ export default function Monteurs() {
                     </td>
                     <td className="px-4 py-3 text-gray-600">{m.telefoon || '—'}</td>
                     <td className="px-4 py-3 text-gray-600">{m.woonplaats || '—'}</td>
-                    <td className="px-4 py-3 text-right">
-                      {verwijderBevestig === m.id ? (
-                        <span className="inline-flex items-center gap-2">
-                          <span className="text-xs text-gray-500">Zeker?</span>
-                          <button
-                            onClick={() => handleVerwijder(m.id)}
-                            className="text-xs font-medium text-red-600 hover:text-red-700 transition-colors"
-                          >
-                            Ja
-                          </button>
-                          <button
-                            onClick={() => setVerwijderBevestig(null)}
-                            className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
-                          >
-                            Nee
-                          </button>
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-3">
-                          <button
-                            onClick={() => setMonteurModal({ mode: 'bewerk', monteur: m })}
-                            title="Bewerken"
-                            className="text-gray-300 hover:text-gray-700 transition-colors"
-                          >
-                            <EditIcon />
-                          </button>
-                          <button
-                            onClick={() => setVerwijderBevestig(m.id)}
-                            title="Verwijderen"
-                            className="text-gray-300 hover:text-red-500 transition-colors"
-                          >
-                            <TrashIcon />
-                          </button>
-                        </span>
-                      )}
-                    </td>
+                    {kanBewerken && (
+                      <td className="px-4 py-3 text-right">
+                        {verwijderBevestig === m.id ? (
+                          <span className="inline-flex items-center gap-2">
+                            <span className="text-xs text-gray-500">Zeker?</span>
+                            <button
+                              onClick={() => handleVerwijder(m.id)}
+                              className="text-xs font-medium text-red-600 hover:text-red-700 transition-colors"
+                            >
+                              Ja
+                            </button>
+                            <button
+                              onClick={() => setVerwijderBevestig(null)}
+                              className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                            >
+                              Nee
+                            </button>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-3">
+                            <button
+                              onClick={() => setMonteurModal({ mode: 'bewerk', monteur: m })}
+                              title="Bewerken"
+                              className="text-gray-300 hover:text-gray-700 transition-colors"
+                            >
+                              <EditIcon />
+                            </button>
+                            <button
+                              onClick={() => setVerwijderBevestig(m.id)}
+                              title="Verwijderen"
+                              className="text-gray-300 hover:text-red-500 transition-colors"
+                            >
+                              <TrashIcon />
+                            </button>
+                          </span>
+                        )}
+                      </td>
+                    )}
                   </tr>
                 ))
               )}
@@ -338,7 +349,7 @@ export default function Monteurs() {
 
 // ─── GroepKaart ───────────────────────────────────────────────────────────────
 
-function GroepKaart({ groep, monteurs, onBeheer }) {
+function GroepKaart({ groep, monteurs, kanBewerken, onBeheer }) {
   const leden = (groep.groep_leden ?? [])
     .map((gl) => { const m = monteurs.find((x) => x.id === gl.monteur_id); return m ? monteurNaam(m) : null })
     .filter(Boolean)
@@ -351,12 +362,14 @@ function GroepKaart({ groep, monteurs, onBeheer }) {
           {leden.length === 0 ? 'Geen leden' : leden.join(', ')}
         </div>
       </div>
-      <button
-        onClick={onBeheer}
-        className="text-xs text-gray-400 hover:text-gray-700 whitespace-nowrap transition-colors"
-      >
-        Beheren
-      </button>
+      {kanBewerken && (
+        <button
+          onClick={onBeheer}
+          className="text-xs text-gray-400 hover:text-gray-700 whitespace-nowrap transition-colors"
+        >
+          Beheren
+        </button>
+      )}
     </div>
   )
 }
