@@ -565,6 +565,11 @@ export default function Planning({ onNavigate }) {
                       <div className="text-xs font-medium text-gray-900 truncate leading-tight">
                         {monteurNaam(monteur)}
                       </div>
+                      {monteur.bedrijfsnaam && (
+                        <div className="text-[10px] text-gray-400 truncate leading-tight">
+                          {monteur.bedrijfsnaam}
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -579,8 +584,7 @@ export default function Planning({ onNavigate }) {
                       return (
                         <div
                           key={dagStr}
-                          onClick={kanInplannen ? () => openModal(monteur, dagStr) : undefined}
-                          className={`relative border-l border-white/40 flex flex-row overflow-hidden ${kanInplannen ? 'cursor-pointer group/cel' : ''}`}
+                          className={`relative border-l border-white/40 flex flex-row overflow-hidden ${kanInplannen ? 'group/cel' : ''}`}
                           style={{ flex: 1, minWidth: DAG_B, height: ROW_H }}
                         >
                           {tvList.map((tv, i) => {
@@ -589,7 +593,7 @@ export default function Planning({ onNavigate }) {
                             return (
                               <div
                                 key={tv.id}
-                                onClick={kanInplannen ? (e) => { e.stopPropagation(); openModal(monteur, dagStr, tv) } : undefined}
+                                onClick={kanInplannen ? () => openModal(monteur, dagStr, tv) : undefined}
                                 title={`${tv.projecten?.werknummer} — ${tv.projecten?.omschrijving}`}
                                 className={`${kanInplannen ? 'cursor-pointer' : ''} flex flex-col justify-center overflow-hidden`}
                                 style={{
@@ -626,9 +630,14 @@ export default function Planning({ onNavigate }) {
                             )
                           })}
                           {kanInplannen && (
-                            <span className="absolute top-0.5 right-0.5 z-10 text-[10px] leading-none text-white opacity-0 group-hover/cel:opacity-60 transition-opacity select-none pointer-events-none">
+                            <button
+                              type="button"
+                              onClick={() => openModal(monteur, dagStr)}
+                              title="Nog een project toevoegen"
+                              className="absolute top-0.5 right-0.5 z-20 w-4 h-4 flex items-center justify-center text-[11px] leading-none text-white bg-black/25 rounded-sm opacity-0 group-hover/cel:opacity-100 transition-opacity hover:bg-black/45"
+                            >
                               +
-                            </span>
+                            </button>
                           )}
                         </div>
                       )
