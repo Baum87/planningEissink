@@ -120,7 +120,9 @@ export default function Planning() {
   const [error, setError] = useState(null)
   const [uitgeklapt, setUitgeklapt] = useState(new Set())
   const [zoek, setZoek] = useState('')
+  const [filterExpertise, setFilterExpertise] = useState('')
   const [modal, setModal] = useState(null)
+  const [monteurPopup, setMonteurPopup] = useState(null)
 
   // ── Datum berekeningen ──────────────────────────────────────────────────────
 
@@ -203,11 +205,18 @@ export default function Planning() {
     [groepen]
   )
 
+  const alleExpertises = useMemo(
+    () => [...new Set(monteurs.flatMap((m) => m.expertises ?? []))].sort((a, b) => a.localeCompare(b, 'nl')),
+    [monteurs]
+  )
+
   // ── Rijen opbouwen: eigen → groepen → zzp ─────────────────────────────────
 
   const rijen = useMemo(() => {
     const q = zoek.trim().toLowerCase()
-    const match = (m) => !q || monteurNaam(m).toLowerCase().includes(q)
+    const match = (m) =>
+      (!q || monteurNaam(m).toLowerCase().includes(q)) &&
+      (!filterExpertise || (m.expertises ?? []).includes(filterExpertise))
 
     const eigen = monteurs.filter((m) => m.type === 'Eissink'       && match(m) && !groepLedenIds.has(m.id))
     const zzp   = monteurs.filter((m) => m.type === 'Onderaannemer' && match(m) && !groepLedenIds.has(m.id))
@@ -230,7 +239,7 @@ export default function Planning() {
       ...groepRijen,
       ...zzp.map((m) => ({ type: 'monteur', monteur: m })),
     ]
-  }, [monteurs, groepen, groepLedenIds, uitgeklapt, zoek])
+  }, [monteurs, groepen, groepLedenIds, uitgeklapt, zoek, filterExpertise])
 
   function toggleGroep(id) {
     setUitgeklapt((prev) => {
@@ -298,6 +307,19 @@ export default function Planning() {
           onChange={(e) => setZoek(e.target.value)}
           className="w-44 px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors"
         />
+
+        {alleExpertises.length > 0 && (
+          <select
+            value={filterExpertise}
+            onChange={(e) => setFilterExpertise(e.target.value)}
+            className="px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors bg-white text-gray-600"
+          >
+            <option value="">Alle expertises</option>
+            {alleExpertises.map((ex) => (
+              <option key={ex} value={ex}>{ex}</option>
+            ))}
+          </select>
+        )}
 
         <div className="flex items-center gap-0.5">
           <button
@@ -491,10 +513,11 @@ export default function Planning() {
                 >
                   {/* Naam cel */}
                   <div
-                    className={`sticky left-0 z-10 border-r border-gray-100 flex items-center gap-2 shrink-0 ${
+                    className={`sticky left-0 z-10 border-r border-gray-100 flex items-center gap-2 shrink-0 cursor-pointer hover:bg-gray-50 transition-colors ${
                       isGroeplid ? 'bg-gray-50 pl-8 pr-3 py-2' : 'bg-white px-3 py-2'
                     }`}
                     style={{ width: NAAM_B }}
+                    onClick={() => setMonteurPopup(monteur)}
                   >
                     <div
                       className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0"
@@ -609,6 +632,90 @@ export default function Planning() {
           onClose={() => setModal(null)}
         />
       )}
+
+      {/* Monteur detail popup */}
+      {monteurPopup && (
+        <MonteurPopup
+          monteur={monteurPopup}
+          onClose={() => setMonteurPopup(null)}
+        />
+      )}
+    </div>
+  )
+}
+
+// ─── MonteurPopup ─────────────────────────────────────────────────────────────
+
+function MonteurPopup({ monteur, onClose }) {
+  const naam = monteurNaam(monteur)
+  const [avgBg, avgFg] = avatarKleur(naam)
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/25"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center gap-4 p-5 pb-4 border-b border-gray-100">
+          <div
+            className="w-11 h-11 rounded-full flex items-center justify-center text-sm font-semibold shrink-0"
+            style={{ backgroundColor: avgBg, color: avgFg }}
+          >
+            {initialen(naam)}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-semibold text-gray-900 truncate">{naam || '—'}</div>
+            {monteur.bedrijfsnaam && (
+              <div className="text-xs text-gray-400 truncate">{monteur.bedrijfsnaam}</div>
+            )}
+          </div>
+          <button
+            onClick={onClose}
+            className="text-gray-300 hover:text-gray-600 transition-colors shrink-0 text-base leading-none"
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* Details */}
+        <div className="p-5 space-y-3">
+          <Regel label="Type" waarde={monteur.type || '—'} />
+          <Regel label="Telefoon" waarde={monteur.telefoon || '—'} />
+          <Regel label="Woonplaats" waarde={monteur.woonplaats || '—'} />
+          {(monteur.expertises ?? []).length > 0 && (
+            <div>
+              <div className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1.5">
+                Expertises
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {monteur.expertises.map((ex) => (
+                  <span
+                    key={ex}
+                    className="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs rounded-md"
+                  >
+                    {ex}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function Regel({ label, waarde }) {
+  return (
+    <div className="flex items-baseline gap-3">
+      <span className="text-xs font-medium text-gray-400 uppercase tracking-wide w-20 shrink-0">
+        {label}
+      </span>
+      <span className="text-sm text-gray-900">{waarde}</span>
     </div>
   )
 }
