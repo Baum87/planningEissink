@@ -12,7 +12,7 @@ const TABS = [
 ]
 
 function AppInner() {
-  const { user, uitloggen } = useAuth()
+  const { user, rol, uitloggen } = useAuth()
   const [activeTab, setActiveTab] = useState('planning')
 
   // Sessie wordt opgehaald — niets tonen om flicker te voorkomen
@@ -44,12 +44,17 @@ function AppInner() {
                 {tab.label}
               </button>
             ))}
-            <button
-              onClick={uitloggen}
-              className="ml-auto text-xs text-gray-400 hover:text-gray-700 transition-colors"
-            >
-              Uitloggen
-            </button>
+            <div className="ml-auto flex items-center gap-4">
+              {rol && (
+                <span className="text-xs text-gray-400 capitalize">{rol}</span>
+              )}
+              <button
+                onClick={uitloggen}
+                className="text-xs text-gray-400 hover:text-gray-700 transition-colors"
+              >
+                Uitloggen
+              </button>
+            </div>
           </div>
         </div>
       </header>

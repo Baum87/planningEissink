@@ -6,14 +6,19 @@ const AuthContext = createContext(null)
 export function AuthProvider({ children }) {
   // undefined = sessie nog aan het laden, null = niet ingelogd, object = ingelogd
   const [user, setUser] = useState(undefined)
+  const [rol, setRol] = useState(null)
+
+  function verwerkUser(u) {
+    setUser(u ?? null)
+    setRol(u?.user_metadata?.rol ?? null)
+  }
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-    })
+    // getUser() haalt verse data op van de server (user_metadata altijd actueel)
+    supabase.auth.getUser().then(({ data: { user } }) => verwerkUser(user))
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
+      verwerkUser(session?.user)
     })
 
     return () => subscription.unsubscribe()
@@ -24,7 +29,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, uitloggen }}>
+    <AuthContext.Provider value={{ user, rol, uitloggen }}>
       {children}
     </AuthContext.Provider>
   )
