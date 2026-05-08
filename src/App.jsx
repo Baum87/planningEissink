@@ -1,16 +1,25 @@
 import { useState } from 'react'
+import { AuthProvider, useAuth } from './context/AuthContext'
+import Login from './pages/Login'
 import Planning from './pages/Planning'
 import Projecten from './pages/Projecten'
 import Monteurs from './pages/Monteurs'
 
 const TABS = [
-  { id: 'planning', label: 'Planning', component: Planning },
+  { id: 'planning',  label: 'Planning',  component: Planning  },
   { id: 'projecten', label: 'Projecten', component: Projecten },
-  { id: 'monteurs', label: 'Monteurs', component: Monteurs },
+  { id: 'monteurs',  label: 'Monteurs',  component: Monteurs  },
 ]
 
-export default function App() {
+function AppInner() {
+  const { user, uitloggen } = useAuth()
   const [activeTab, setActiveTab] = useState('planning')
+
+  // Sessie wordt opgehaald — niets tonen om flicker te voorkomen
+  if (user === undefined) return null
+
+  // Niet ingelogd
+  if (user === null) return <Login />
 
   const ActivePage = TABS.find((t) => t.id === activeTab).component
 
@@ -35,6 +44,12 @@ export default function App() {
                 {tab.label}
               </button>
             ))}
+            <button
+              onClick={uitloggen}
+              className="ml-auto text-xs text-gray-400 hover:text-gray-700 transition-colors"
+            >
+              Uitloggen
+            </button>
           </div>
         </div>
       </header>
@@ -43,5 +58,13 @@ export default function App() {
         <ActivePage />
       </main>
     </div>
+  )
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppInner />
+    </AuthProvider>
   )
 }
