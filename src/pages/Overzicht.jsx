@@ -96,12 +96,16 @@ export default function Overzicht() {
   const [error, setError] = useState(null)
   const [popup, setPopup] = useState(null)
   const [filterProjectleider, setFilterProjectleider] = useState('')
+  const [toonZesWeken, setToonZesWeken] = useState(false)
 
   // ── Datum berekeningen ──────────────────────────────────────────────────────
 
+  const aantalDagen = toonZesWeken ? 42 : 21
+  const dagBreedte = toonZesWeken ? 55 : DAG_B
+
   const alleDagen = useMemo(
-    () => Array.from({ length: 21 }, (_, i) => plusDagen(startDatum, i)),
-    [startDatum]
+    () => Array.from({ length: aantalDagen }, (_, i) => plusDagen(startDatum, i)),
+    [startDatum, aantalDagen]
   )
 
   const zDagen = useMemo(
@@ -132,7 +136,7 @@ export default function Overzicht() {
     setError(null)
     try {
       const van = naarStr(startDatum)
-      const tot = naarStr(plusDagen(startDatum, 20))
+      const tot = naarStr(plusDagen(startDatum, aantalDagen - 1))
       const [m, tv, p, per] = await Promise.all([
         getMonteurs(),
         getToewijzingen(van, tot),
@@ -152,14 +156,14 @@ export default function Overzicht() {
 
   useEffect(() => {
     laad()
-  }, [startDatum])
+  }, [startDatum, toonZesWeken])
 
   // ── Data verwerking ────────────────────────────────────────────────────────
 
   // projectId → dagStr → [monteurId, ...]
   const projectDagMap = useMemo(() => {
     const periodeVan = naarStr(startDatum)
-    const periodeTot = naarStr(plusDagen(startDatum, 20))
+    const periodeTot = naarStr(plusDagen(startDatum, aantalDagen - 1))
     const map = new Map()
 
     toewijzingen.forEach((tv) => {
@@ -182,7 +186,7 @@ export default function Overzicht() {
     })
 
     return map
-  }, [toewijzingen, startDatum])
+  }, [toewijzingen, startDatum, aantalDagen])
 
   const alleInitialen = useMemo(
     () => [...new Set(projecten.map((p) => p.projectleider_initialen).filter(Boolean))].sort(),
@@ -236,7 +240,7 @@ export default function Overzicht() {
       <div className="flex items-center gap-3 flex-wrap">
         <div className="flex items-center gap-0.5">
           <button
-            onClick={() => setStartDatum((d) => plusDagen(d, -21))}
+            onClick={() => setStartDatum((d) => plusDagen(d, -aantalDagen))}
             className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors text-lg leading-none"
           >
             ‹
@@ -248,7 +252,7 @@ export default function Overzicht() {
             Vandaag
           </button>
           <button
-            onClick={() => setStartDatum((d) => plusDagen(d, 21))}
+            onClick={() => setStartDatum((d) => plusDagen(d, aantalDagen))}
             className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors text-lg leading-none"
           >
             ›
@@ -268,24 +272,44 @@ export default function Overzicht() {
           ))}
         </select>
 
-        <label className="ml-auto flex items-center gap-2 cursor-pointer select-none">
-          <span className="text-sm text-gray-500">Weekend</span>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={toonWeekend}
-            onClick={() => setToonWeekend((v) => !v)}
-            className={`relative w-9 h-5 rounded-full transition-colors focus:outline-none ${
-              toonWeekend ? 'bg-gray-800' : 'bg-gray-200'
-            }`}
-          >
-            <span
-              className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all duration-200 ${
-                toonWeekend ? 'left-[18px]' : 'left-0.5'
+        <div className="ml-auto flex items-center gap-4">
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <span className="text-sm text-gray-500">6 weken</span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={toonZesWeken}
+              onClick={() => setToonZesWeken((v) => !v)}
+              className={`relative w-9 h-5 rounded-full transition-colors focus:outline-none ${
+                toonZesWeken ? 'bg-gray-800' : 'bg-gray-200'
               }`}
-            />
-          </button>
-        </label>
+            >
+              <span
+                className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all duration-200 ${
+                  toonZesWeken ? 'left-[18px]' : 'left-0.5'
+                }`}
+              />
+            </button>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <span className="text-sm text-gray-500">Weekend</span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={toonWeekend}
+              onClick={() => setToonWeekend((v) => !v)}
+              className={`relative w-9 h-5 rounded-full transition-colors focus:outline-none ${
+                toonWeekend ? 'bg-gray-800' : 'bg-gray-200'
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all duration-200 ${
+                  toonWeekend ? 'left-[18px]' : 'left-0.5'
+                }`}
+              />
+            </button>
+          </label>
+        </div>
       </div>
 
       {error && (
@@ -313,7 +337,7 @@ export default function Overzicht() {
               <div
                 key={wg.wk}
                 className="border-l border-gray-100 flex items-center px-3"
-                style={{ flex: wg.dagen.length, minWidth: wg.dagen.length * DAG_B }}
+                style={{ flex: wg.dagen.length, minWidth: wg.dagen.length * dagBreedte }}
               >
                 <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
                   Wk {wg.wk}
@@ -342,7 +366,7 @@ export default function Overzicht() {
                   className={`border-l border-gray-100 shrink-0 flex flex-col items-center justify-center gap-0.5 ${
                     isWeekend ? 'bg-gray-100' : isPeriode ? 'bg-amber-100' : ''
                   }`}
-                  style={{ flex: 1, minWidth: DAG_B }}
+                  style={{ flex: 1, minWidth: dagBreedte }}
                 >
                   <span className="text-[10px] text-gray-400 uppercase tracking-wide leading-none">
                     {fDagNaam(d)}
@@ -414,7 +438,7 @@ export default function Overzicht() {
                         className="border-l border-white/40 flex items-center justify-center cursor-pointer hover:opacity-75 transition-opacity"
                         style={{
                           flex: 1,
-                          minWidth: DAG_B,
+                          minWidth: dagBreedte,
                           height: ROW_H,
                           backgroundColor: kleur.bg,
                         }}
@@ -432,7 +456,7 @@ export default function Overzicht() {
                       className={`border-l border-gray-100 ${
                         isVandaag ? 'bg-blue-50/30' : isWeekend ? 'bg-gray-50' : isPeriode ? 'bg-amber-50' : ''
                       }`}
-                      style={{ flex: 1, minWidth: DAG_B, height: ROW_H }}
+                      style={{ flex: 1, minWidth: dagBreedte, height: ROW_H }}
                     />
                   )
                 })}

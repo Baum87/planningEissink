@@ -129,12 +129,17 @@ export default function Planning({ onNavigate }) {
   const [filterProjectleider, setFilterProjectleider] = useState('')
   const [modal, setModal] = useState(null)
   const [monteurPopup, setMonteurPopup] = useState(null)
+  const [toonZesWeken, setToonZesWeken] = useState(false)
+  const [celPopup, setCelPopup] = useState(null)
 
   // ── Datum berekeningen ──────────────────────────────────────────────────────
 
+  const aantalDagen = toonZesWeken ? 42 : 21
+  const dagBreedte = toonZesWeken ? 55 : DAG_B
+
   const alleDagen = useMemo(
-    () => Array.from({ length: 21 }, (_, i) => plusDagen(startDatum, i)),
-    [startDatum]
+    () => Array.from({ length: aantalDagen }, (_, i) => plusDagen(startDatum, i)),
+    [startDatum, aantalDagen]
   )
 
   const zDagen = useMemo(
@@ -165,7 +170,7 @@ export default function Planning({ onNavigate }) {
     setError(null)
     try {
       const van = naarStr(startDatum)
-      const tot = naarStr(plusDagen(startDatum, 20))
+      const tot = naarStr(plusDagen(startDatum, aantalDagen - 1))
       const [m, g, tv, p, per] = await Promise.all([
         getMonteurs(),
         getGroepen(),
@@ -187,7 +192,7 @@ export default function Planning({ onNavigate }) {
 
   useEffect(() => {
     laad()
-  }, [startDatum])
+  }, [startDatum, toonZesWeken])
 
   // ── Toewijzingen map per monteur ───────────────────────────────────────────
 
@@ -375,7 +380,7 @@ export default function Planning({ onNavigate }) {
 
         <div className="flex items-center gap-0.5">
           <button
-            onClick={() => setStartDatum((d) => plusDagen(d, -21))}
+            onClick={() => setStartDatum((d) => plusDagen(d, -aantalDagen))}
             className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors text-lg leading-none"
           >
             ‹
@@ -387,7 +392,7 @@ export default function Planning({ onNavigate }) {
             Vandaag
           </button>
           <button
-            onClick={() => setStartDatum((d) => plusDagen(d, 21))}
+            onClick={() => setStartDatum((d) => plusDagen(d, aantalDagen))}
             className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors text-lg leading-none"
           >
             ›
@@ -396,24 +401,44 @@ export default function Planning({ onNavigate }) {
 
         <span className="text-sm font-semibold text-gray-700">{periodeLabel}</span>
 
-        <label className="ml-auto flex items-center gap-2 cursor-pointer select-none">
-          <span className="text-sm text-gray-500">Weekend</span>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={toonWeekend}
-            onClick={() => setToonWeekend((v) => !v)}
-            className={`relative w-9 h-5 rounded-full transition-colors focus:outline-none ${
-              toonWeekend ? 'bg-gray-800' : 'bg-gray-200'
-            }`}
-          >
-            <span
-              className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all duration-200 ${
-                toonWeekend ? 'left-[18px]' : 'left-0.5'
+        <div className="ml-auto flex items-center gap-4">
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <span className="text-sm text-gray-500">6 weken</span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={toonZesWeken}
+              onClick={() => setToonZesWeken((v) => !v)}
+              className={`relative w-9 h-5 rounded-full transition-colors focus:outline-none ${
+                toonZesWeken ? 'bg-gray-800' : 'bg-gray-200'
               }`}
-            />
-          </button>
-        </label>
+            >
+              <span
+                className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all duration-200 ${
+                  toonZesWeken ? 'left-[18px]' : 'left-0.5'
+                }`}
+              />
+            </button>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <span className="text-sm text-gray-500">Weekend</span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={toonWeekend}
+              onClick={() => setToonWeekend((v) => !v)}
+              className={`relative w-9 h-5 rounded-full transition-colors focus:outline-none ${
+                toonWeekend ? 'bg-gray-800' : 'bg-gray-200'
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all duration-200 ${
+                  toonWeekend ? 'left-[18px]' : 'left-0.5'
+                }`}
+              />
+            </button>
+          </label>
+        </div>
       </div>
 
       {error && (
@@ -442,7 +467,7 @@ export default function Planning({ onNavigate }) {
               <div
                 key={wg.wk}
                 className="border-l border-gray-100 flex items-center px-3"
-                style={{ flex: wg.dagen.length, minWidth: wg.dagen.length * DAG_B }}
+                style={{ flex: wg.dagen.length, minWidth: wg.dagen.length * dagBreedte }}
               >
                 <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">
                   Wk {wg.wk}
@@ -471,7 +496,7 @@ export default function Planning({ onNavigate }) {
                   className={`border-l border-gray-100 shrink-0 flex flex-col items-center justify-center gap-0.5 ${
                     isWeekend ? 'bg-gray-100' : isPeriode ? 'bg-amber-100' : ''
                   }`}
-                  style={{ flex: 1, minWidth: DAG_B }}
+                  style={{ flex: 1, minWidth: dagBreedte }}
                 >
                   <span className="text-[10px] text-gray-400 uppercase tracking-wide leading-none">
                     {fDagNaam(d)}
@@ -544,7 +569,7 @@ export default function Planning({ onNavigate }) {
                           } ${
                             isWeekend ? 'bg-gray-100/50 hover:bg-gray-100' : isPeriode ? 'bg-amber-50' : kanInplannen ? 'hover:bg-gray-100/60' : ''
                           }`}
-                          style={{ flex: 1, minWidth: DAG_B, minHeight: 40 }}
+                          style={{ flex: 1, minWidth: dagBreedte, minHeight: 40 }}
                         >
                           {kanInplannen && (
                             <span className="text-gray-300 opacity-0 group-hover/cel:opacity-100 transition-opacity text-lg leading-none select-none">
@@ -607,18 +632,18 @@ export default function Planning({ onNavigate }) {
                       return (
                         <div
                           key={dagStr}
-                          className={`relative border-l border-white/40 flex flex-row overflow-hidden ${kanInplannen ? 'group/cel' : ''}`}
-                          style={{ flex: 1, minWidth: DAG_B, height: ROW_H }}
+                          className="relative border-l border-white/40 flex flex-row overflow-hidden group/cel cursor-pointer"
+                          style={{ flex: 1, minWidth: dagBreedte, height: ROW_H }}
                         >
                           {tvList.map((tv, i) => {
                             const kleur = projKleur(tv.project_id)
-                            const compact = DAG_B / tvList.length < 40
+                            const compact = toonZesWeken || (dagBreedte / tvList.length < 40)
                             return (
                               <div
                                 key={tv.id}
-                                onClick={kanInplannen ? () => openModal(monteur, dagStr, tv) : undefined}
+                                onClick={() => setCelPopup({ monteur, dagStr, tv })}
                                 title={`${tv.projecten?.werknummer} — ${tv.projecten?.omschrijving}`}
-                                className={`${kanInplannen ? 'cursor-pointer' : ''} flex flex-col justify-center overflow-hidden`}
+                                className="cursor-pointer flex flex-col justify-center overflow-hidden"
                                 style={{
                                   width: `${100 / tvList.length}%`,
                                   height: '100%',
@@ -681,7 +706,7 @@ export default function Planning({ onNavigate }) {
                             ? 'bg-amber-50'
                             : kanInplannen ? 'hover:bg-gray-50' : ''
                         }`}
-                        style={{ flex: 1, minWidth: DAG_B, height: ROW_H }}
+                        style={{ flex: 1, minWidth: dagBreedte, height: ROW_H }}
                       >
                         {kanInplannen && (
                           <span className="text-gray-300 opacity-0 group-hover/cel:opacity-100 transition-opacity text-xl leading-none select-none">
@@ -723,6 +748,22 @@ export default function Planning({ onNavigate }) {
         <MonteurPopup
           monteur={monteurPopup}
           onClose={() => setMonteurPopup(null)}
+        />
+      )}
+
+      {/* Cel info popup */}
+      {celPopup && (
+        <CelInfoPopup
+          monteur={celPopup.monteur}
+          dagStr={celPopup.dagStr}
+          tv={celPopup.tv}
+          kanInplannen={kanInplannen}
+          onBewerken={() => {
+            const { monteur, dagStr, tv } = celPopup
+            setCelPopup(null)
+            openModal(monteur, dagStr, tv)
+          }}
+          onClose={() => setCelPopup(null)}
         />
       )}
     </div>
@@ -797,6 +838,78 @@ function MonteurPopup({ monteur, onClose }) {
               <span className="text-sm text-gray-900">—</span>
             )}
           </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── CelInfoPopup ─────────────────────────────────────────────────────────────
+
+function CelInfoPopup({ monteur, dagStr, tv, kanInplannen, onBewerken, onClose }) {
+  const kleur = projKleur(tv.project_id)
+  const naam = [monteur.voornaam, monteur.achternaam].filter(Boolean).join(' ')
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/25"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="p-5 pb-4" style={{ backgroundColor: kleur.bg }}>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-bold truncate" style={{ color: kleur.fg }}>
+                {tv.projecten?.werknummer}
+                {tv.projecten?.projectleider_initialen && (
+                  <span className="font-normal opacity-75">
+                    {' · '}{tv.projecten.projectleider_initialen}
+                  </span>
+                )}
+              </div>
+              <div className="text-xs mt-0.5 truncate" style={{ color: kleur.fg, opacity: 0.8 }}>
+                {tv.projecten?.omschrijving}
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="shrink-0 text-sm leading-none mt-0.5 hover:opacity-50 transition-opacity"
+              style={{ color: kleur.fg }}
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+        <div className="px-5 py-4 space-y-2.5">
+          <div className="flex items-baseline gap-3">
+            <span className="text-xs font-medium text-gray-400 uppercase tracking-wide w-20 shrink-0">Monteur</span>
+            <span className="text-sm text-gray-900">{naam || '—'}</span>
+          </div>
+          <div className="flex items-baseline gap-3">
+            <span className="text-xs font-medium text-gray-400 uppercase tracking-wide w-20 shrink-0">Datum</span>
+            <span className="text-sm text-gray-900 capitalize">{fDatumLang(dagStr)}</span>
+          </div>
+        </div>
+        <div className="px-5 pb-5 flex justify-end gap-2 border-t border-gray-100 pt-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 text-sm text-gray-500 hover:text-gray-900 transition-colors"
+          >
+            Sluiten
+          </button>
+          {kanInplannen && (
+            <button
+              type="button"
+              onClick={onBewerken}
+              className="px-4 py-2 text-sm font-medium bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition-colors"
+            >
+              Bewerken
+            </button>
+          )}
         </div>
       </div>
     </div>
