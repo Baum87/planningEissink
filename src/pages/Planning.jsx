@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
+import { useAuth } from '../context/AuthContext'
 import { getMonteurs, getGroepen } from '../services/monteursService'
 import {
   getToewijzingen,
@@ -110,6 +111,8 @@ function fBereik(van, tot) {
 // ─── Planning ─────────────────────────────────────────────────────────────────
 
 export default function Planning() {
+  const { rol, initialen } = useAuth()
+
   const [startDatum, setStartDatum] = useState(() => getMaandag(new Date()))
   const [toonWeekend, setToonWeekend] = useState(false)
   const [monteurs, setMonteurs] = useState([])
@@ -121,6 +124,9 @@ export default function Planning() {
   const [uitgeklapt, setUitgeklapt] = useState(new Set())
   const [zoek, setZoek] = useState('')
   const [filterExpertise, setFilterExpertise] = useState('')
+  const [filterProjectleider, setFilterProjectleider] = useState(
+    () => (rol === 'projectleider' ? (initialen ?? '') : '')
+  )
   const [modal, setModal] = useState(null)
   const [monteurPopup, setMonteurPopup] = useState(null)
 
@@ -210,13 +216,31 @@ export default function Planning() {
     [monteurs]
   )
 
+  const alleInitialen = useMemo(
+    () => [...new Set(projecten.map((p) => p.projectleider_initialen).filter(Boolean))].sort(),
+    [projecten]
+  )
+
+  // Project-IDs die bij de actieve projectleider filter horen
+  const filterProjectIds = useMemo(() => {
+    if (!filterProjectleider) return null
+    return new Set(projecten.filter((p) => p.projectleider_initialen === filterProjectleider).map((p) => p.id))
+  }, [projecten, filterProjectleider])
+
+  // Monteur-IDs die in de zichtbare periode op een gefilterd project staan
+  const gefilterdeMonteurIds = useMemo(() => {
+    if (!filterProjectIds) return null
+    return new Set(toewijzingen.filter((tv) => filterProjectIds.has(tv.project_id)).map((tv) => tv.monteur_id))
+  }, [toewijzingen, filterProjectIds])
+
   // ── Rijen opbouwen: eigen → groepen → zzp ─────────────────────────────────
 
   const rijen = useMemo(() => {
     const q = zoek.trim().toLowerCase()
     const match = (m) =>
       (!q || monteurNaam(m).toLowerCase().includes(q)) &&
-      (!filterExpertise || (m.expertises ?? []).includes(filterExpertise))
+      (!filterExpertise || (m.expertises ?? []).includes(filterExpertise)) &&
+      (!gefilterdeMonteurIds || gefilterdeMonteurIds.has(m.id))
 
     const eigen = monteurs.filter((m) => m.type === 'Eissink'       && match(m) && !groepLedenIds.has(m.id))
     const zzp   = monteurs.filter((m) => m.type === 'Onderaannemer' && match(m) && !groepLedenIds.has(m.id))
@@ -239,7 +263,7 @@ export default function Planning() {
       ...groepRijen,
       ...zzp.map((m) => ({ type: 'monteur', monteur: m })),
     ]
-  }, [monteurs, groepen, groepLedenIds, uitgeklapt, zoek, filterExpertise])
+  }, [monteurs, groepen, groepLedenIds, uitgeklapt, zoek, filterExpertise, gefilterdeMonteurIds])
 
   function toggleGroep(id) {
     setUitgeklapt((prev) => {
@@ -308,15 +332,26 @@ export default function Planning() {
           className="w-44 px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors"
         />
 
-        {alleExpertises.length > 0 && (
+        <select
+          value={filterExpertise}
+          onChange={(e) => setFilterExpertise(e.target.value)}
+          className="px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors bg-white text-gray-600"
+        >
+          <option value="">Alle expertises</option>
+          {alleExpertises.map((ex) => (
+            <option key={ex} value={ex}>{ex}</option>
+          ))}
+        </select>
+
+        {rol !== 'projectleider' && (
           <select
-            value={filterExpertise}
-            onChange={(e) => setFilterExpertise(e.target.value)}
+            value={filterProjectleider}
+            onChange={(e) => setFilterProjectleider(e.target.value)}
             className="px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors bg-white text-gray-600"
           >
-            <option value="">Alle expertises</option>
-            {alleExpertises.map((ex) => (
-              <option key={ex} value={ex}>{ex}</option>
+            <option value="">Alle projectleiders</option>
+            {alleInitialen.map((ini) => (
+              <option key={ini} value={ini}>{ini}</option>
             ))}
           </select>
         )}
@@ -686,6 +721,12 @@ function MonteurPopup({ monteur, onClose }) {
           <Regel label="Type" waarde={monteur.type || '—'} />
           <Regel label="Telefoon" waarde={monteur.telefoon || '—'} />
           <Regel label="Woonplaats" waarde={monteur.woonplaats || '—'} />
+          {monteur.toewijzing_vandaag && (
+            <Regel
+              label="Vandaag"
+              waarde={`${monteur.toewijzing_vandaag.projecten?.werknummer} — ${monteur.toewijzing_vandaag.projecten?.omschrijving}`}
+            />
+          )}
           {(monteur.expertises ?? []).length > 0 && (
             <div>
               <div className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1.5">

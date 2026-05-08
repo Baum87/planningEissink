@@ -43,3 +43,12 @@ export async function deleteProject(id) {
   const { error } = await supabase.from('projecten').delete().eq('id', id)
   if (error) throw error
 }
+
+export async function getProjectleiderInitialen() {
+  const { data, error } = await supabase
+    .from('projecten')
+    .select('projectleider_initialen')
+    .not('projectleider_initialen', 'is', null)
+  if (error) throw error
+  return [...new Set(data.map((p) => p.projectleider_initialen).filter(Boolean))].sort()
+}

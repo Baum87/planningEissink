@@ -9,10 +9,12 @@ export function AuthProvider({ children }) {
   // undefined = sessie nog aan het laden, null = niet ingelogd, object = ingelogd
   const [user, setUser] = useState(undefined)
   const [rol, setRol] = useState(null)
+  const [initialen, setInitialen] = useState(null)
 
   function verwerkUser(u) {
     setUser(u ?? null)
     setRol(u?.user_metadata?.rol ?? null)
+    setInitialen(u?.user_metadata?.initialen ?? null)
   }
 
   useEffect(() => {
@@ -31,7 +33,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, rol, uitloggen }}>
+    <AuthContext.Provider value={{ user, rol, initialen, uitloggen }}>
       {children}
     </AuthContext.Provider>
   )

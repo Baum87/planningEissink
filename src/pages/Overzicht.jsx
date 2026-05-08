@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { useAuth } from '../context/AuthContext'
 import { getMonteurs } from '../services/monteursService'
 import { getToewijzingen } from '../services/toewijzingenService'
 import { getProjecten } from '../services/projectenService'
@@ -82,6 +83,8 @@ function fDatumLang(str) {
 // ─── Overzicht ────────────────────────────────────────────────────────────────
 
 export default function Overzicht() {
+  const { rol, initialen } = useAuth()
+
   const [startDatum, setStartDatum] = useState(() => getMaandag(new Date()))
   const [toonWeekend, setToonWeekend] = useState(false)
   const [monteurs, setMonteurs] = useState([])
@@ -90,6 +93,9 @@ export default function Overzicht() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [popup, setPopup] = useState(null)
+  const [filterProjectleider, setFilterProjectleider] = useState(
+    () => (rol === 'projectleider' ? (initialen ?? '') : '')
+  )
 
   // ── Datum berekeningen ──────────────────────────────────────────────────────
 
@@ -176,6 +182,11 @@ export default function Overzicht() {
     return map
   }, [toewijzingen, startDatum])
 
+  const alleInitialen = useMemo(
+    () => [...new Set(projecten.map((p) => p.projectleider_initialen).filter(Boolean))].sort(),
+    [projecten]
+  )
+
   // Projecten die op minimaal één zichtbare dag een toewijzing hebben
   const zichtbareProjecten = useMemo(() => {
     const dagStrs = new Set(zDagen.map(naarStr))
@@ -185,10 +196,11 @@ export default function Overzicht() {
       .filter(([, dagMap]) => [...dagMap.keys()].some((d) => dagStrs.has(d)))
       .map(([id]) => projMap[id])
       .filter(Boolean)
+      .filter((p) => !filterProjectleider || p.projectleider_initialen === filterProjectleider)
       .sort((a, b) =>
         String(a.werknummer ?? '').localeCompare(String(b.werknummer ?? ''), 'nl')
       )
-  }, [projectDagMap, zDagen, projecten])
+  }, [projectDagMap, zDagen, projecten, filterProjectleider])
 
   const monteursMap = useMemo(
     () => Object.fromEntries(monteurs.map((m) => [m.id, m])),
@@ -228,6 +240,19 @@ export default function Overzicht() {
         </div>
 
         <span className="text-sm font-semibold text-gray-700">{periodeLabel}</span>
+
+        {rol !== 'projectleider' && (
+          <select
+            value={filterProjectleider}
+            onChange={(e) => setFilterProjectleider(e.target.value)}
+            className="px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors bg-white text-gray-600"
+          >
+            <option value="">Alle projectleiders</option>
+            {alleInitialen.map((ini) => (
+              <option key={ini} value={ini}>{ini}</option>
+            ))}
+          </select>
+        )}
 
         <label className="ml-auto flex items-center gap-2 cursor-pointer select-none">
           <span className="text-sm text-gray-500">Weekend</span>
