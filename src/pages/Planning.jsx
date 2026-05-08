@@ -4,7 +4,6 @@ import { getMonteurs, getGroepen } from '../services/monteursService'
 import {
   getToewijzingen,
   createToewijzing,
-  updateToewijzing,
   deleteToewijzing,
 } from '../services/toewijzingenService'
 import { getProjecten } from '../services/projectenService'
@@ -110,7 +109,7 @@ function fBereik(van, tot) {
 
 // ─── Planning ─────────────────────────────────────────────────────────────────
 
-export default function Planning() {
+export default function Planning({ onNavigate }) {
   const { rol } = useAuth()
   const kanInplannen = rol === 'beheerder' || rol === 'planner'
 
@@ -305,8 +304,9 @@ export default function Planning() {
     await laad()
   }
 
-  async function handleBewerken(id, van, tot) {
-    await updateToewijzing(id, van, tot)
+  async function handleBewerken(id, monteurId, projectId, van, tot) {
+    await deleteToewijzing(id)
+    await createToewijzing({ monteur_id: monteurId, project_id: projectId, datum_van: van, datum_tot: tot })
     setModal(null)
     await laad()
   }
@@ -565,9 +565,6 @@ export default function Planning() {
                       <div className="text-xs font-medium text-gray-900 truncate leading-tight">
                         {monteurNaam(monteur)}
                       </div>
-                      <div className="text-[10px] text-gray-400 truncate leading-tight">
-                        {(monteur.expertises ?? []).slice(0, 1).join(', ') || monteur.type}
-                      </div>
                     </div>
                   </div>
 
@@ -582,7 +579,8 @@ export default function Planning() {
                       return (
                         <div
                           key={dagStr}
-                          className="border-l border-white/40 flex flex-row overflow-hidden"
+                          onClick={kanInplannen ? () => openModal(monteur, dagStr) : undefined}
+                          className={`relative border-l border-white/40 flex flex-row overflow-hidden ${kanInplannen ? 'cursor-pointer group/cel' : ''}`}
                           style={{ flex: 1, minWidth: DAG_B, height: ROW_H }}
                         >
                           {tvList.map((tv, i) => {
@@ -591,7 +589,7 @@ export default function Planning() {
                             return (
                               <div
                                 key={tv.id}
-                                onClick={kanInplannen ? () => openModal(monteur, dagStr, tv) : undefined}
+                                onClick={kanInplannen ? (e) => { e.stopPropagation(); openModal(monteur, dagStr, tv) } : undefined}
                                 title={`${tv.projecten?.werknummer} — ${tv.projecten?.omschrijving}`}
                                 className={`${kanInplannen ? 'cursor-pointer' : ''} flex flex-col justify-center overflow-hidden`}
                                 style={{
@@ -627,6 +625,11 @@ export default function Planning() {
                               </div>
                             )
                           })}
+                          {kanInplannen && (
+                            <span className="absolute top-0.5 right-0.5 z-10 text-[10px] leading-none text-white opacity-0 group-hover/cel:opacity-60 transition-opacity select-none pointer-events-none">
+                              +
+                            </span>
+                          )}
                         </div>
                       )
                     }
@@ -677,6 +680,7 @@ export default function Planning() {
           onBewerken={handleBewerken}
           onVerwijder={handleVerwijder}
           onClose={() => setModal(null)}
+          onNaarProjecten={onNavigate ? () => { setModal(null); onNavigate('projecten') } : undefined}
         />
       )}
 
@@ -778,7 +782,7 @@ function Regel({ label, waarde }) {
 
 // ─── ProjectZoeker ────────────────────────────────────────────────────────────
 
-function ProjectZoeker({ projecten, value, onChange }) {
+function ProjectZoeker({ projecten, value, onChange, onNieuwProject }) {
   const [zoek, setZoek] = useState('')
   const inputRef = useRef(null)
 
@@ -868,8 +872,19 @@ function ProjectZoeker({ projecten, value, onChange }) {
           ))}
         </ul>
       ) : (
-        <div className="px-3 py-2.5 text-xs text-gray-400 border border-gray-200 rounded-lg">
-          Geen projecten gevonden
+        <div className="border border-gray-200 rounded-lg overflow-hidden">
+          <div className="px-3 py-2.5 text-xs text-gray-400">
+            Geen projecten gevonden
+          </div>
+          {zoek.trim() && onNieuwProject && (
+            <button
+              type="button"
+              onClick={onNieuwProject}
+              className="w-full px-3 py-2.5 text-xs text-left text-blue-600 hover:bg-blue-50 transition-colors border-t border-gray-100"
+            >
+              ＋ Nieuw project aanmaken
+            </button>
+          )}
         </div>
       )}
     </div>
@@ -878,7 +893,7 @@ function ProjectZoeker({ projecten, value, onChange }) {
 
 // ─── InplanModal ──────────────────────────────────────────────────────────────
 
-function InplanModal({ modal, projecten, onInplannen, onBewerken, onVerwijder, onClose }) {
+function InplanModal({ modal, projecten, onInplannen, onBewerken, onVerwijder, onClose, onNaarProjecten }) {
   const isBewerk = modal.type === 'bewerk'
   const isGroep  = modal.type === 'groep'
   const { dag } = modal
@@ -896,7 +911,7 @@ function InplanModal({ modal, projecten, onInplannen, onBewerken, onVerwijder, o
     setBezig(true)
     try {
       if (isBewerk) {
-        await onBewerken(modal.tv.id, van, tot)
+        await onBewerken(modal.tv.id, modal.tv.monteur_id, modal.tv.project_id, van, tot)
       } else {
         await onInplannen(projectId, van, tot)
       }
@@ -983,6 +998,7 @@ function InplanModal({ modal, projecten, onInplannen, onBewerken, onVerwijder, o
                 projecten={projecten}
                 value={projectId}
                 onChange={setProjectId}
+                onNieuwProject={onNaarProjecten}
               />
             </div>
           )}

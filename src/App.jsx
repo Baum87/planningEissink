@@ -66,7 +66,7 @@ function AppInner() {
       </header>
 
       <main className={`px-6 py-6${activeTab !== 'planning' && activeTab !== 'overzicht' ? ' max-w-screen-xl mx-auto' : ''}`}>
-        <ActivePage />
+        <ActivePage onNavigate={setActiveTab} />
       </main>
     </div>
   )
