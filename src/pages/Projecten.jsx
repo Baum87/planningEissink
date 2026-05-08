@@ -4,6 +4,7 @@ import {
   getProjectenMetStats,
   createProject,
   updateProject,
+  deleteProject,
 } from '../services/projectenService'
 
 const TODAY = new Date().toISOString().split('T')[0]
@@ -62,6 +63,7 @@ export default function Projecten() {
   const [modal, setModal] = useState(null)
   const [formulier, setFormulier] = useState(LEEG)
   const [bezig, setBezig] = useState(false)
+  const [verwijderConfirm, setVerwijderConfirm] = useState(false)
 
   async function laadProjecten() {
     setLoading(true)
@@ -133,6 +135,20 @@ export default function Projecten() {
   function openNieuw() {
     setFormulier(LEEG)
     setModal({ mode: 'nieuw' })
+  }
+
+  async function handleVerwijder() {
+    setBezig(true)
+    try {
+      await deleteProject(modal.project.id)
+      setModal(null)
+      setVerwijderConfirm(false)
+      await laadProjecten()
+    } catch (err) {
+      alert('Verwijderen mislukt: ' + err.message)
+    } finally {
+      setBezig(false)
+    }
   }
 
   function openBewerk(project) {
@@ -335,7 +351,7 @@ export default function Projecten() {
       {modal && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/25"
-          onClick={() => setModal(null)}
+          onClick={() => { setModal(null); setVerwijderConfirm(false) }}
         >
           <div
             className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6"
@@ -425,10 +441,41 @@ export default function Projecten() {
                 </Veld>
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="flex items-center gap-2 pt-2">
+                {modal.mode === 'bewerk' && (
+                  verwijderConfirm ? (
+                    <span className="text-sm text-gray-500 mr-auto flex items-center gap-2">
+                      Zeker?
+                      <button
+                        type="button"
+                        disabled={bezig}
+                        onClick={handleVerwijder}
+                        className="text-red-600 font-medium hover:text-red-800 transition-colors disabled:opacity-50"
+                      >
+                        Ja
+                      </button>
+                      <span className="text-gray-300">·</span>
+                      <button
+                        type="button"
+                        onClick={() => setVerwijderConfirm(false)}
+                        className="text-gray-500 hover:text-gray-900 transition-colors"
+                      >
+                        Nee
+                      </button>
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setVerwijderConfirm(true)}
+                      className="mr-auto px-4 py-2 text-sm text-red-500 hover:text-red-700 transition-colors"
+                    >
+                      Verwijderen
+                    </button>
+                  )
+                )}
                 <button
                   type="button"
-                  onClick={() => setModal(null)}
+                  onClick={() => { setModal(null); setVerwijderConfirm(false) }}
                   className="px-4 py-2 text-sm text-gray-500 hover:text-gray-900 transition-colors"
                 >
                   Annuleren
