@@ -2,11 +2,13 @@ import { useState } from 'react'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import Login from './pages/Login'
 import Planning from './pages/Planning'
+import Overzicht from './pages/Overzicht'
 import Projecten from './pages/Projecten'
 import Monteurs from './pages/Monteurs'
 
 const TABS = [
   { id: 'planning',  label: 'Planning',  component: Planning  },
+  { id: 'overzicht', label: 'Overzicht', component: Overzicht },
   { id: 'projecten', label: 'Projecten', component: Projecten },
   { id: 'monteurs',  label: 'Monteurs',  component: Monteurs  },
 ]
@@ -61,7 +63,7 @@ function AppInner() {
         </div>
       </header>
 
-      <main className={`px-6 py-6${activeTab !== 'planning' ? ' max-w-screen-xl mx-auto' : ''}`}>
+      <main className={`px-6 py-6${activeTab !== 'planning' && activeTab !== 'overzicht' ? ' max-w-screen-xl mx-auto' : ''}`}>
         <ActivePage />
       </main>
     </div>
