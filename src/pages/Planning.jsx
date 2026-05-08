@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { getMonteurs, getGroepen } from '../services/monteursService'
 import {
   getToewijzingen,
@@ -613,6 +613,96 @@ export default function Planning() {
   )
 }
 
+// ─── ProjectZoeker ────────────────────────────────────────────────────────────
+
+function ProjectZoeker({ projecten, value, onChange }) {
+  const [zoek, setZoek] = useState('')
+  const inputRef = useRef(null)
+
+  const geselecteerd = value ? projecten.find((p) => p.id === value) : null
+
+  const gefilterd = useMemo(() => {
+    const q = zoek.trim().toLowerCase()
+    if (!q) return projecten.slice(0, 10)
+    return projecten
+      .filter(
+        (p) =>
+          p.werknummer?.toLowerCase().includes(q) ||
+          p.omschrijving?.toLowerCase().includes(q)
+      )
+      .slice(0, 10)
+  }, [projecten, zoek])
+
+  useEffect(() => {
+    if (!geselecteerd && inputRef.current) inputRef.current.focus()
+  }, [geselecteerd])
+
+  function selecteer(p) {
+    onChange(p.id)
+    setZoek('')
+  }
+
+  function wis() {
+    onChange('')
+    setZoek('')
+  }
+
+  if (geselecteerd) {
+    const kleur = projKleur(geselecteerd.id)
+    return (
+      <button
+        type="button"
+        onClick={wis}
+        className="flex items-center gap-2 w-full px-3 py-2.5 rounded-lg text-left hover:opacity-80 transition-opacity"
+        style={{ backgroundColor: kleur.bg }}
+      >
+        <div className="min-w-0 flex-1">
+          <div className="text-xs font-semibold font-mono truncate leading-tight" style={{ color: kleur.fg }}>
+            {geselecteerd.werknummer}
+          </div>
+          <div className="text-xs truncate leading-tight" style={{ color: kleur.fg, opacity: 0.75 }}>
+            {geselecteerd.omschrijving}
+          </div>
+        </div>
+        <span className="text-xs shrink-0" style={{ color: kleur.fg, opacity: 0.5 }}>✕</span>
+      </button>
+    )
+  }
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <input
+        ref={inputRef}
+        type="text"
+        value={zoek}
+        onChange={(e) => setZoek(e.target.value)}
+        placeholder="Zoek op werknummer of omschrijving…"
+        className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors"
+      />
+      {gefilterd.length > 0 ? (
+        <ul className="border border-gray-200 rounded-lg overflow-hidden">
+          {gefilterd.map((p) => (
+            <li key={p.id} className="border-b border-gray-100 last:border-b-0">
+              <button
+                type="button"
+                onClick={() => selecteer(p)}
+                className="w-full px-3 py-2 text-left hover:bg-gray-50 transition-colors"
+              >
+                <span className="text-xs font-semibold font-mono text-gray-700">{p.werknummer}</span>
+                <span className="text-xs text-gray-400 ml-2">{p.omschrijving}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <div className="px-3 py-2.5 text-xs text-gray-400 border border-gray-200 rounded-lg">
+          Geen projecten gevonden
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── InplanModal ──────────────────────────────────────────────────────────────
 
 function InplanModal({ modal, projecten, onInplannen, onBewerken, onVerwijder, onClose }) {
@@ -716,19 +806,11 @@ function InplanModal({ modal, projecten, onInplannen, onBewerken, onVerwijder, o
           {!isBewerk && (
             <div>
               <label className="block text-xs text-gray-500 mb-1">Project</label>
-              <select
-                required
+              <ProjectZoeker
+                projecten={projecten}
                 value={projectId}
-                onChange={(e) => setProjectId(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors bg-white"
-              >
-                <option value="">Kies project…</option>
-                {projecten.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.werknummer} — {p.omschrijving}
-                  </option>
-                ))}
-              </select>
+                onChange={setProjectId}
+              />
             </div>
           )}
 
