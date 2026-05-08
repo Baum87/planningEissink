@@ -1,18 +1,69 @@
 # Eissink Planning
 
-Interne planningsapplicatie voor **Eissink Plafond en Wand Systemen**. Vervangt de Excel-planning en geeft een overzichtelijk 21-daags rooster van eigen monteurs, ZZP'ers en vaste groepen, gekoppeld aan projecten in de database.
+Interne planningsapplicatie voor **Eissink Plafond en Wand Systemen**. Vervangt de Excel-planning en geeft een overzichtelijk rooster van eigen monteurs, ZZP'ers en vaste groepen, gekoppeld aan projecten in de database.
 
 ---
 
 ## Wat doet de applicatie
 
-De app bestaat uit drie pagina's:
+De app bestaat uit vier pagina's:
 
-**Planning** — Het hart van de applicatie. Een horizontale tijdlijn van drie weken met alle monteurs als rijen. Per cel zie je welk project iemand is toegewezen. Klik op een lege cel om iemand in te plannen, klik op een gekleurd blok om de toewijzing aan te passen of te verwijderen. Groepen kunnen in één klik als geheel worden ingepland.
+**Planning** — Het hart van de applicatie. Een horizontale tijdlijn (3 of 6 weken) met alle monteurs als rijen. Per cel zie je welk project iemand is toegewezen. Klik op een cel om de details te bekijken; beheerder en planner kunnen vanuit die popup ook direct bewerken of verwijderen. Groepen kunnen in één klik als geheel worden ingepland.
 
-**Projecten** — Tabel met alle lopende projecten. Sorteerbaar op elk veld, doorzoekbaar op werknummer, omschrijving of opdrachtgever. Toont live hoeveel monteurs er vandaag op een project zitten en het totaal aantal mandagen. Nieuwe projecten aanmaken en bestaande bewerken via een modal.
+**Overzicht** — Hetzelfde rooster maar vanuit projectperspectief: projecten als rijen, per dag het aantal ingeplande monteurs. Klik op een cel om te zien wie er op die dag op het project zit. Ook beschikbaar in 3- of 6-weekse weergave.
+
+**Projecten** — Tabel met alle lopende projecten, inclusief projectleider-initialen. Filterbaar op projectleider, doorzoekbaar op werknummer of omschrijving. Toont live hoeveel monteurs er vandaag op een project zitten en het totaal aantal mandagen. Nieuwe projecten aanmaken en bestaande bewerken via een modal.
 
 **Monteurs** — Kaartoverzicht van alle eigen monteurs en ZZP'ers, inclusief expertise en de actieve toewijzing van vandaag. Monteurs zijn te groeperen in vaste teams (groepen). Groepen zijn inklapbaar in de planning en kunnen als blok worden ingepland.
+
+---
+
+## Rollen en toegang
+
+De applicatie kent drie rollen, opgeslagen in `app_metadata` (niet aanpasbaar door de gebruiker zelf):
+
+| Rol | Toegang |
+|---|---|
+| `beheerder` | Volledig: inplannen, bewerken, verwijderen, projecten en monteurs beheren |
+| `planner` | Volledig: zelfde rechten als beheerder |
+| `projectleider` | Alleen lezen: kan de planning en het overzicht bekijken via de info-popup, maar niets wijzigen |
+
+Rollen worden toegewezen via de Supabase SQL Editor met de Supabase service-role sleutel:
+
+```sql
+SELECT auth.admin_update_user_by_id(
+  '<user-uuid>',
+  '{"app_metadata": {"rol": "beheerder"}}'
+);
+```
+
+---
+
+## Functies
+
+### Planning & Overzicht
+- **3 of 6 weken**: schakelaar in de toolbar wisselt tussen 21 en 42 dagen; bij 6 weken zijn kolommen smaller en cellen compact (geen tekst)
+- **Weekend**: optioneel zichtbaar via een schakelaar
+- **Feestdagen en bouwvak**: amber achtergrond op de betreffende kolommen; bij een periode-inplanning worden deze dagen automatisch overgeslagen
+- **Projectleider-filter**: toon alleen monteurs of projecten van één specifieke projectleider
+- **Info-popup**: klik op een gevulde cel om project, PL-initialen, monteur en datum te zien — toegankelijk voor alle rollen inclusief projectleider; beheerder/planner krijgt ook een "Bewerken"-knop
+
+### Toewijzingen
+- Eén databaserecord per werkdag (datum_van = datum_tot = dag); dit maakt correcte weekend- en feestdagselectie mogelijk
+- Bij het aanmaken van een toewijzing over meerdere dagen worden weekends en feestdagen/bouwvak automatisch overgeslagen
+- Een monteur op een enkel weekend-dag inplannen is wel mogelijk (los record)
+
+### Periodes (feestdagen & bouwvak)
+Beheer je via de `periodes`-tabel in Supabase:
+
+| Kolom | Type | Voorbeeld |
+|---|---|---|
+| naam | text | `Eerste Kerstdag` |
+| datum_van | date | `2025-12-25` |
+| datum_tot | date | `2025-12-25` |
+| type | text | `feestdag` of `bouwvak` |
+
+Voeg elk jaar de gewenste periodes toe; de applicatie laadt ze automatisch in.
 
 ---
 
@@ -37,35 +88,50 @@ De app bestaat uit drie pagina's:
 ```
 src/
 ├── lib/
-│   └── supabase.js          # Supabase client (leest uit .env.local)
+│   └── supabase.js              # Supabase client (leest uit .env.local)
+├── context/
+│   └── AuthContext.jsx          # Auth state, rol (uit app_metadata), uitloggen
 ├── pages/
-│   ├── Planning.jsx         # 21-daags planningsrooster
-│   ├── Projecten.jsx        # Projectenoverzicht en -beheer
-│   └── Monteurs.jsx         # Monteurs en groepbeheer
+│   ├── Planning.jsx             # Planningsrooster (monteurs × dagen)
+│   ├── Overzicht.jsx            # Projectoverzicht (projecten × dagen)
+│   ├── Projecten.jsx            # Projectbeheer
+│   └── Monteurs.jsx             # Monteurs en groepbeheer
 ├── services/
-│   ├── toewijzingenService.js   # CRUD toewijzingen
+│   ├── toewijzingenService.js   # CRUD toewijzingen (per werkdag)
+│   ├── periodesService.js       # Ophalen feestdagen en bouwvak
 │   ├── monteursService.js       # CRUD monteurs en groepen
 │   └── projectenService.js      # CRUD projecten
-├── App.jsx                  # Tabs en hoofd-layout
-└── main.jsx                 # Entrypoint
-supabase-schema.sql          # Database schema (uitvoeren in Supabase SQL editor)
+├── App.jsx                      # Tabs, hoofd-layout, auth guard
+└── main.jsx                     # Entrypoint
+supabase-schema.sql              # Database schema
 ```
 
 ---
 
 ## Database schema
 
-Vijf tabellen in Supabase (PostgreSQL):
+Zes tabellen in Supabase (PostgreSQL):
 
 ```
-projecten        — werknummer, omschrijving, opdrachtgever, aanneemsom, plaats, adres
-monteurs         — naam, type (eigen/zzp), expertises[], telefoon, woonplaats
-groepen          — naam
-groep_leden      — koppeltabel groepen ↔ monteurs
-toewijzingen     — monteur_id, project_id, datum_van, datum_tot
+projecten    — werknummer, omschrijving, opdrachtgever, aanneemsom, plaats, adres,
+               projectleider_initialen
+monteurs     — voornaam, achternaam, type (Eissink/Onderaannemer), expertises[],
+               bedrijfsnaam, telefoon, woonplaats
+groepen      — naam
+groep_leden  — koppeltabel groepen ↔ monteurs
+toewijzingen — monteur_id, project_id, datum_van, datum_tot
+               (altijd datum_van = datum_tot = één werkdag)
+periodes     — naam, datum_van, datum_tot, type (feestdag | bouwvak)
 ```
 
 Indexen zijn aangelegd op `toewijzingen(datum_van, datum_tot)`, `toewijzingen(monteur_id)`, `toewijzingen(project_id)` en `groep_leden(monteur_id)` voor snelle queries.
+
+### Row Level Security
+
+Alle tabellen hebben RLS ingeschakeld:
+
+- **Lezen**: alle ingelogde gebruikers
+- **Schrijven**: alleen rollen `beheerder` en `planner` (gecontroleerd via `get_user_rol()` die `app_metadata` uitleest)
 
 ---
 
@@ -86,7 +152,7 @@ npm install
 
 ### 3. Database aanmaken
 
-Open de Supabase SQL Editor en voer het bestand `supabase-schema.sql` uit. Dit maakt alle tabellen en indexen aan.
+Open de Supabase SQL Editor en voer het bestand `supabase-schema.sql` uit. Dit maakt alle tabellen, indexen en RLS-policies aan.
 
 ### 4. Omgevingsvariabelen instellen
 
@@ -130,6 +196,8 @@ De applicatie is bereikbaar op `http://localhost:5173`.
 
 ## Beveiliging
 
-- De Supabase Anon Key is een publieke sleutel bedoeld voor clientgebruik; stel in Supabase **Row Level Security (RLS)** in op alle tabellen voor productiegebruik.
+- Rollen worden uitsluitend via `app_metadata` toegewezen (server-side, niet aanpasbaar door de gebruiker).
+- Row Level Security is actief op alle tabellen; schrijfrechten vereisen de rol `beheerder` of `planner`.
+- De Supabase Anon Key is een publieke sleutel bedoeld voor clientgebruik — RLS bepaalt wat er daadwerkelijk toegankelijk is.
 - `.env.local` staat in `.gitignore` en wordt nooit meegestuurd naar de repo.
 - Voeg voor productie security headers toe via de configuratie van je hostingdienst (bijv. `vercel.json` of `_headers` bij Netlify).
