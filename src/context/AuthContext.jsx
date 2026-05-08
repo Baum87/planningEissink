@@ -13,7 +13,7 @@ export function AuthProvider({ children }) {
 
   function verwerkUser(u) {
     setUser(u ?? null)
-    setRol(u?.user_metadata?.rol ?? null)
+    setRol(u?.app_metadata?.rol ?? null)
     setInitialen(u?.user_metadata?.initialen ?? null)
   }
 
