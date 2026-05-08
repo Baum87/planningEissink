@@ -623,14 +623,12 @@ function ProjectZoeker({ projecten, value, onChange }) {
 
   const gefilterd = useMemo(() => {
     const q = zoek.trim().toLowerCase()
-    if (!q) return projecten.slice(0, 10)
-    return projecten
-      .filter(
-        (p) =>
-          p.werknummer?.toLowerCase().includes(q) ||
-          p.omschrijving?.toLowerCase().includes(q)
-      )
-      .slice(0, 10)
+    if (!q) return projecten
+    return projecten.filter(
+      (p) =>
+        p.werknummer?.toLowerCase().includes(q) ||
+        p.omschrijving?.toLowerCase().includes(q)
+    )
   }, [projecten, zoek])
 
   useEffect(() => {
@@ -680,7 +678,7 @@ function ProjectZoeker({ projecten, value, onChange }) {
         className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors"
       />
       {gefilterd.length > 0 ? (
-        <ul className="border border-gray-200 rounded-lg overflow-hidden">
+        <ul className="border border-gray-200 rounded-lg overflow-y-auto" style={{ maxHeight: 192 }}>
           {gefilterd.map((p) => (
             <li key={p.id} className="border-b border-gray-100 last:border-b-0">
               <button
@@ -751,7 +749,7 @@ function InplanModal({ modal, projecten, onInplannen, onBewerken, onVerwijder, o
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden"
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 overflow-y-auto max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
