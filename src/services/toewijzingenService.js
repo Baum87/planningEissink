@@ -8,14 +8,15 @@ function naarStr(d) {
   ].join('-')
 }
 
-function getWerkdagen(van, tot) {
+function getWerkdagen(van, tot, skipDagen = new Set()) {
   if (van === tot) return [van]
   const dagen = []
   let cur = new Date(van + 'T00:00:00')
   const eindD = new Date(tot + 'T00:00:00')
   while (cur <= eindD) {
     const dag = cur.getDay()
-    if (dag !== 0 && dag !== 6) dagen.push(naarStr(cur))
+    const str = naarStr(cur)
+    if (dag !== 0 && dag !== 6 && !skipDagen.has(str)) dagen.push(str)
     cur.setDate(cur.getDate() + 1)
   }
   return dagen
@@ -31,9 +32,9 @@ export async function getToewijzingen(van, tot) {
   return data
 }
 
-// Maakt één record per werkdag (ma-vr) — weekends worden overgeslagen
-export async function createToewijzing({ monteur_id, project_id, datum_van, datum_tot }) {
-  const werkdagen = getWerkdagen(datum_van, datum_tot)
+// Maakt één record per werkdag (ma-vr) — weekends en feestdagen/bouwvak worden overgeslagen
+export async function createToewijzing({ monteur_id, project_id, datum_van, datum_tot }, skipDagen = new Set()) {
+  const werkdagen = getWerkdagen(datum_van, datum_tot, skipDagen)
   if (werkdagen.length === 0) return []
   const inserts = werkdagen.map((dag) => ({
     monteur_id,

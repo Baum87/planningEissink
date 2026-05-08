@@ -7,6 +7,7 @@ import {
   deleteToewijzing,
 } from '../services/toewijzingenService'
 import { getProjecten } from '../services/projectenService'
+import { getPeriodes } from '../services/periodesService'
 
 // ─── Constanten ───────────────────────────────────────────────────────────────
 
@@ -119,6 +120,7 @@ export default function Planning({ onNavigate }) {
   const [groepen, setGroepen] = useState([])
   const [toewijzingen, setToewijzingen] = useState([])
   const [projecten, setProjecten] = useState([])
+  const [periodes, setPeriodes] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [uitgeklapt, setUitgeklapt] = useState(new Set())
@@ -164,16 +166,18 @@ export default function Planning({ onNavigate }) {
     try {
       const van = naarStr(startDatum)
       const tot = naarStr(plusDagen(startDatum, 20))
-      const [m, g, tv, p] = await Promise.all([
+      const [m, g, tv, p, per] = await Promise.all([
         getMonteurs(),
         getGroepen(),
         getToewijzingen(van, tot),
         getProjecten(),
+        getPeriodes(),
       ])
       setMonteurs(m)
       setGroepen(g)
       setToewijzingen(tv)
       setProjecten(p)
+      setPeriodes(per)
     } catch {
       setError('Kon planning niet ophalen. Controleer de verbinding.')
     } finally {
@@ -218,6 +222,22 @@ export default function Planning({ onNavigate }) {
     () => [...new Set(projecten.map((p) => p.projectleider_initialen).filter(Boolean))].sort(),
     [projecten]
   )
+
+  const periodeMap = useMemo(() => {
+    const map = new Map()
+    for (const p of periodes) {
+      let cur = new Date(p.datum_van + 'T00:00:00')
+      const eind = new Date(p.datum_tot + 'T00:00:00')
+      while (cur <= eind) {
+        const str = naarStr(cur)
+        if (!map.has(str)) map.set(str, p)
+        cur.setDate(cur.getDate() + 1)
+      }
+    }
+    return map
+  }, [periodes])
+
+  const skipDagen = useMemo(() => new Set(periodeMap.keys()), [periodeMap])
 
   // Project-IDs die bij de actieve projectleider filter horen
   const filterProjectIds = useMemo(() => {
@@ -289,7 +309,7 @@ export default function Planning({ onNavigate }) {
     if (modal.type === 'groep') {
       await Promise.all(
         modal.leden.map((m) =>
-          createToewijzing({ monteur_id: m.id, project_id: projectId, datum_van: van, datum_tot: tot })
+          createToewijzing({ monteur_id: m.id, project_id: projectId, datum_van: van, datum_tot: tot }, skipDagen)
         )
       )
     } else {
@@ -298,7 +318,7 @@ export default function Planning({ onNavigate }) {
         project_id: projectId,
         datum_van: van,
         datum_tot: tot,
-      })
+      }, skipDagen)
     }
     setModal(null)
     await laad()
@@ -306,7 +326,7 @@ export default function Planning({ onNavigate }) {
 
   async function handleBewerken(id, monteurId, projectId, van, tot) {
     await deleteToewijzing(id)
-    await createToewijzing({ monteur_id: monteurId, project_id: projectId, datum_van: van, datum_tot: tot })
+    await createToewijzing({ monteur_id: monteurId, project_id: projectId, datum_van: van, datum_tot: tot }, skipDagen)
     setModal(null)
     await laad()
   }
@@ -444,11 +464,12 @@ export default function Planning({ onNavigate }) {
               const str = naarStr(d)
               const isVandaag = str === VANDAAG
               const isWeekend = d.getDay() === 0 || d.getDay() === 6
+              const isPeriode = !isWeekend && periodeMap.has(str)
               return (
                 <div
                   key={str}
                   className={`border-l border-gray-100 shrink-0 flex flex-col items-center justify-center gap-0.5 ${
-                    isWeekend ? 'bg-gray-100' : ''
+                    isWeekend ? 'bg-gray-100' : isPeriode ? 'bg-amber-100' : ''
                   }`}
                   style={{ flex: 1, minWidth: DAG_B }}
                 >
@@ -513,6 +534,7 @@ export default function Planning({ onNavigate }) {
                     {zDagen.map((d) => {
                       const dagStr = naarStr(d)
                       const isWeekend = d.getDay() === 0 || d.getDay() === 6
+                      const isPeriode = !isWeekend && periodeMap.has(dagStr)
                       return (
                         <div
                           key={dagStr}
@@ -520,7 +542,7 @@ export default function Planning({ onNavigate }) {
                           className={`border-l border-gray-100 flex items-center justify-center transition-colors ${
                             kanInplannen ? 'cursor-pointer group/cel' : ''
                           } ${
-                            isWeekend ? 'bg-gray-100/50 hover:bg-gray-100' : kanInplannen ? 'hover:bg-gray-100/60' : ''
+                            isWeekend ? 'bg-gray-100/50 hover:bg-gray-100' : isPeriode ? 'bg-amber-50' : kanInplannen ? 'hover:bg-gray-100/60' : ''
                           }`}
                           style={{ flex: 1, minWidth: DAG_B, minHeight: 40 }}
                         >
@@ -578,6 +600,7 @@ export default function Planning({ onNavigate }) {
                     const dagStr = naarStr(d)
                     const isVandaag = dagStr === VANDAAG
                     const isWeekend = d.getDay() === 0 || d.getDay() === 6
+                    const isPeriode = !isWeekend && periodeMap.has(dagStr)
                     const tvList = tvVoorDag(monteur.id, dagStr)
 
                     if (tvList.length > 0) {
@@ -654,6 +677,8 @@ export default function Planning({ onNavigate }) {
                             ? 'bg-blue-50/30'
                             : isWeekend
                             ? 'bg-gray-50'
+                            : isPeriode
+                            ? 'bg-amber-50'
                             : kanInplannen ? 'hover:bg-gray-50' : ''
                         }`}
                         style={{ flex: 1, minWidth: DAG_B, height: ROW_H }}

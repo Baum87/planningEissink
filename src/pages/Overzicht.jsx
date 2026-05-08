@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import { getMonteurs } from '../services/monteursService'
 import { getToewijzingen } from '../services/toewijzingenService'
 import { getProjecten } from '../services/projectenService'
+import { getPeriodes } from '../services/periodesService'
 
 // ─── Constanten ───────────────────────────────────────────────────────────────
 
@@ -90,6 +91,7 @@ export default function Overzicht() {
   const [monteurs, setMonteurs] = useState([])
   const [toewijzingen, setToewijzingen] = useState([])
   const [projecten, setProjecten] = useState([])
+  const [periodes, setPeriodes] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [popup, setPopup] = useState(null)
@@ -131,14 +133,16 @@ export default function Overzicht() {
     try {
       const van = naarStr(startDatum)
       const tot = naarStr(plusDagen(startDatum, 20))
-      const [m, tv, p] = await Promise.all([
+      const [m, tv, p, per] = await Promise.all([
         getMonteurs(),
         getToewijzingen(van, tot),
         getProjecten(),
+        getPeriodes(),
       ])
       setMonteurs(m)
       setToewijzingen(tv)
       setProjecten(p)
+      setPeriodes(per)
     } catch {
       setError('Kon overzicht niet ophalen. Controleer de verbinding.')
     } finally {
@@ -184,6 +188,20 @@ export default function Overzicht() {
     () => [...new Set(projecten.map((p) => p.projectleider_initialen).filter(Boolean))].sort(),
     [projecten]
   )
+
+  const periodeMap = useMemo(() => {
+    const map = new Map()
+    for (const p of periodes) {
+      let cur = new Date(p.datum_van + 'T00:00:00')
+      const eind = new Date(p.datum_tot + 'T00:00:00')
+      while (cur <= eind) {
+        const str = naarStr(cur)
+        if (!map.has(str)) map.set(str, p)
+        cur.setDate(cur.getDate() + 1)
+      }
+    }
+    return map
+  }, [periodes])
 
   // Projecten die op minimaal één zichtbare dag een toewijzing hebben
   const zichtbareProjecten = useMemo(() => {
@@ -317,11 +335,12 @@ export default function Overzicht() {
               const str = naarStr(d)
               const isVandaag = str === VANDAAG
               const isWeekend = d.getDay() === 0 || d.getDay() === 6
+              const isPeriode = !isWeekend && periodeMap.has(str)
               return (
                 <div
                   key={str}
                   className={`border-l border-gray-100 shrink-0 flex flex-col items-center justify-center gap-0.5 ${
-                    isWeekend ? 'bg-gray-100' : ''
+                    isWeekend ? 'bg-gray-100' : isPeriode ? 'bg-amber-100' : ''
                   }`}
                   style={{ flex: 1, minWidth: DAG_B }}
                 >
@@ -384,6 +403,7 @@ export default function Overzicht() {
                   const dagStr    = naarStr(d)
                   const isVandaag = dagStr === VANDAAG
                   const isWeekend = d.getDay() === 0 || d.getDay() === 6
+                  const isPeriode = !isWeekend && periodeMap.has(dagStr)
                   const aantal    = (dagMap.get(dagStr) ?? []).length
 
                   if (aantal > 0) {
@@ -410,7 +430,7 @@ export default function Overzicht() {
                     <div
                       key={dagStr}
                       className={`border-l border-gray-100 ${
-                        isVandaag ? 'bg-blue-50/30' : isWeekend ? 'bg-gray-50' : ''
+                        isVandaag ? 'bg-blue-50/30' : isWeekend ? 'bg-gray-50' : isPeriode ? 'bg-amber-50' : ''
                       }`}
                       style={{ flex: 1, minWidth: DAG_B, height: ROW_H }}
                     />
