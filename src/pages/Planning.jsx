@@ -165,6 +165,7 @@ export default function Planning({ onNavigate }) {
   const [zoek, setZoek] = useState('')
   const [filterExpertise, setFilterExpertise] = useState('')
   const [filterProjectleider, setFilterProjectleider] = useState('')
+  const [filterProject, setFilterProject] = useState('')
   const [modal, setModal] = useState(null)
   const [monteurPopup, setMonteurPopup] = useState(null)
   const [toonZesWeken, setToonZesWeken] = useState(false)
@@ -303,6 +304,12 @@ export default function Planning({ onNavigate }) {
     return new Set(toewijzingen.filter((tv) => filterProjectIds.has(tv.project_id)).map((tv) => tv.monteur_id))
   }, [toewijzingen, filterProjectIds])
 
+  // Monteur-IDs die in de zichtbare periode op het geselecteerde project staan
+  const gefilterdeMonteurIdsProject = useMemo(() => {
+    if (!filterProject) return null
+    return new Set(toewijzingen.filter((tv) => tv.project_id === filterProject).map((tv) => tv.monteur_id))
+  }, [toewijzingen, filterProject])
+
   // ── Rijen opbouwen: eigen → groepen → zzp ─────────────────────────────────
 
   const rijen = useMemo(() => {
@@ -310,7 +317,8 @@ export default function Planning({ onNavigate }) {
     const match = (m) =>
       (!q || monteurNaam(m).toLowerCase().includes(q)) &&
       (!filterExpertise || (m.expertises ?? []).includes(filterExpertise)) &&
-      (!gefilterdeMonteurIds || gefilterdeMonteurIds.has(m.id))
+      (!gefilterdeMonteurIds || gefilterdeMonteurIds.has(m.id)) &&
+      (!gefilterdeMonteurIdsProject || gefilterdeMonteurIdsProject.has(m.id))
 
     const eigen = monteurs.filter((m) => m.type === 'Eissink'       && match(m) && !groepLedenIds.has(m.id))
     const zzp   = monteurs.filter((m) => m.type === 'Onderaannemer' && match(m) && !groepLedenIds.has(m.id))
@@ -333,7 +341,7 @@ export default function Planning({ onNavigate }) {
       ...groepRijen,
       ...zzp.map((m) => ({ type: 'monteur', monteur: m })),
     ]
-  }, [monteurs, groepen, groepLedenIds, uitgeklapt, zoek, filterExpertise, gefilterdeMonteurIds])
+  }, [monteurs, groepen, groepLedenIds, uitgeklapt, zoek, filterExpertise, gefilterdeMonteurIds, gefilterdeMonteurIdsProject])
 
   function toggleGroep(id) {
     setUitgeklapt((prev) => {
@@ -422,6 +430,21 @@ export default function Planning({ onNavigate }) {
           {alleInitialen.map((ini) => (
             <option key={ini} value={ini}>{ini}</option>
           ))}
+        </select>
+
+        <select
+          value={filterProject}
+          onChange={(e) => setFilterProject(e.target.value)}
+          className="px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors bg-white text-gray-600 max-w-[200px]"
+        >
+          <option value="">Alle projecten</option>
+          {[...projecten]
+            .sort((a, b) => (a.werknummer ?? '').localeCompare(b.werknummer ?? '', 'nl'))
+            .map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.werknummer}{p.projectleider_initialen ? ` · ${p.projectleider_initialen}` : ''} — {p.omschrijving}
+              </option>
+            ))}
         </select>
 
         <div className="flex items-center gap-0.5">
@@ -768,7 +791,9 @@ export default function Planning({ onNavigate }) {
 
           {!loading && rijen.length === 0 && (
             <div className="py-12 text-center text-sm text-gray-400">
-              {filterProjectleider
+              {filterProject
+                ? `Geen monteurs ingepland op dit project in deze periode`
+                : filterProjectleider
                 ? `Geen monteurs ingepland op projecten van ${filterProjectleider} in deze periode`
                 : 'Geen monteurs gevonden'}
             </div>
