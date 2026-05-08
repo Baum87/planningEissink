@@ -111,7 +111,7 @@ function fBereik(van, tot) {
 // ─── Planning ─────────────────────────────────────────────────────────────────
 
 export default function Planning() {
-  const { rol, initialen } = useAuth()
+  const { rol, initialen: eigenInitialen } = useAuth()
 
   const [startDatum, setStartDatum] = useState(() => getMaandag(new Date()))
   const [toonWeekend, setToonWeekend] = useState(false)
@@ -125,7 +125,7 @@ export default function Planning() {
   const [zoek, setZoek] = useState('')
   const [filterExpertise, setFilterExpertise] = useState('')
   const [filterProjectleider, setFilterProjectleider] = useState(
-    () => (rol === 'projectleider' ? (initialen ?? '') : '')
+    () => (rol === 'projectleider' ? (eigenInitialen ?? '') : '')
   )
   const [modal, setModal] = useState(null)
   const [monteurPopup, setMonteurPopup] = useState(null)
