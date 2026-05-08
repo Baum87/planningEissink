@@ -7,6 +7,17 @@ import {
   deleteProject,
 } from '../services/projectenService'
 
+function TrashIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="3 6 5 6 21 6" />
+      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+      <path d="M10 11v6" /><path d="M14 11v6" />
+      <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+    </svg>
+  )
+}
+
 const TODAY = new Date().toISOString().split('T')[0]
 
 const EUR = new Intl.NumberFormat('nl-NL', {
@@ -63,7 +74,7 @@ export default function Projecten() {
   const [modal, setModal] = useState(null)
   const [formulier, setFormulier] = useState(LEEG)
   const [bezig, setBezig] = useState(false)
-  const [verwijderConfirm, setVerwijderConfirm] = useState(false)
+  const [verwijderBevestig, setVerwijderBevestig] = useState(null)
 
   async function laadProjecten() {
     setLoading(true)
@@ -137,17 +148,13 @@ export default function Projecten() {
     setModal({ mode: 'nieuw' })
   }
 
-  async function handleVerwijder() {
-    setBezig(true)
+  async function handleVerwijder(id) {
     try {
-      await deleteProject(modal.project.id)
-      setModal(null)
-      setVerwijderConfirm(false)
+      await deleteProject(id)
+      setVerwijderBevestig(null)
       await laadProjecten()
     } catch (err) {
       alert('Verwijderen mislukt: ' + err.message)
-    } finally {
-      setBezig(false)
     }
   }
 
@@ -310,13 +317,40 @@ export default function Projecten() {
                     </td>
                     <td className="px-4 py-3 text-right">
                       {kanBewerken && (
-                        <button
-                          onClick={() => openBewerk(p)}
-                          title="Bewerken"
-                          className="text-gray-300 hover:text-gray-700 transition-colors"
-                        >
-                          <EditIcon />
-                        </button>
+                        verwijderBevestig === p.id ? (
+                          <span className="inline-flex items-center gap-2">
+                            <span className="text-xs text-gray-500">Zeker?</span>
+                            <button
+                              onClick={() => handleVerwijder(p.id)}
+                              className="text-xs font-medium text-red-600 hover:text-red-700 transition-colors"
+                            >
+                              Ja
+                            </button>
+                            <button
+                              onClick={() => setVerwijderBevestig(null)}
+                              className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                            >
+                              Nee
+                            </button>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-3">
+                            <button
+                              onClick={() => openBewerk(p)}
+                              title="Bewerken"
+                              className="text-gray-300 hover:text-gray-700 transition-colors"
+                            >
+                              <EditIcon />
+                            </button>
+                            <button
+                              onClick={() => setVerwijderBevestig(p.id)}
+                              title="Verwijderen"
+                              className="text-gray-300 hover:text-red-500 transition-colors"
+                            >
+                              <TrashIcon />
+                            </button>
+                          </span>
+                        )
                       )}
                     </td>
                   </tr>
@@ -351,7 +385,7 @@ export default function Projecten() {
       {modal && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/25"
-          onClick={() => { setModal(null); setVerwijderConfirm(false) }}
+          onClick={() => setModal(null)}
         >
           <div
             className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6"
@@ -441,41 +475,10 @@ export default function Projecten() {
                 </Veld>
               </div>
 
-              <div className="flex items-center gap-2 pt-2">
-                {modal.mode === 'bewerk' && (
-                  verwijderConfirm ? (
-                    <span className="text-sm text-gray-500 mr-auto flex items-center gap-2">
-                      Zeker?
-                      <button
-                        type="button"
-                        disabled={bezig}
-                        onClick={handleVerwijder}
-                        className="text-red-600 font-medium hover:text-red-800 transition-colors disabled:opacity-50"
-                      >
-                        Ja
-                      </button>
-                      <span className="text-gray-300">·</span>
-                      <button
-                        type="button"
-                        onClick={() => setVerwijderConfirm(false)}
-                        className="text-gray-500 hover:text-gray-900 transition-colors"
-                      >
-                        Nee
-                      </button>
-                    </span>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setVerwijderConfirm(true)}
-                      className="mr-auto px-4 py-2 text-sm text-red-500 hover:text-red-700 transition-colors"
-                    >
-                      Verwijderen
-                    </button>
-                  )
-                )}
+              <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
-                  onClick={() => { setModal(null); setVerwijderConfirm(false) }}
+                  onClick={() => setModal(null)}
                   className="px-4 py-2 text-sm text-gray-500 hover:text-gray-900 transition-colors"
                 >
                   Annuleren
