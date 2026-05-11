@@ -39,10 +39,10 @@ const KOLOMMEN = [
   { veld: 'omschrijving',  label: 'Omschrijving'               },
   { veld: 'opdrachtgever', label: 'Opdrachtgever'              },
   { veld: 'plaats',        label: 'Plaats'                     },
-  { veld: 'aanneemsom',    label: 'Aanneemsom',    rechts: true },
-  { veld: 'pers',          label: 'Pers.',         rechts: true },
-  { veld: 'mandagen',      label: 'Mandagen',      rechts: true },
-  { veld: 'created_at',   label: 'Ingevoerd',     rechts: true },
+  { veld: 'aanneemsom',    label: 'Aanneemsom',    rechts: true, breedte: 100 },
+  { veld: 'pers',          label: 'Pers.',         rechts: true, breedte: 55  },
+  { veld: 'mandagen',      label: 'Mandagen',      rechts: true, breedte: 55  },
+  { veld: 'created_at',   label: 'Ingevoerd',     rechts: true, breedte: 90  },
 ]
 
 function berekenPers(toewijzingen) {
@@ -252,14 +252,15 @@ export default function Projecten() {
 
       {/* Tabel */}
       {!loading && !error && (
-        <div className="border border-gray-200 rounded-xl overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="border border-gray-200 rounded-xl overflow-x-auto">
+          <table className="w-full min-w-[700px] text-sm">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50">
                 {KOLOMMEN.map((k) => (
                   <th
                     key={k.veld}
                     onClick={() => toggleSort(k.veld)}
+                    style={k.breedte ? { width: k.breedte } : undefined}
                     className={`px-4 py-2.5 font-medium text-gray-500 cursor-pointer select-none hover:text-gray-900 transition-colors whitespace-nowrap ${
                       k.rechts ? 'text-right' : 'text-left'
                     }`}
@@ -274,7 +275,7 @@ export default function Projecten() {
                     </span>
                   </th>
                 ))}
-                <th className="w-10 px-4 py-2.5" />
+                <th className="sticky right-0 w-20 px-4 py-2.5 bg-gray-50" />
               </tr>
             </thead>
             <tbody>
@@ -291,7 +292,7 @@ export default function Projecten() {
                 gesorteerd.map((p) => (
                   <tr
                     key={p.id}
-                    className="border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors"
+                    className="group border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors"
                   >
                     <td className="px-4 py-3 font-mono text-xs text-gray-700 whitespace-nowrap">
                       {p.werknummer}
@@ -322,7 +323,7 @@ export default function Projecten() {
                     <td className="px-4 py-3 text-right tabular-nums text-gray-400 text-xs whitespace-nowrap">
                       {p.created_at ? new Date(p.created_at).toLocaleDateString('nl-NL') : '—'}
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="sticky right-0 px-4 py-3 text-right bg-white group-hover:bg-gray-50 transition-colors">
                       {kanBewerken && (
                         verwijderBevestig === p.id ? (
                           <span className="inline-flex items-center gap-2">
