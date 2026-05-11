@@ -4,6 +4,7 @@ import { getMonteurs } from '../services/monteursService'
 import { getToewijzingen } from '../services/toewijzingenService'
 import { getProjecten } from '../services/projectenService'
 import { getPeriodes } from '../services/periodesService'
+import { projKleur } from '../lib/kleurenpalet'
 
 // ─── Constanten ───────────────────────────────────────────────────────────────
 
@@ -13,24 +14,7 @@ const WEEK_H = 32
 const DAG_H  = 40
 const ROW_H  = 48
 
-const PROJ_KLEUREN = [
-  { bg: '#dbeafe', fg: '#1e40af' },
-  { bg: '#dcfce7', fg: '#166534' },
-  { bg: '#fef3c7', fg: '#92400e' },
-  { bg: '#fce7f3', fg: '#9d174d' },
-  { bg: '#ede9fe', fg: '#5b21b6' },
-  { bg: '#ffedd5', fg: '#9a3412' },
-  { bg: '#cffafe', fg: '#155e75' },
-  { bg: '#d1fae5', fg: '#064e3b' },
-]
-
 // ─── Hulpfuncties ─────────────────────────────────────────────────────────────
-
-function projKleur(id = '') {
-  let h = 0
-  for (const c of id) h = (h * 31 + c.charCodeAt(0)) >>> 0
-  return PROJ_KLEUREN[h % PROJ_KLEUREN.length]
-}
 
 function getMaandag(d) {
   const r = new Date(d)
@@ -395,7 +379,7 @@ export default function Overzicht() {
 
           {/* Project rijen */}
           {!loading && zichtbareProjecten.map((project) => {
-            const kleur  = projKleur(project.id)
+            const kleur  = projKleur(project)
             const dagMap = projectDagMap.get(project.id) ?? new Map()
 
             return (

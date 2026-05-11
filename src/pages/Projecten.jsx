@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useAuth, heeftVolledigeToegang } from '../context/AuthContext'
 import {
   getProjectenMetStats,
@@ -6,6 +6,7 @@ import {
   updateProject,
   deleteProject,
 } from '../services/projectenService'
+import { KLEURENPALET, projKleur, minstGebruikteKleur } from '../lib/kleurenpalet'
 
 function TrashIcon() {
   return (
@@ -30,6 +31,7 @@ const LEEG = {
   opdrachtgever: '',
   aanneemsom: '',
   projectleider_initialen: '',
+  kleur: '',
   plaats: '',
   adres: '',
 }
@@ -76,6 +78,8 @@ export default function Projecten() {
   const [formulier, setFormulier] = useState(LEEG)
   const [bezig, setBezig] = useState(false)
   const [verwijderBevestig, setVerwijderBevestig] = useState(null)
+  const [kleurPicker, setKleurPicker] = useState(null) // { projectId, top, left }
+  const kleurPickerRef = useRef(null)
 
   async function laadProjecten() {
     setLoading(true)
@@ -95,6 +99,36 @@ export default function Projecten() {
   useEffect(() => {
     laadProjecten()
   }, [])
+
+  useEffect(() => {
+    if (!kleurPicker) return
+    function handler(e) {
+      if (kleurPickerRef.current && !kleurPickerRef.current.contains(e.target)) {
+        setKleurPicker(null)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [kleurPicker])
+
+  async function handleKleurKiezen(projectId, hex) {
+    try {
+      await updateProject(projectId, { kleur: hex })
+      setKleurPicker(null)
+      await laadProjecten()
+    } catch (err) {
+      alert('Kleur opslaan mislukt: ' + err.message)
+    }
+  }
+
+  function openKleurPicker(e, projectId) {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const popupH = 160
+    const top = rect.bottom + 4 + popupH > window.innerHeight
+      ? rect.top - popupH - 4
+      : rect.bottom + 4
+    setKleurPicker({ projectId, top, left: rect.left })
+  }
 
   const verrijkt = useMemo(
     () =>
@@ -145,7 +179,7 @@ export default function Projecten() {
   }
 
   function openNieuw() {
-    setFormulier(LEEG)
+    setFormulier({ ...LEEG, kleur: minstGebruikteKleur(projecten) })
     setModal({ mode: 'nieuw' })
   }
 
@@ -166,6 +200,7 @@ export default function Projecten() {
       opdrachtgever: project.opdrachtgever ?? '',
       aanneemsom: project.aanneemsom ?? '',
       projectleider_initialen: project.projectleider_initialen ?? '',
+      kleur: project.kleur ?? '',
       plaats: project.plaats ?? '',
       adres: project.adres ?? '',
     })
@@ -256,6 +291,7 @@ export default function Projecten() {
           <table className="w-full min-w-[700px] text-sm">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50">
+                <th className="w-8 pl-4 py-2.5" />
                 {KOLOMMEN.map((k) => (
                   <th
                     key={k.veld}
@@ -282,7 +318,7 @@ export default function Projecten() {
               {gesorteerd.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={KOLOMMEN.length + 1}
+                    colSpan={KOLOMMEN.length + 2}
                     className="px-4 py-12 text-center text-gray-400"
                   >
                     Geen projecten gevonden
@@ -294,6 +330,21 @@ export default function Projecten() {
                     key={p.id}
                     className="group border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors"
                   >
+                    <td className="pl-4 py-3">
+                      <button
+                        onClick={kanBewerken ? (e) => openKleurPicker(e, p.id) : undefined}
+                        style={{
+                          width: 18,
+                          height: 18,
+                          borderRadius: 4,
+                          backgroundColor: projKleur(p).bg,
+                          cursor: kanBewerken ? 'pointer' : 'default',
+                          display: 'block',
+                          flexShrink: 0,
+                        }}
+                        title={kanBewerken ? 'Kleur wijzigen' : undefined}
+                      />
+                    </td>
                     <td className="px-4 py-3 font-mono text-xs text-gray-700 whitespace-nowrap">
                       {p.werknummer}
                       {p.projectleider_initialen && (
@@ -520,6 +571,37 @@ export default function Projecten() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Kleurpicker popup */}
+      {kleurPicker && (
+        <div
+          ref={kleurPickerRef}
+          style={{ position: 'fixed', top: kleurPicker.top, left: kleurPicker.left, zIndex: 100, width: 220 }}
+          className="bg-white rounded-xl shadow-xl border border-gray-200 p-2.5"
+        >
+          <div className="grid grid-cols-10 gap-1">
+            {KLEURENPALET.map((hex) => {
+              const actief = projecten.find((p) => p.id === kleurPicker.projectId)?.kleur === hex
+              return (
+                <button
+                  key={hex}
+                  onClick={() => handleKleurKiezen(kleurPicker.projectId, hex)}
+                  style={{
+                    backgroundColor: hex,
+                    width: 18,
+                    height: 18,
+                    borderRadius: 3,
+                    outline: actief ? '2px solid white' : 'none',
+                    boxShadow: actief ? '0 0 0 3px #374151' : 'none',
+                    cursor: 'pointer',
+                    display: 'block',
+                  }}
+                />
+              )
+            })}
           </div>
         </div>
       )}

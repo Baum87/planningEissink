@@ -26,7 +26,7 @@ export async function getToewijzingen(van, tot) {
   const { data, error } = await supabase
     .from('toewijzingen')
     // TODO multi-tenancy: voeg .eq('tenant_id', tenantId) toe
-    .select('*, projecten(id, werknummer, omschrijving, projectleider_initialen)')
+    .select('*, projecten(id, werknummer, omschrijving, projectleider_initialen, kleur)')
     .lte('datum_van', tot)
     .gte('datum_tot', van)
   if (error) throw error

@@ -8,6 +8,7 @@ import {
 } from '../services/toewijzingenService'
 import { getProjecten } from '../services/projectenService'
 import { getPeriodes } from '../services/periodesService'
+import { projKleur } from '../lib/kleurenpalet'
 
 // ─── Constanten ───────────────────────────────────────────────────────────────
 
@@ -17,17 +18,6 @@ const ROW_H  = 48
 const WEEK_H = 32
 const DAG_H  = 40
 
-const PROJ_KLEUREN = [
-  { bg: '#dbeafe', fg: '#1e40af' },
-  { bg: '#dcfce7', fg: '#166534' },
-  { bg: '#fef3c7', fg: '#92400e' },
-  { bg: '#fce7f3', fg: '#9d174d' },
-  { bg: '#ede9fe', fg: '#5b21b6' },
-  { bg: '#ffedd5', fg: '#9a3412' },
-  { bg: '#cffafe', fg: '#155e75' },
-  { bg: '#d1fae5', fg: '#064e3b' },
-]
-
 const AVATAR_KLEUREN = [
   ['#dbeafe', '#1e40af'], ['#dcfce7', '#166534'], ['#fef3c7', '#92400e'],
   ['#fce7f3', '#9d174d'], ['#ede9fe', '#5b21b6'], ['#ffedd5', '#9a3412'],
@@ -35,12 +25,6 @@ const AVATAR_KLEUREN = [
 ]
 
 // ─── Hulpfuncties ─────────────────────────────────────────────────────────────
-
-function projKleur(id = '') {
-  let h = 0
-  for (const c of id) h = (h * 31 + c.charCodeAt(0)) >>> 0
-  return PROJ_KLEUREN[h % PROJ_KLEUREN.length]
-}
 
 function avatarKleur(naam = '') {
   return AVATAR_KLEUREN[naam.charCodeAt(0) % AVATAR_KLEUREN.length]
@@ -161,6 +145,7 @@ export default function Planning({ onNavigate }) {
     () => isProjectleider(rol) ? (mijnInitialen ?? '') : ''
   )
   const [filterProject, setFilterProject] = useState('')
+  const [alleenIngepland, setAlleenIngepland] = useState(false)
   const [modal, setModal] = useState(null)
   const [monteurPopup, setMonteurPopup] = useState(null)
   const [toonUitgebreid, setToonUitgebreid] = useState(false)
@@ -306,6 +291,12 @@ export default function Planning({ onNavigate }) {
     return new Set(toewijzingen.filter((tv) => tv.project_id === filterProject).map((tv) => tv.monteur_id))
   }, [toewijzingen, filterProject])
 
+  // Monteur-IDs met minimaal één toewijzing in de zichtbare periode
+  const ingeplandeMonteurIds = useMemo(
+    () => new Set(toewijzingen.map((tv) => tv.monteur_id)),
+    [toewijzingen]
+  )
+
   // ── Rijen opbouwen: eigen → groepen → zzp ─────────────────────────────────
 
   const rijen = useMemo(() => {
@@ -314,10 +305,15 @@ export default function Planning({ onNavigate }) {
       (!q || monteurNaam(m).toLowerCase().includes(q)) &&
       (!filterExpertise || (m.expertises ?? []).includes(filterExpertise)) &&
       (!gefilterdeMonteurIds || gefilterdeMonteurIds.has(m.id)) &&
-      (!gefilterdeMonteurIdsProject || gefilterdeMonteurIdsProject.has(m.id))
+      (!gefilterdeMonteurIdsProject || gefilterdeMonteurIdsProject.has(m.id)) &&
+      (!alleenIngepland || ingeplandeMonteurIds.has(m.id))
 
-    const eigen = monteurs.filter((m) => m.type === 'Eissink'       && match(m) && !groepLedenIds.has(m.id))
-    const zzp   = monteurs.filter((m) => m.type === 'Onderaannemer' && match(m) && !groepLedenIds.has(m.id))
+    const eigen = monteurs
+      .filter((m) => m.type === 'Eissink' && match(m) && !groepLedenIds.has(m.id))
+      .sort((a, b) => (a.achternaam ?? '').localeCompare(b.achternaam ?? '', 'nl'))
+    const zzp = monteurs
+      .filter((m) => m.type === 'Onderaannemer' && match(m) && !groepLedenIds.has(m.id))
+      .sort((a, b) => (a.bedrijfsnaam ?? '').localeCompare(b.bedrijfsnaam ?? '', 'nl'))
 
     const groepRijen = groepen.flatMap((g) => {
       const leden = (g.groep_leden ?? [])
@@ -337,7 +333,7 @@ export default function Planning({ onNavigate }) {
       ...groepRijen,
       ...zzp.map((m) => ({ type: 'monteur', monteur: m })),
     ]
-  }, [monteurs, groepen, groepLedenIds, uitgeklapt, zoek, filterExpertise, gefilterdeMonteurIds, gefilterdeMonteurIdsProject])
+  }, [monteurs, groepen, groepLedenIds, uitgeklapt, zoek, filterExpertise, gefilterdeMonteurIds, gefilterdeMonteurIdsProject, alleenIngepland, ingeplandeMonteurIds])
 
   function toggleGroep(id) {
     setUitgeklapt((prev) => {
@@ -467,6 +463,24 @@ export default function Planning({ onNavigate }) {
         <span className="text-sm font-semibold text-gray-700">{periodeLabel}</span>
 
         <div className="ml-auto flex items-center gap-4">
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <span className="text-sm text-gray-500">Ingepland</span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={alleenIngepland}
+              onClick={() => setAlleenIngepland((v) => !v)}
+              className={`relative w-9 h-5 rounded-full transition-colors focus:outline-none ${
+                alleenIngepland ? 'bg-gray-800' : 'bg-gray-200'
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all duration-200 ${
+                  alleenIngepland ? 'left-[18px]' : 'left-0.5'
+                }`}
+              />
+            </button>
+          </label>
           <label className="flex items-center gap-2 cursor-pointer select-none">
             <span className="text-sm text-gray-500">8 weken</span>
             <button
@@ -701,7 +715,7 @@ export default function Planning({ onNavigate }) {
                           style={{ flex: 1, minWidth: dagBreedte, height: ROW_H }}
                         >
                           {tvList.map((tv, i) => {
-                            const kleur = projKleur(tv.project_id)
+                            const kleur = projKleur(tv.projecten)
                             const compact = toonUitgebreid || (dagBreedte / tvList.length < 40)
                             return (
                               <div
@@ -942,7 +956,7 @@ function ProjectZoeker({ projecten, value, onChange, onNieuwProject }) {
   }
 
   if (geselecteerd) {
-    const kleur = projKleur(geselecteerd.id)
+    const kleur = projKleur(geselecteerd)
     return (
       <button
         type="button"
@@ -1051,7 +1065,7 @@ function InplanModal({ modal, projecten, kanInplannen, onInplannen, onVerwijder,
 
   // ── Modus 1: bestaande toewijzing bekijken ─────────────────────────────────
   if (isBewerk) {
-    const kleur   = projKleur(modal.tv.project_id)
+    const kleur   = projKleur(modal.tv.projecten)
     const project = modal.tv.projecten
 
     return (
