@@ -143,7 +143,7 @@ function aaneengesloten(daten, vanDag) {
 // ─── Planning ─────────────────────────────────────────────────────────────────
 
 export default function Planning({ onNavigate }) {
-  const { rol, initialen } = useAuth()
+  const { rol, initialen: mijnInitialen } = useAuth()
   const kanInplannen = heeftVolledigeToegang(rol)
 
   const [startDatum, setStartDatum] = useState(() => getMaandag(new Date()))
@@ -159,7 +159,7 @@ export default function Planning({ onNavigate }) {
   const [zoek, setZoek] = useState('')
   const [filterExpertise, setFilterExpertise] = useState('')
   const [filterProjectleider, setFilterProjectleider] = useState(
-    () => isProjectleider(rol) ? (initialen ?? '') : ''
+    () => isProjectleider(rol) ? (mijnInitialen ?? '') : ''
   )
   const [filterProject, setFilterProject] = useState('')
   const [modal, setModal] = useState(null)
