@@ -18,8 +18,6 @@ function TrashIcon() {
   )
 }
 
-const TODAY = new Date().toISOString().split('T')[0]
-
 const EUR = new Intl.NumberFormat('nl-NL', {
   style: 'currency',
   currency: 'EUR',
@@ -46,8 +44,9 @@ const KOLOMMEN = [
 ]
 
 function berekenPers(toewijzingen) {
+  const today = new Date().toISOString().split('T')[0]
   return toewijzingen.filter(
-    (t) => t.datum_van <= TODAY && t.datum_tot >= TODAY
+    (t) => t.datum_van <= today && t.datum_tot >= today
   ).length
 }
 

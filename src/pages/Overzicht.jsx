@@ -13,8 +13,6 @@ const WEEK_H = 32
 const DAG_H  = 40
 const ROW_H  = 48
 
-const VANDAAG = naarStr(new Date())
-
 const PROJ_KLEUREN = [
   { bg: '#dbeafe', fg: '#1e40af' },
   { bg: '#dcfce7', fg: '#166534' },
@@ -85,6 +83,7 @@ function fDatumLang(str) {
 
 export default function Overzicht() {
   const { rol, initialen } = useAuth()
+  const vandaag = naarStr(new Date())
   const [startDatum, setStartDatum] = useState(() => getMaandag(new Date()))
   const [toonWeekend, setToonWeekend] = useState(false)
   const [monteurs, setMonteurs] = useState([])
@@ -358,7 +357,7 @@ export default function Overzicht() {
             />
             {zDagen.map((d) => {
               const str = naarStr(d)
-              const isVandaag = str === VANDAAG
+              const isVandaag = str === vandaag
               const isWeekend = d.getDay() === 0 || d.getDay() === 6
               const isPeriode = !isWeekend && periodeMap.has(str)
               return (
@@ -426,7 +425,7 @@ export default function Overzicht() {
                 {/* Dag cellen */}
                 {zDagen.map((d) => {
                   const dagStr    = naarStr(d)
-                  const isVandaag = dagStr === VANDAAG
+                  const isVandaag = dagStr === vandaag
                   const isWeekend = d.getDay() === 0 || d.getDay() === 6
                   const isPeriode = !isWeekend && periodeMap.has(dagStr)
                   const aantal    = (dagMap.get(dagStr) ?? []).length

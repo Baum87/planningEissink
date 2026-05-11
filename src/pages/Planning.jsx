@@ -17,8 +17,6 @@ const ROW_H  = 48
 const WEEK_H = 32
 const DAG_H  = 40
 
-const VANDAAG = naarStr(new Date())
-
 const PROJ_KLEUREN = [
   { bg: '#dbeafe', fg: '#1e40af' },
   { bg: '#dcfce7', fg: '#166534' },
@@ -144,6 +142,7 @@ function aaneengesloten(daten, vanDag) {
 
 export default function Planning({ onNavigate }) {
   const { rol, initialen: mijnInitialen } = useAuth()
+  const vandaag = naarStr(new Date())
   const kanInplannen = heeftVolledigeToegang(rol)
 
   const [startDatum, setStartDatum] = useState(() => getMaandag(new Date()))
@@ -552,7 +551,7 @@ export default function Planning({ onNavigate }) {
             />
             {zDagen.map((d) => {
               const str = naarStr(d)
-              const isVandaag = str === VANDAAG
+              const isVandaag = str === vandaag
               const isWeekend = d.getDay() === 0 || d.getDay() === 6
               const isPeriode = !isWeekend && periodeMap.has(str)
               return (
@@ -688,7 +687,7 @@ export default function Planning({ onNavigate }) {
                   {/* Dag cellen */}
                   {zDagen.map((d) => {
                     const dagStr = naarStr(d)
-                    const isVandaag = dagStr === VANDAAG
+                    const isVandaag = dagStr === vandaag
                     const isWeekend = d.getDay() === 0 || d.getDay() === 6
                     const isPeriode = !isWeekend && periodeMap.has(dagStr)
                     const tvList = tvVoorDag(monteur.id, dagStr)
