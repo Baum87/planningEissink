@@ -97,12 +97,12 @@ export default function Overzicht() {
   const [filterProjectleider, setFilterProjectleider] = useState(
     () => isProjectleider(rol) ? (initialen ?? '') : ''
   )
-  const [toonZesWeken, setToonZesWeken] = useState(false)
+  const [toonUitgebreid, setToonUitgebreid] = useState(false)
 
   // ── Datum berekeningen ──────────────────────────────────────────────────────
 
-  const aantalDagen = toonZesWeken ? 56 : 21
-  const dagBreedte = toonZesWeken ? 40 : DAG_B
+  const aantalDagen = toonUitgebreid ? 56 : 21
+  const dagBreedte = toonUitgebreid ? 40 : DAG_B
 
   const alleDagen = useMemo(
     () => Array.from({ length: aantalDagen }, (_, i) => plusDagen(startDatum, i)),
@@ -157,7 +157,7 @@ export default function Overzicht() {
 
   useEffect(() => {
     laad()
-  }, [startDatum, toonZesWeken])
+  }, [startDatum, toonUitgebreid])
 
   // ── Data verwerking ────────────────────────────────────────────────────────
 
@@ -275,19 +275,19 @@ export default function Overzicht() {
 
         <div className="ml-auto flex items-center gap-4">
           <label className="flex items-center gap-2 cursor-pointer select-none">
-            <span className="text-sm text-gray-500">8 weken</span>
+            <span className="text-sm text-gray-500">Uitgebreid</span>
             <button
               type="button"
               role="switch"
-              aria-checked={toonZesWeken}
-              onClick={() => setToonZesWeken((v) => !v)}
+              aria-checked={toonUitgebreid}
+              onClick={() => setToonUitgebreid((v) => !v)}
               className={`relative w-9 h-5 rounded-full transition-colors focus:outline-none ${
-                toonZesWeken ? 'bg-gray-800' : 'bg-gray-200'
+                toonUitgebreid ? 'bg-gray-800' : 'bg-gray-200'
               }`}
             >
               <span
                 className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all duration-200 ${
-                  toonZesWeken ? 'left-[18px]' : 'left-0.5'
+                  toonUitgebreid ? 'left-[18px]' : 'left-0.5'
                 }`}
               />
             </button>
