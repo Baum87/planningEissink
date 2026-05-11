@@ -25,6 +25,7 @@ function getWerkdagen(van, tot, skipDagen = new Set()) {
 export async function getToewijzingen(van, tot) {
   const { data, error } = await supabase
     .from('toewijzingen')
+    // TODO multi-tenancy: voeg .eq('tenant_id', tenantId) toe
     .select('*, projecten(id, werknummer, omschrijving, projectleider_initialen)')
     .lte('datum_van', tot)
     .gte('datum_tot', van)

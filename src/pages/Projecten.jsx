@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { useAuth } from '../context/AuthContext'
+import { useAuth, heeftVolledigeToegang } from '../context/AuthContext'
 import {
   getProjectenMetStats,
   createProject,
@@ -55,7 +55,7 @@ function berekenMandagen(toewijzingen) {
   return toewijzingen.reduce((sum, t) => {
     const dagen =
       Math.round(
-        (new Date(t.datum_tot) - new Date(t.datum_van)) / 86400000
+        (new Date(t.datum_tot + 'T00:00:00') - new Date(t.datum_van + 'T00:00:00')) / 86400000
       ) + 1
     return sum + Math.max(0, dagen)
   }, 0)
@@ -63,7 +63,7 @@ function berekenMandagen(toewijzingen) {
 
 export default function Projecten() {
   const { rol } = useAuth()
-  const kanBewerken = rol === 'beheerder' || rol === 'planner'
+  const kanBewerken = heeftVolledigeToegang(rol)
 
   const [projecten, setProjecten] = useState([])
   const [loading, setLoading] = useState(true)

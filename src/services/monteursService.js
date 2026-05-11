@@ -7,10 +7,12 @@ export async function getMonteurs() {
     await Promise.all([
       supabase
         .from('monteurs')
+        // TODO multi-tenancy: voeg .eq('tenant_id', tenantId) toe
         .select('id, voornaam, achternaam, bedrijfsnaam, type, expertises, telefoon, woonplaats, created_at')
         .order('achternaam'),
       supabase
         .from('toewijzingen')
+        // TODO multi-tenancy: voeg .eq('tenant_id', tenantId) toe
         .select('monteur_id, datum_van, datum_tot, projecten(id, werknummer, omschrijving)')
         .lte('datum_van', today)
         .gte('datum_tot', today),
@@ -57,6 +59,7 @@ export async function deleteMonteur(id) {
 export async function getGroepen() {
   const { data, error } = await supabase
     .from('groepen')
+    // TODO multi-tenancy: voeg .eq('tenant_id', tenantId) toe
     .select('*, groep_leden(monteur_id)')
     .order('naam')
   if (error) throw error

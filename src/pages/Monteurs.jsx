@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { useAuth } from '../context/AuthContext'
+import { useAuth, heeftVolledigeToegang } from '../context/AuthContext'
 import {
   getMonteurs,
   createMonteur,
@@ -62,7 +62,7 @@ const KOLOMMEN = [
 
 export default function Monteurs() {
   const { rol } = useAuth()
-  const kanBewerken = rol === 'beheerder' || rol === 'planner'
+  const kanBewerken = heeftVolledigeToegang(rol)
 
   const [monteurs, setMonteurs] = useState([])
   const [groepen, setGroepen] = useState([])

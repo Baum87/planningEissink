@@ -11,6 +11,9 @@ export function AuthProvider({ children }) {
   const [rol, setRol] = useState(null)
   const [initialen, setInitialen] = useState(null)
 
+  // TODO gebruikersbeheer: rol wordt nu handmatig gezet via Supabase Dashboard of Admin API.
+  // Koppel hier later een Edge Function aan (bijv. POST /functions/v1/set-user-rol) zodat
+  // beheerders rollen zelf kunnen toewijzen vanuit de app.
   function verwerkUser(u) {
     setUser(u ?? null)
     setRol(u?.app_metadata?.rol ?? null)

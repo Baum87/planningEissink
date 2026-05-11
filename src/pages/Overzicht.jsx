@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { useAuth } from '../context/AuthContext'
+import { useAuth, isProjectleider } from '../context/AuthContext'
 import { getMonteurs } from '../services/monteursService'
 import { getToewijzingen } from '../services/toewijzingenService'
 import { getProjecten } from '../services/projectenService'
@@ -84,8 +84,7 @@ function fDatumLang(str) {
 // ─── Overzicht ────────────────────────────────────────────────────────────────
 
 export default function Overzicht() {
-  const { rol } = useAuth()
-
+  const { rol, initialen } = useAuth()
   const [startDatum, setStartDatum] = useState(() => getMaandag(new Date()))
   const [toonWeekend, setToonWeekend] = useState(false)
   const [monteurs, setMonteurs] = useState([])
@@ -95,7 +94,9 @@ export default function Overzicht() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [popup, setPopup] = useState(null)
-  const [filterProjectleider, setFilterProjectleider] = useState('')
+  const [filterProjectleider, setFilterProjectleider] = useState(
+    () => isProjectleider(rol) ? (initialen ?? '') : ''
+  )
   const [toonZesWeken, setToonZesWeken] = useState(false)
 
   // ── Datum berekeningen ──────────────────────────────────────────────────────

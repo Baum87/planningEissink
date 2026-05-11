@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { useAuth } from '../context/AuthContext'
+import { useAuth, heeftVolledigeToegang, isProjectleider } from '../context/AuthContext'
 import { getMonteurs, getGroepen } from '../services/monteursService'
 import {
   getToewijzingen,
@@ -102,12 +102,6 @@ function fDatumLang(str) {
   })
 }
 
-function fBereik(van, tot) {
-  const v = new Date(van + 'T00:00:00').toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })
-  const t = new Date(tot + 'T00:00:00').toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })
-  return van === tot ? v : `${v} t/m ${t}`
-}
-
 function fBereikLang(van, tot) {
   const opts = { weekday: 'short', day: 'numeric', month: 'long' }
   const v = new Date(van + 'T00:00:00').toLocaleDateString('nl-NL', opts)
@@ -149,8 +143,8 @@ function aaneengesloten(daten, vanDag) {
 // ─── Planning ─────────────────────────────────────────────────────────────────
 
 export default function Planning({ onNavigate }) {
-  const { rol } = useAuth()
-  const kanInplannen = rol === 'beheerder' || rol === 'planner'
+  const { rol, initialen } = useAuth()
+  const kanInplannen = heeftVolledigeToegang(rol)
 
   const [startDatum, setStartDatum] = useState(() => getMaandag(new Date()))
   const [toonWeekend, setToonWeekend] = useState(false)
@@ -164,7 +158,9 @@ export default function Planning({ onNavigate }) {
   const [uitgeklapt, setUitgeklapt] = useState(new Set())
   const [zoek, setZoek] = useState('')
   const [filterExpertise, setFilterExpertise] = useState('')
-  const [filterProjectleider, setFilterProjectleider] = useState('')
+  const [filterProjectleider, setFilterProjectleider] = useState(
+    () => isProjectleider(rol) ? (initialen ?? '') : ''
+  )
   const [filterProject, setFilterProject] = useState('')
   const [modal, setModal] = useState(null)
   const [monteurPopup, setMonteurPopup] = useState(null)
