@@ -274,7 +274,7 @@ export default function Overzicht() {
 
         <div className="ml-auto flex items-center gap-4">
           <label className="flex items-center gap-2 cursor-pointer select-none">
-            <span className="text-sm text-gray-500">Uitgebreid</span>
+            <span className="text-sm text-gray-500">8 weken</span>
             <button
               type="button"
               role="switch"

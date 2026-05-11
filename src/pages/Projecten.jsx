@@ -29,6 +29,7 @@ const LEEG = {
   omschrijving: '',
   opdrachtgever: '',
   aanneemsom: '',
+  projectleider_initialen: '',
   plaats: '',
   adres: '',
 }
@@ -41,6 +42,7 @@ const KOLOMMEN = [
   { veld: 'aanneemsom',    label: 'Aanneemsom',    rechts: true },
   { veld: 'pers',          label: 'Pers.',         rechts: true },
   { veld: 'mandagen',      label: 'Mandagen',      rechts: true },
+  { veld: 'created_at',   label: 'Ingevoerd',     rechts: true },
 ]
 
 function berekenPers(toewijzingen) {
@@ -163,6 +165,7 @@ export default function Projecten() {
       omschrijving: project.omschrijving ?? '',
       opdrachtgever: project.opdrachtgever ?? '',
       aanneemsom: project.aanneemsom ?? '',
+      projectleider_initialen: project.projectleider_initialen ?? '',
       plaats: project.plaats ?? '',
       adres: project.adres ?? '',
     })
@@ -177,6 +180,8 @@ export default function Projecten() {
         ...formulier,
         aanneemsom:
           formulier.aanneemsom === '' ? null : Number(formulier.aanneemsom),
+        projectleider_initialen:
+          formulier.projectleider_initialen.trim().toUpperCase() || null,
       }
       if (modal.mode === 'nieuw') {
         await createProject(payload)
@@ -314,6 +319,9 @@ export default function Projecten() {
                     <td className="px-4 py-3 text-right tabular-nums text-gray-600">
                       {p.mandagen}
                     </td>
+                    <td className="px-4 py-3 text-right tabular-nums text-gray-400 text-xs whitespace-nowrap">
+                      {p.created_at ? new Date(p.created_at).toLocaleDateString('nl-NL') : '—'}
+                    </td>
                     <td className="px-4 py-3 text-right">
                       {kanBewerken && (
                         verwijderBevestig === p.id ? (
@@ -387,7 +395,7 @@ export default function Projecten() {
           onClick={() => setModal(null)}
         >
           <div
-            className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6"
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 p-6"
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="text-base font-semibold text-gray-900 mb-5">
@@ -422,7 +430,7 @@ export default function Projecten() {
                 />
               </Veld>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <Veld label="Opdrachtgever">
                   <input
                     value={formulier.opdrachtgever}
@@ -434,6 +442,26 @@ export default function Projecten() {
                     }
                     className={INVOER}
                   />
+                </Veld>
+                <Veld label="Projectleider">
+                  <input
+                    list="pl-initialen"
+                    value={formulier.projectleider_initialen}
+                    onChange={(e) =>
+                      setFormulier((f) => ({
+                        ...f,
+                        projectleider_initialen: e.target.value.toUpperCase(),
+                      }))
+                    }
+                    className={INVOER}
+                    placeholder="bijv. RB"
+                    maxLength={5}
+                  />
+                  <datalist id="pl-initialen">
+                    {alleInitialen.map((ini) => (
+                      <option key={ini} value={ini} />
+                    ))}
+                  </datalist>
                 </Veld>
                 <Veld label="Aanneemsom (€)">
                   <input
