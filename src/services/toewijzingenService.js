@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase'
+import { supabase, getTenantId } from '../lib/supabase'
 
 function naarStr(d) {
   return [
@@ -25,7 +25,6 @@ function getWerkdagen(van, tot, skipDagen = new Set()) {
 export async function getToewijzingen(van, tot) {
   const { data, error } = await supabase
     .from('toewijzingen')
-    // TODO multi-tenancy: voeg .eq('tenant_id', tenantId) toe
     .select('*, projecten(id, werknummer, omschrijving, projectleider_initialen, kleur)')
     .lte('datum_van', tot)
     .gte('datum_tot', van)
@@ -37,7 +36,9 @@ export async function getToewijzingen(van, tot) {
 export async function createToewijzing({ monteur_id, project_id, datum_van, datum_tot }, skipDagen = new Set()) {
   const werkdagen = getWerkdagen(datum_van, datum_tot, skipDagen)
   if (werkdagen.length === 0) return []
+  const tenant_id = await getTenantId()
   const inserts = werkdagen.map((dag) => ({
+    tenant_id,
     monteur_id,
     project_id,
     datum_van: dag,

@@ -1,9 +1,8 @@
-import { supabase } from '../lib/supabase'
+import { supabase, getTenantId } from '../lib/supabase'
 
 export async function getProjecten() {
   const { data, error } = await supabase
     .from('projecten')
-    // TODO multi-tenancy: voeg .eq('tenant_id', tenantId) toe
     .select('*')
     .order('created_at', { ascending: false })
   if (error) throw error
@@ -13,7 +12,6 @@ export async function getProjecten() {
 export async function getProjectenMetStats() {
   const { data, error } = await supabase
     .from('projecten')
-    // TODO multi-tenancy: voeg .eq('tenant_id', tenantId) toe
     .select('*, toewijzingen(id, monteur_id, datum_van, datum_tot)')
     .order('created_at', { ascending: false })
   if (error) throw error
@@ -24,9 +22,10 @@ export async function getProjectenMetStats() {
 // createProject en updateProject ontvangen het extern_id-veld zodra de koppeling actief is.
 // Overweeg een aparte syncProject(externId, payload) functie voor de webhook-handler.
 export async function createProject(project) {
+  const tenant_id = await getTenantId()
   const { data, error } = await supabase
     .from('projecten')
-    .insert(project)
+    .insert({ ...project, tenant_id })
     .select()
     .single()
   if (error) throw error
