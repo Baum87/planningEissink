@@ -209,6 +209,14 @@ export default function Planning({ onNavigate }) {
     }
   }
 
+  // Ververst alleen toewijzingen — geen loading state, geen scroll reset
+  async function laadToewijzingen() {
+    const van = naarStr(startDatum)
+    const tot = naarStr(plusDagen(startDatum, aantalDagen - 1))
+    const tv = await getToewijzingen(van, tot)
+    setToewijzingen(tv)
+  }
+
   useEffect(() => {
     laad()
   }, [startDatum, toonUitgebreid])
@@ -373,19 +381,19 @@ export default function Planning({ onNavigate }) {
       }, skipDagen)
     }
     setModal(null)
-    await laad()
+    await laadToewijzingen()
   }
 
   async function handleVerwijder(id) {
     await deleteToewijzing(id)
     setModal(null)
-    await laad()
+    await laadToewijzingen()
   }
 
   async function handleVerwijderPeriode(ids) {
     await Promise.all(ids.map((id) => deleteToewijzing(id)))
     setModal(null)
-    await laad()
+    await laadToewijzingen()
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────
