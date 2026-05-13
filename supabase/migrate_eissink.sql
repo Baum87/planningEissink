@@ -10,6 +10,14 @@
 --   3. Controleer de check-query onderaan (alle counts = 0)
 -- ============================================================
 
+-- ─── Type rename: 'Eissink' → 'Intern' ─────────────────────────────────────
+alter table monteurs drop constraint monteurs_type_check;
+update monteurs set type = 'Intern' where type = 'Eissink';
+alter table monteurs add constraint monteurs_type_check
+  check (type in ('Intern', 'Onderaannemer'));
+
+-- ─── Tenant_id toewijzen ────────────────────────────────────────────────────
+
 update projecten
 set tenant_id = 'a0000000-0000-0000-0000-000000000001'
 where tenant_id is null;

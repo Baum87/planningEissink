@@ -42,7 +42,7 @@ const LEEG_MONTEUR = {
   voornaam: '',
   achternaam: '',
   bedrijfsnaam: '',
-  type: 'Eissink',
+  type: 'Intern',
   expertises: [],
   telefoon: '',
   woonplaats: '',
@@ -263,7 +263,7 @@ export default function Monteurs() {
                     <td className="px-4 py-3">
                       <span
                         className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${
-                          m.type === 'Eissink'
+                          m.type === 'Intern'
                             ? 'bg-blue-50 text-blue-700'
                             : 'bg-gray-100 text-gray-600'
                         }`}
@@ -383,7 +383,7 @@ function MonteurModal({ modal, onClose, onOpgeslagen }) {
           voornaam:     modal.monteur.voornaam     ?? '',
           achternaam:   modal.monteur.achternaam   ?? '',
           bedrijfsnaam: modal.monteur.bedrijfsnaam ?? '',
-          type:         modal.monteur.type         ?? 'Eissink',
+          type:         modal.monteur.type         ?? 'Intern',
           expertises:   modal.monteur.expertises   ?? [],
           telefoon:     modal.monteur.telefoon     ?? '',
           woonplaats:   modal.monteur.woonplaats   ?? '',
@@ -465,7 +465,7 @@ function MonteurModal({ modal, onClose, onOpgeslagen }) {
 
         <Veld label="Type">
           <div className="flex gap-2">
-            {['Eissink', 'Onderaannemer'].map((t) => (
+            {['Intern', 'Onderaannemer'].map((t) => (
               <button
                 key={t}
                 type="button"

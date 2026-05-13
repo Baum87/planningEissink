@@ -38,10 +38,10 @@ values ('b0000000-0000-0000-0000-000000000002');
 
 insert into monteurs (id, voornaam, achternaam, bedrijfsnaam, type, expertises, telefoon, woonplaats, tenant_id)
 values
-  (gen_random_uuid(), 'Jan',      'de Vries', 'Demo Afbouw BV', 'Eissink',       array['Plafond', 'Wand'],     '0612345678', 'Amsterdam', 'b0000000-0000-0000-0000-000000000002'),
-  (gen_random_uuid(), 'Peter',    'Bakker',   'Demo Afbouw BV', 'Eissink',       array['Plafond'],             '0623456789', 'Utrecht',   'b0000000-0000-0000-0000-000000000002'),
+  (gen_random_uuid(), 'Jan',      'de Vries', 'Demo Afbouw BV', 'Intern',        array['Plafond', 'Wand'],     '0612345678', 'Amsterdam', 'b0000000-0000-0000-0000-000000000002'),
+  (gen_random_uuid(), 'Peter',    'Bakker',   'Demo Afbouw BV', 'Intern',        array['Plafond'],             '0623456789', 'Utrecht',   'b0000000-0000-0000-0000-000000000002'),
   (gen_random_uuid(), 'Mohammed', 'Hassan',   'ZZP Hassan',     'Onderaannemer', array['Wand', 'Stucwerk'],    '0634567890', 'Rotterdam', 'b0000000-0000-0000-0000-000000000002'),
-  (gen_random_uuid(), 'Erik',     'Smit',     'Demo Afbouw BV', 'Eissink',       array['Plafond', 'Stucwerk'], '0645678901', 'Den Haag',  'b0000000-0000-0000-0000-000000000002'),
+  (gen_random_uuid(), 'Erik',     'Smit',     'Demo Afbouw BV', 'Intern',        array['Plafond', 'Stucwerk'], '0645678901', 'Den Haag',  'b0000000-0000-0000-0000-000000000002'),
   (gen_random_uuid(), 'Sven',     'Jansen',   'ZZP Jansen',     'Onderaannemer', array['Wand'],                '0656789012', 'Eindhoven', 'b0000000-0000-0000-0000-000000000002');
 
 -- ─── Demo projecten ─────────────────────────────────────────

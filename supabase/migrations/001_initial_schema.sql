@@ -87,7 +87,7 @@ create table monteurs (
   voornaam      text,
   achternaam    text,
   bedrijfsnaam  text,
-  type          text not null check (type in ('Eissink', 'Onderaannemer')),
+  type          text not null check (type in ('Intern', 'Onderaannemer')),
   expertises    text[] default '{}',
   telefoon      text,
   woonplaats    text,

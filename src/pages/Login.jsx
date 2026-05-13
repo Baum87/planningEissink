@@ -26,7 +26,7 @@ export default function Login() {
         {/* Logo */}
         <div className="mb-10 text-center">
           <span className="text-xl font-semibold text-gray-900 tracking-tight">
-            Eissink Planning
+            Planning
           </span>
         </div>
 
@@ -42,7 +42,7 @@ export default function Login() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl outline-none focus:border-gray-400 transition-colors"
-              placeholder="naam@eissink.nl"
+              placeholder="naam@bedrijf.nl"
             />
           </div>
 

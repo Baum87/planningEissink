@@ -317,7 +317,7 @@ export default function Planning({ onNavigate }) {
       (!alleenIngepland || ingeplandeMonteurIds.has(m.id))
 
     const eigen = monteurs
-      .filter((m) => m.type === 'Eissink' && match(m) && !groepLedenIds.has(m.id))
+      .filter((m) => m.type === 'Intern' && match(m) && !groepLedenIds.has(m.id))
       .sort((a, b) => (a.achternaam ?? '').localeCompare(b.achternaam ?? '', 'nl'))
     const zzp = monteurs
       .filter((m) => m.type === 'Onderaannemer' && match(m) && !groepLedenIds.has(m.id))

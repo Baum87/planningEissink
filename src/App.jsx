@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { AuthProvider, useAuth } from './context/AuthContext'
+import { TenantProvider, useTenant } from './context/TenantContext'
 import Login from './pages/Login'
 import Planning from './pages/Planning'
 import Overzicht from './pages/Overzicht'
@@ -15,6 +16,7 @@ const TABS = [
 
 function AppInner() {
   const { user, rol, uitloggen } = useAuth()
+  const { tenant } = useTenant()
   const [activeTab, setActiveTab] = useState('planning')
 
   // Sessie wordt opgehaald — niets tonen om flicker te voorkomen
@@ -33,7 +35,7 @@ function AppInner() {
         <div className="max-w-screen-xl mx-auto px-6">
           <div className="flex items-center gap-1 h-14">
             <span className="text-sm font-semibold text-gray-900 mr-6">
-              Eissink Planning
+              {tenant?.naam ?? 'Planning'}
             </span>
             {TABS.map((tab) => (
               <button
@@ -75,7 +77,9 @@ function AppInner() {
 export default function App() {
   return (
     <AuthProvider>
-      <AppInner />
+      <TenantProvider>
+        <AppInner />
+      </TenantProvider>
     </AuthProvider>
   )
 }
