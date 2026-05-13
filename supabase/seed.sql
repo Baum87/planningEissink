@@ -46,13 +46,22 @@ values
 
 -- ─── Demo projecten ─────────────────────────────────────────
 
-insert into projecten (id, werknummer, omschrijving, opdrachtgever, plaats, aanneemsom, projectleider_initialen, kleur, tenant_id)
+insert into projecten (id, werknummer, omschrijving, opdrachtgever, plaats, projectleider_initialen, kleur, tenant_id)
 values
-  (gen_random_uuid(), '2024-001', 'Renovatie kantoor Zuidas',     'ING Bank',      'Amsterdam', 125000, 'JV', '#dbeafe', 'b0000000-0000-0000-0000-000000000002'),
-  (gen_random_uuid(), '2024-002', 'Nieuwbouw appartementen',       'Bouwfonds',     'Utrecht',   280000, 'PB', '#dcfce7', 'b0000000-0000-0000-0000-000000000002'),
-  (gen_random_uuid(), '2024-003', 'Plafond winkelcentrum',         'Vastgoed Noord','Rotterdam',  95000, 'JV', '#fef3c7', 'b0000000-0000-0000-0000-000000000002'),
-  (gen_random_uuid(), '2024-004', 'Wanden ziekenhuis vleugel B',  'UMCG',          'Groningen', 340000, 'ES', '#fce7f3', 'b0000000-0000-0000-0000-000000000002'),
-  (gen_random_uuid(), '2024-005', 'Interieur hotel centrum',       'NH Hotels',     'Amsterdam', 175000, 'PB', '#ede9fe', 'b0000000-0000-0000-0000-000000000002');
+  (gen_random_uuid(), '2024-001', 'Renovatie kantoor Zuidas',    'ING Bank',      'Amsterdam', 'JV', '#dbeafe', 'b0000000-0000-0000-0000-000000000002'),
+  (gen_random_uuid(), '2024-002', 'Nieuwbouw appartementen',      'Bouwfonds',     'Utrecht',   'PB', '#dcfce7', 'b0000000-0000-0000-0000-000000000002'),
+  (gen_random_uuid(), '2024-003', 'Plafond winkelcentrum',        'Vastgoed Noord','Rotterdam',  'JV', '#fef3c7', 'b0000000-0000-0000-0000-000000000002'),
+  (gen_random_uuid(), '2024-004', 'Wanden ziekenhuis vleugel B', 'UMCG',          'Groningen', 'ES', '#fce7f3', 'b0000000-0000-0000-0000-000000000002'),
+  (gen_random_uuid(), '2024-005', 'Interieur hotel centrum',      'NH Hotels',     'Amsterdam', 'PB', '#ede9fe', 'b0000000-0000-0000-0000-000000000002');
+
+-- ─── Demo expertises ────────────────────────────────────────
+
+insert into tenant_expertises (tenant_id, naam, volgorde) values
+  ('b0000000-0000-0000-0000-000000000002', 'Plafonds',      1),
+  ('b0000000-0000-0000-0000-000000000002', 'Wanden',        2),
+  ('b0000000-0000-0000-0000-000000000002', 'Systeemwanden', 3),
+  ('b0000000-0000-0000-0000-000000000002', 'Afsmeren',      4),
+  ('b0000000-0000-0000-0000-000000000002', 'Overig',        5);
 
 -- ─── Demo groepen ───────────────────────────────────────────
 

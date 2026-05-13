@@ -38,6 +38,15 @@ update periodes
 set tenant_id = 'a0000000-0000-0000-0000-000000000001'
 where tenant_id is null;
 
+-- ─── Eissink expertises toevoegen ───────────────────────────
+-- Pas de lijst aan naar de expertises die Eissink gebruikt.
+insert into tenant_expertises (tenant_id, naam, volgorde) values
+  ('a0000000-0000-0000-0000-000000000001', 'Plafonds',      1),
+  ('a0000000-0000-0000-0000-000000000001', 'Wanden',        2),
+  ('a0000000-0000-0000-0000-000000000001', 'Systeemwanden', 3),
+  ('a0000000-0000-0000-0000-000000000001', 'Afsmeren',      4),
+  ('a0000000-0000-0000-0000-000000000001', 'Overig',        5);
+
 -- ─── Validatie: alle counts moeten 0 zijn ───────────────────
 
 select 'projecten zonder tenant_id'   as check, count(*) from projecten   where tenant_id is null

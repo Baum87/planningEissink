@@ -137,6 +137,27 @@ create policy "periodes_write" on periodes
     and get_user_rol() in ('beheerder', 'planner')
   );
 
+-- ─── Tenant expertises ──────────────────────────────────────
+
+alter table tenant_expertises enable row level security;
+create policy "expertises_select" on tenant_expertises
+  for select using (tenant_id = get_user_tenant_id());
+create policy "expertises_insert" on tenant_expertises
+  for insert with check (
+    tenant_id = get_user_tenant_id()
+    and get_user_rol() in ('beheerder', 'planner')
+  );
+create policy "expertises_update" on tenant_expertises
+  for update using (
+    tenant_id = get_user_tenant_id()
+    and get_user_rol() in ('beheerder', 'planner')
+  );
+create policy "expertises_delete" on tenant_expertises
+  for delete using (
+    tenant_id = get_user_tenant_id()
+    and get_user_rol() in ('beheerder', 'planner')
+  );
+
 -- ─── Audit log ──────────────────────────────────────────────
 
 alter table audit_log enable row level security;

@@ -21,16 +21,18 @@ create table tenants (
 create table tenant_instellingen (
   id              uuid primary key default gen_random_uuid(),
   tenant_id       uuid not null references tenants(id) on delete cascade,
+  veld_labels     jsonb default '{}',
   kolommen_config jsonb default '{
     "projecten": {
       "werknummer": true,
       "omschrijving": true,
       "opdrachtgever": true,
       "plaats": true,
-      "aanneemsom": true,
+      "opmerkingen": true,
       "projectleider_initialen": true,
       "aantal_personen": true,
-      "mandagen": true
+      "mandagen": true,
+      "created_at": true
     },
     "monteurs": {
       "naam": true,
@@ -71,8 +73,8 @@ create table projecten (
   omschrijving             text not null,
   plaats                   text,
   adres                    text,
-  aanneemsom               numeric(12, 2),
   opdrachtgever            text,
+  opmerkingen              text,
   extern_id                text,
   projectleider_initialen  text,
   kleur                    varchar(7),
@@ -122,6 +124,16 @@ create table toewijzingen (
   created_at  timestamptz default now()
 );
 
+-- ─── Tenant expertises ──────────────────────────────────────
+
+create table tenant_expertises (
+  id         uuid primary key default gen_random_uuid(),
+  tenant_id  uuid not null references tenants(id) on delete cascade,
+  naam       text not null,
+  volgorde   int default 0,
+  created_at timestamptz default now()
+);
+
 -- ─── Periodes (bouwvak, feestdagen) ─────────────────────────
 
 create table periodes (
@@ -143,6 +155,7 @@ create index idx_toewijzingen_tenant_id      on toewijzingen(tenant_id);
 create index idx_toewijzingen_monteur_datum  on toewijzingen(monteur_id, datum_van);
 create index idx_toewijzingen_project_datum  on toewijzingen(project_id, datum_van);
 create index idx_toewijzingen_datum_range    on toewijzingen(datum_van, datum_tot);
+create index idx_tenant_expertises_tenant_id on tenant_expertises(tenant_id);
 create index idx_periodes_tenant_id          on periodes(tenant_id);
 create index idx_periodes_datum              on periodes(datum_van);
 create index idx_groep_leden_monteur         on groep_leden(monteur_id);

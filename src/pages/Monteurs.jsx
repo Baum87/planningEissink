@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useAuth, heeftVolledigeToegang } from '../context/AuthContext'
+import { useTenant } from '../context/TenantContext'
 import {
   getMonteurs,
   createMonteur,
@@ -11,9 +12,7 @@ import {
   deleteGroep,
   setGroepLeden,
 } from '../services/monteursService'
-
-const EXPERTISE_OPTIES = ['Plafonds', 'Wanden', 'Systeemwanden', 'Afsmeren', 'Overig']
-const FILTER_OPTIES = ['Allemaal', ...EXPERTISE_OPTIES]
+import { getExpertises } from '../services/expertisesService'
 
 const AVATAR_KLEUREN = [
   ['#dbeafe', '#1e40af'],
@@ -46,26 +45,30 @@ const LEEG_MONTEUR = {
   expertises: [],
   telefoon: '',
   woonplaats: '',
+  adres: '',
 }
 
 const KOLOMMEN = [
-  { veld: 'voornaam',     label: 'Voornaam'     },
-  { veld: 'achternaam',   label: 'Achternaam'   },
-  { veld: 'bedrijfsnaam', label: 'Bedrijfsnaam' },
-  { veld: 'type',         label: 'Type'         },
-  { veld: 'expertises',   label: 'Expertise'    },
-  { veld: 'telefoon',     label: 'Telefoon'     },
-  { veld: 'woonplaats',   label: 'Woonplaats'   },
+  { veld: 'voornaam',     config: 'naam',         label: 'Voornaam'     },
+  { veld: 'achternaam',   config: 'naam',         label: 'Achternaam'   },
+  { veld: 'bedrijfsnaam', config: 'bedrijfsnaam', label: 'Bedrijfsnaam' },
+  { veld: 'type',         config: 'type',         label: 'Type'         },
+  { veld: 'expertises',   config: 'expertises',   label: 'Expertise'    },
+  { veld: 'telefoon',     config: 'telefoon',     label: 'Telefoon'     },
+  { veld: 'woonplaats',   config: 'woonplaats',   label: 'Woonplaats'   },
+  { veld: 'adres',        config: 'adres',        label: 'Adres'        },
 ]
 
 // ─── Hoofdpagina ──────────────────────────────────────────────────────────────
 
 export default function Monteurs() {
   const { rol } = useAuth()
+  const { kolomZichtbaar, veldLabel } = useTenant()
   const kanBewerken = heeftVolledigeToegang(rol)
 
   const [monteurs, setMonteurs] = useState([])
   const [groepen, setGroepen] = useState([])
+  const [expertiseOpties, setExpertiseOpties] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [zoek, setZoek] = useState('')
@@ -79,9 +82,10 @@ export default function Monteurs() {
     setLoading(true)
     setError(null)
     try {
-      const [m, g] = await Promise.all([getMonteurs(), getGroepen()])
+      const [m, g, e] = await Promise.all([getMonteurs(), getGroepen(), getExpertises()])
       setMonteurs(m)
       setGroepen(g)
+      setExpertiseOpties(e.map((ex) => ex.naam))
     } catch {
       setError('Kon data niet ophalen. Controleer de verbinding met Supabase.')
     } finally {
@@ -179,8 +183,8 @@ export default function Monteurs() {
           onChange={(e) => setZoek(e.target.value)}
           className="w-72 px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors"
         />
-        <div className="flex gap-1.5 flex-wrap">
-          {FILTER_OPTIES.map((opt) => (
+        {kolomZichtbaar('monteurs', 'expertises') && <div className="flex gap-1.5 flex-wrap">
+          {['Allemaal', ...expertiseOpties].map((opt) => (
             <button
               key={opt}
               onClick={() => setFilter(opt)}
@@ -193,7 +197,7 @@ export default function Monteurs() {
               {opt}
             </button>
           ))}
-        </div>
+        </div>}
         {kanBewerken && (
           <button
             onClick={() => setMonteurModal({ mode: 'nieuw' })}
@@ -222,14 +226,14 @@ export default function Monteurs() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50">
-                {KOLOMMEN.map((k) => (
+                {KOLOMMEN.filter((k) => kolomZichtbaar('monteurs', k.config)).map((k) => (
                   <th
                     key={k.veld}
                     onClick={() => toggleSort(k.veld)}
                     className="px-4 py-2.5 text-left font-medium text-gray-500 cursor-pointer select-none hover:text-gray-900 transition-colors whitespace-nowrap"
                   >
                     <span className="inline-flex items-center gap-1">
-                      {k.label}
+                      {veldLabel('monteurs', k.config, k.label)}
                       {sort.veld === k.veld && (
                         <span className="text-gray-800 text-xs">
                           {sort.dir === 'asc' ? '↑' : '↓'}
@@ -245,7 +249,7 @@ export default function Monteurs() {
               {gesorteerd.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={KOLOMMEN.length + 1}
+                    colSpan={KOLOMMEN.filter((k) => kolomZichtbaar('monteurs', k.config)).length + 1}
                     className="px-4 py-12 text-center text-gray-400"
                   >
                     Geen monteurs gevonden
@@ -257,25 +261,42 @@ export default function Monteurs() {
                     key={m.id}
                     className="border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors"
                   >
-                    <td className="px-4 py-3 text-gray-600">{m.voornaam || '—'}</td>
-                    <td className="px-4 py-3 font-medium text-gray-900">{m.achternaam}</td>
-                    <td className="px-4 py-3 text-gray-600">{m.bedrijfsnaam || '—'}</td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${
-                          m.type === 'Intern'
-                            ? 'bg-blue-50 text-blue-700'
-                            : 'bg-gray-100 text-gray-600'
-                        }`}
-                      >
-                        {m.type}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-gray-600">
-                      {(m.expertises ?? []).length > 0 ? m.expertises.join(', ') : '—'}
-                    </td>
-                    <td className="px-4 py-3 text-gray-600">{m.telefoon || '—'}</td>
-                    <td className="px-4 py-3 text-gray-600">{m.woonplaats || '—'}</td>
+                    {kolomZichtbaar('monteurs', 'naam') && (
+                      <td className="px-4 py-3 text-gray-600">{m.voornaam || '—'}</td>
+                    )}
+                    {kolomZichtbaar('monteurs', 'naam') && (
+                      <td className="px-4 py-3 font-medium text-gray-900">{m.achternaam}</td>
+                    )}
+                    {kolomZichtbaar('monteurs', 'bedrijfsnaam') && (
+                      <td className="px-4 py-3 text-gray-600">{m.bedrijfsnaam || '—'}</td>
+                    )}
+                    {kolomZichtbaar('monteurs', 'type') && (
+                      <td className="px-4 py-3">
+                        <span
+                          className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${
+                            m.type === 'Intern'
+                              ? 'bg-blue-50 text-blue-700'
+                              : 'bg-gray-100 text-gray-600'
+                          }`}
+                        >
+                          {m.type}
+                        </span>
+                      </td>
+                    )}
+                    {kolomZichtbaar('monteurs', 'expertises') && (
+                      <td className="px-4 py-3 text-gray-600">
+                        {(m.expertises ?? []).length > 0 ? m.expertises.join(', ') : '—'}
+                      </td>
+                    )}
+                    {kolomZichtbaar('monteurs', 'telefoon') && (
+                      <td className="px-4 py-3 text-gray-600">{m.telefoon || '—'}</td>
+                    )}
+                    {kolomZichtbaar('monteurs', 'woonplaats') && (
+                      <td className="px-4 py-3 text-gray-600">{m.woonplaats || '—'}</td>
+                    )}
+                    {kolomZichtbaar('monteurs', 'adres') && (
+                      <td className="px-4 py-3 text-gray-600">{m.adres || '—'}</td>
+                    )}
                     {kanBewerken && (
                       <td className="px-4 py-3 text-right">
                         {verwijderBevestig === m.id ? (
@@ -331,6 +352,7 @@ export default function Monteurs() {
       {monteurModal && (
         <MonteurModal
           modal={monteurModal}
+          expertiseOpties={expertiseOpties}
           onClose={() => setMonteurModal(null)}
           onOpgeslagen={laad}
         />
@@ -376,7 +398,7 @@ function GroepKaart({ groep, monteurs, kanBewerken, onBeheer }) {
 
 // ─── MonteurModal ─────────────────────────────────────────────────────────────
 
-function MonteurModal({ modal, onClose, onOpgeslagen }) {
+function MonteurModal({ modal, expertiseOpties, onClose, onOpgeslagen }) {
   const [formulier, setFormulier] = useState(() =>
     modal.mode === 'bewerk'
       ? {
@@ -387,6 +409,7 @@ function MonteurModal({ modal, onClose, onOpgeslagen }) {
           expertises:   modal.monteur.expertises   ?? [],
           telefoon:     modal.monteur.telefoon     ?? '',
           woonplaats:   modal.monteur.woonplaats   ?? '',
+          adres:        modal.monteur.adres        ?? '',
         }
       : { ...LEEG_MONTEUR }
   )
@@ -413,6 +436,7 @@ function MonteurModal({ modal, onClose, onOpgeslagen }) {
         expertises:   formulier.expertises,
         telefoon:     formulier.telefoon     || null,
         woonplaats:   formulier.woonplaats   || null,
+        adres:        formulier.adres        || null,
       }
       if (modal.mode === 'nieuw') {
         await createMonteur(payload)
@@ -484,7 +508,7 @@ function MonteurModal({ modal, onClose, onOpgeslagen }) {
 
         <Veld label="Expertises">
           <div className="flex flex-wrap gap-2">
-            {EXPERTISE_OPTIES.map((opt) => (
+            {expertiseOpties.map((opt) => (
               <button
                 key={opt}
                 type="button"
@@ -519,6 +543,15 @@ function MonteurModal({ modal, onClose, onOpgeslagen }) {
             />
           </Veld>
         </div>
+
+        <Veld label="Adres">
+          <input
+            value={formulier.adres}
+            onChange={(e) => setFormulier((f) => ({ ...f, adres: e.target.value }))}
+            className={INVOER}
+            placeholder="Straat en huisnummer"
+          />
+        </Veld>
 
         <div className="flex justify-end gap-2 pt-2">
           <button type="button" onClick={onClose} className={ANNULEER}>

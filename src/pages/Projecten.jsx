@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useAuth, heeftVolledigeToegang } from '../context/AuthContext'
+import { useTenant } from '../context/TenantContext'
 import {
   getProjectenMetStats,
   createProject,
@@ -19,17 +20,11 @@ function TrashIcon() {
   )
 }
 
-const EUR = new Intl.NumberFormat('nl-NL', {
-  style: 'currency',
-  currency: 'EUR',
-  maximumFractionDigits: 0,
-})
-
 const LEEG = {
   werknummer: '',
   omschrijving: '',
   opdrachtgever: '',
-  aanneemsom: '',
+  opmerkingen: '',
   projectleider_initialen: '',
   kleur: '',
   plaats: '',
@@ -37,14 +32,15 @@ const LEEG = {
 }
 
 const KOLOMMEN = [
-  { veld: 'werknummer',    label: 'Werknummer',    mono: true },
-  { veld: 'omschrijving',  label: 'Omschrijving'               },
-  { veld: 'opdrachtgever', label: 'Opdrachtgever'              },
-  { veld: 'plaats',        label: 'Plaats'                     },
-  { veld: 'aanneemsom',    label: 'Aanneemsom',    rechts: true, breedte: 100 },
-  { veld: 'pers',          label: 'Pers.',         rechts: true, breedte: 55  },
-  { veld: 'mandagen',      label: 'Mandagen',      rechts: true, breedte: 55  },
-  { veld: 'created_at',   label: 'Ingevoerd',     rechts: true, breedte: 90  },
+  { veld: 'werknummer',    config: 'werknummer',    label: 'Werknummer',    mono: true },
+  { veld: 'omschrijving',  config: 'omschrijving',  label: 'Omschrijving'              },
+  { veld: 'opdrachtgever', config: 'opdrachtgever', label: 'Opdrachtgever'             },
+  { veld: 'plaats',        config: 'plaats',        label: 'Plaats'                    },
+  { veld: 'adres',         config: 'adres',         label: 'Adres'                     },
+  { veld: 'opmerkingen',   config: 'opmerkingen',   label: 'Opmerkingen'               },
+  { veld: 'pers',          config: 'aantal_personen',label: 'Pers.',    rechts: true, breedte: 55 },
+  { veld: 'mandagen',      config: 'mandagen',      label: 'Mandagen', rechts: true, breedte: 55 },
+  { veld: 'created_at',    config: 'created_at',    label: 'Ingevoerd',rechts: true, breedte: 90 },
 ]
 
 function berekenPers(toewijzingen) {
@@ -66,6 +62,7 @@ function berekenMandagen(toewijzingen) {
 
 export default function Projecten() {
   const { rol } = useAuth()
+  const { kolomZichtbaar, veldLabel } = useTenant()
   const kanBewerken = heeftVolledigeToegang(rol)
 
   const [projecten, setProjecten] = useState([])
@@ -198,7 +195,7 @@ export default function Projecten() {
       werknummer: project.werknummer ?? '',
       omschrijving: project.omschrijving ?? '',
       opdrachtgever: project.opdrachtgever ?? '',
-      aanneemsom: project.aanneemsom ?? '',
+      opmerkingen: project.opmerkingen ?? '',
       projectleider_initialen: project.projectleider_initialen ?? '',
       kleur: project.kleur ?? '',
       plaats: project.plaats ?? '',
@@ -213,8 +210,7 @@ export default function Projecten() {
     try {
       const payload = {
         ...formulier,
-        aanneemsom:
-          formulier.aanneemsom === '' ? null : Number(formulier.aanneemsom),
+        opmerkingen: formulier.opmerkingen || null,
         projectleider_initialen:
           formulier.projectleider_initialen.trim().toUpperCase() || null,
       }
@@ -232,11 +228,8 @@ export default function Projecten() {
     }
   }
 
-  const totaalAanneemsom = gesorteerd.reduce(
-    (s, p) => s + (p.aanneemsom ?? 0),
-    0
-  )
   const totaalMandagen = gesorteerd.reduce((s, p) => s + p.mandagen, 0)
+  const zichtbareKolommen = KOLOMMEN.filter((k) => kolomZichtbaar('projecten', k.config))
 
   return (
     <div>
@@ -292,7 +285,7 @@ export default function Projecten() {
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50">
                 <th className="w-8 pl-4 py-2.5" />
-                {KOLOMMEN.map((k) => (
+                {zichtbareKolommen.map((k) => (
                   <th
                     key={k.veld}
                     onClick={() => toggleSort(k.veld)}
@@ -302,7 +295,7 @@ export default function Projecten() {
                     }`}
                   >
                     <span className="inline-flex items-center gap-1">
-                      {k.label}
+                      {veldLabel('projecten', k.config, k.label)}
                       {sort.veld === k.veld && (
                         <span className="text-gray-800 text-xs">
                           {sort.dir === 'asc' ? '↑' : '↓'}
@@ -318,7 +311,7 @@ export default function Projecten() {
               {gesorteerd.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={KOLOMMEN.length + 2}
+                    colSpan={zichtbareKolommen.length + 2}
                     className="px-4 py-12 text-center text-gray-400"
                   >
                     Geen projecten gevonden
@@ -345,35 +338,46 @@ export default function Projecten() {
                         title={kanBewerken ? 'Kleur wijzigen' : undefined}
                       />
                     </td>
-                    <td className="px-4 py-3 font-mono text-xs text-gray-700 whitespace-nowrap">
-                      {p.werknummer}
-                      {p.projectleider_initialen && (
-                        <span className="ml-1.5 px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded text-[10px] font-sans font-medium non-italic">
-                          {p.projectleider_initialen}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-gray-900 max-w-xs truncate">
-                      {p.omschrijving}
-                    </td>
-                    <td className="px-4 py-3 text-gray-600">
-                      {p.opdrachtgever || '—'}
-                    </td>
-                    <td className="px-4 py-3 text-gray-600">
-                      {p.plaats || '—'}
-                    </td>
-                    <td className="px-4 py-3 text-right tabular-nums text-gray-900">
-                      {p.aanneemsom != null ? EUR.format(p.aanneemsom) : '—'}
-                    </td>
-                    <td className="px-4 py-3 text-right tabular-nums text-gray-600">
-                      {p.pers}
-                    </td>
-                    <td className="px-4 py-3 text-right tabular-nums text-gray-600">
-                      {p.mandagen}
-                    </td>
-                    <td className="px-4 py-3 text-right tabular-nums text-gray-400 text-xs whitespace-nowrap">
-                      {p.created_at ? new Date(p.created_at).toLocaleDateString('nl-NL') : '—'}
-                    </td>
+                    {kolomZichtbaar('projecten', 'werknummer') && (
+                      <td className="px-4 py-3 font-mono text-xs text-gray-700 whitespace-nowrap">
+                        {p.werknummer}
+                        {p.projectleider_initialen && (
+                          <span className="ml-1.5 px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded text-[10px] font-sans font-medium non-italic">
+                            {p.projectleider_initialen}
+                          </span>
+                        )}
+                      </td>
+                    )}
+                    {kolomZichtbaar('projecten', 'omschrijving') && (
+                      <td className="px-4 py-3 text-gray-900 max-w-xs truncate">
+                        {p.omschrijving}
+                      </td>
+                    )}
+                    {kolomZichtbaar('projecten', 'opdrachtgever') && (
+                      <td className="px-4 py-3 text-gray-600">{p.opdrachtgever || '—'}</td>
+                    )}
+                    {kolomZichtbaar('projecten', 'plaats') && (
+                      <td className="px-4 py-3 text-gray-600">{p.plaats || '—'}</td>
+                    )}
+                    {kolomZichtbaar('projecten', 'adres') && (
+                      <td className="px-4 py-3 text-gray-600">{p.adres || '—'}</td>
+                    )}
+                    {kolomZichtbaar('projecten', 'opmerkingen') && (
+                      <td className="px-4 py-3 text-gray-500 max-w-xs truncate text-xs">
+                        {p.opmerkingen || '—'}
+                      </td>
+                    )}
+                    {kolomZichtbaar('projecten', 'aantal_personen') && (
+                      <td className="px-4 py-3 text-right tabular-nums text-gray-600">{p.pers}</td>
+                    )}
+                    {kolomZichtbaar('projecten', 'mandagen') && (
+                      <td className="px-4 py-3 text-right tabular-nums text-gray-600">{p.mandagen}</td>
+                    )}
+                    {kolomZichtbaar('projecten', 'created_at') && (
+                      <td className="px-4 py-3 text-right tabular-nums text-gray-400 text-xs whitespace-nowrap">
+                        {p.created_at ? new Date(p.created_at).toLocaleDateString('nl-NL') : '—'}
+                      </td>
+                    )}
                     <td className="sticky right-0 px-4 py-3 text-right bg-white group-hover:bg-gray-50 transition-colors">
                       {kanBewerken && (
                         verwijderBevestig === p.id ? (
@@ -421,16 +425,8 @@ export default function Projecten() {
           {/* Totaalbalk */}
           <div className="flex items-center gap-6 px-4 py-3 border-t border-gray-200 bg-gray-50 text-sm">
             <span className="text-gray-500">
-              <span className="font-medium text-gray-900">
-                {gesorteerd.length}
-              </span>{' '}
+              <span className="font-medium text-gray-900">{gesorteerd.length}</span>{' '}
               projecten
-            </span>
-            <span className="text-gray-500">
-              Aanneemsom:{' '}
-              <span className="font-medium text-gray-900">
-                {EUR.format(totaalAanneemsom)}
-              </span>
             </span>
             <span className="text-gray-500">
               Mandagen:{' '}
@@ -482,15 +478,12 @@ export default function Projecten() {
                 />
               </Veld>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 <Veld label="Opdrachtgever">
                   <input
                     value={formulier.opdrachtgever}
                     onChange={(e) =>
-                      setFormulier((f) => ({
-                        ...f,
-                        opdrachtgever: e.target.value,
-                      }))
+                      setFormulier((f) => ({ ...f, opdrachtgever: e.target.value }))
                     }
                     className={INVOER}
                   />
@@ -515,22 +508,6 @@ export default function Projecten() {
                     ))}
                   </datalist>
                 </Veld>
-                <Veld label="Aanneemsom (€)">
-                  <input
-                    type="number"
-                    min="0"
-                    step="1"
-                    value={formulier.aanneemsom}
-                    onChange={(e) =>
-                      setFormulier((f) => ({
-                        ...f,
-                        aanneemsom: e.target.value,
-                      }))
-                    }
-                    className={INVOER}
-                    placeholder="0"
-                  />
-                </Veld>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -553,6 +530,18 @@ export default function Projecten() {
                   />
                 </Veld>
               </div>
+
+              <Veld label="Opmerkingen">
+                <textarea
+                  rows={3}
+                  value={formulier.opmerkingen}
+                  onChange={(e) =>
+                    setFormulier((f) => ({ ...f, opmerkingen: e.target.value }))
+                  }
+                  className={INVOER + ' resize-none'}
+                  placeholder="Vrij invulbare notitie…"
+                />
+              </Veld>
 
               <div className="flex justify-end gap-2 pt-2">
                 <button

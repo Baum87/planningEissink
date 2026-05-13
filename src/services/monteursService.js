@@ -7,7 +7,7 @@ export async function getMonteurs() {
     await Promise.all([
       supabase
         .from('monteurs')
-        .select('id, voornaam, achternaam, bedrijfsnaam, type, expertises, telefoon, woonplaats, created_at')
+        .select('id, voornaam, achternaam, bedrijfsnaam, type, expertises, telefoon, woonplaats, adres, created_at')
         .order('achternaam'),
       supabase
         .from('toewijzingen')

@@ -54,6 +54,10 @@ export function TenantProvider({ children }) {
     return instellingen.modules_config[module] ?? true
   }
 
+  function veldLabel(tabel, kolom, standaard) {
+    return instellingen?.veld_labels?.[tabel]?.[kolom] ?? standaard
+  }
+
   return (
     <TenantContext.Provider value={{
       tenant,
@@ -61,6 +65,7 @@ export function TenantProvider({ children }) {
       loading,
       kolomZichtbaar,
       moduleZichtbaar,
+      veldLabel,
       labelProject: tenant?.label_project ?? 'project',
       labelMonteur: tenant?.label_monteur ?? 'monteur',
     }}>
