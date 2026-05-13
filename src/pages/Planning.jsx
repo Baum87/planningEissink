@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { useAuth, heeftVolledigeToegang, isProjectleider } from '../context/AuthContext'
+import { useAuth, heeftVolledigeToegang, isGebruiker } from '../context/AuthContext'
 import { getMonteurs, getGroepen } from '../services/monteursService'
 import {
   getToewijzingen,
@@ -142,7 +142,7 @@ export default function Planning({ onNavigate }) {
   const [zoek, setZoek] = useState('')
   const [filterExpertise, setFilterExpertise] = useState('')
   const [filterProjectleider, setFilterProjectleider] = useState(
-    () => isProjectleider(rol) ? (mijnInitialen ?? '') : ''
+    () => isGebruiker(rol) ? (mijnInitialen ?? '') : ''
   )
   const [filterProject, setFilterProject] = useState('')
   const [alleenIngepland, setAlleenIngepland] = useState(false)

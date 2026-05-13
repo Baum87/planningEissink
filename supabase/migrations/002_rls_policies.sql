@@ -33,7 +33,7 @@ create policy "tenant_instellingen_select" on tenant_instellingen
 create policy "tenant_instellingen_update" on tenant_instellingen
   for update using (
     tenant_id = get_user_tenant_id()
-    and get_user_rol() = 'beheerder'
+    and get_user_rol() = 'admin'
   );
 
 -- ─── Projecten ──────────────────────────────────────────────
@@ -44,17 +44,17 @@ create policy "projecten_select" on projecten
 create policy "projecten_insert" on projecten
   for insert with check (
     tenant_id = get_user_tenant_id()
-    and get_user_rol() in ('beheerder', 'planner')
+    and get_user_rol() in ('admin', 'planner')
   );
 create policy "projecten_update" on projecten
   for update using (
     tenant_id = get_user_tenant_id()
-    and get_user_rol() in ('beheerder', 'planner')
+    and get_user_rol() in ('admin', 'planner')
   );
 create policy "projecten_delete" on projecten
   for delete using (
     tenant_id = get_user_tenant_id()
-    and get_user_rol() in ('beheerder', 'planner')
+    and get_user_rol() in ('admin', 'planner')
   );
 
 -- ─── Monteurs ───────────────────────────────────────────────
@@ -65,17 +65,17 @@ create policy "monteurs_select" on monteurs
 create policy "monteurs_insert" on monteurs
   for insert with check (
     tenant_id = get_user_tenant_id()
-    and get_user_rol() in ('beheerder', 'planner')
+    and get_user_rol() in ('admin', 'planner')
   );
 create policy "monteurs_update" on monteurs
   for update using (
     tenant_id = get_user_tenant_id()
-    and get_user_rol() in ('beheerder', 'planner')
+    and get_user_rol() in ('admin', 'planner')
   );
 create policy "monteurs_delete" on monteurs
   for delete using (
     tenant_id = get_user_tenant_id()
-    and get_user_rol() in ('beheerder', 'planner')
+    and get_user_rol() in ('admin', 'planner')
   );
 
 -- ─── Groepen ────────────────────────────────────────────────
@@ -86,7 +86,7 @@ create policy "groepen_select" on groepen
 create policy "groepen_write" on groepen
   for all using (
     tenant_id = get_user_tenant_id()
-    and get_user_rol() in ('beheerder', 'planner')
+    and get_user_rol() in ('admin', 'planner')
   );
 
 -- ─── Groep_leden ────────────────────────────────────────────
@@ -107,7 +107,7 @@ create policy "groep_leden_write" on groep_leden
       where g.id = groep_id
       and g.tenant_id = get_user_tenant_id()
     )
-    and get_user_rol() in ('beheerder', 'planner')
+    and get_user_rol() in ('admin', 'planner')
   );
 
 -- ─── Toewijzingen ───────────────────────────────────────────
@@ -118,12 +118,12 @@ create policy "toewijzingen_select" on toewijzingen
 create policy "toewijzingen_insert" on toewijzingen
   for insert with check (
     tenant_id = get_user_tenant_id()
-    and get_user_rol() in ('beheerder', 'planner')
+    and get_user_rol() in ('admin', 'planner')
   );
 create policy "toewijzingen_delete" on toewijzingen
   for delete using (
     tenant_id = get_user_tenant_id()
-    and get_user_rol() in ('beheerder', 'planner')
+    and get_user_rol() in ('admin', 'planner')
   );
 
 -- ─── Periodes ───────────────────────────────────────────────
@@ -134,7 +134,7 @@ create policy "periodes_select" on periodes
 create policy "periodes_write" on periodes
   for all using (
     tenant_id = get_user_tenant_id()
-    and get_user_rol() in ('beheerder', 'planner')
+    and get_user_rol() in ('admin', 'planner')
   );
 
 -- ─── Tenant expertises ──────────────────────────────────────
@@ -145,17 +145,17 @@ create policy "expertises_select" on tenant_expertises
 create policy "expertises_insert" on tenant_expertises
   for insert with check (
     tenant_id = get_user_tenant_id()
-    and get_user_rol() in ('beheerder', 'planner')
+    and get_user_rol() in ('admin', 'planner')
   );
 create policy "expertises_update" on tenant_expertises
   for update using (
     tenant_id = get_user_tenant_id()
-    and get_user_rol() in ('beheerder', 'planner')
+    and get_user_rol() in ('admin', 'planner')
   );
 create policy "expertises_delete" on tenant_expertises
   for delete using (
     tenant_id = get_user_tenant_id()
-    and get_user_rol() in ('beheerder', 'planner')
+    and get_user_rol() in ('admin', 'planner')
   );
 
 -- ─── Audit log ──────────────────────────────────────────────
@@ -164,7 +164,7 @@ alter table audit_log enable row level security;
 create policy "audit_log_select" on audit_log
   for select using (
     tenant_id = get_user_tenant_id()
-    and get_user_rol() = 'beheerder'
+    and get_user_rol() = 'admin'
   );
 create policy "audit_log_insert" on audit_log
   for insert with check (tenant_id = get_user_tenant_id());

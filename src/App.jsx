@@ -51,9 +51,9 @@ function AppInner() {
               </button>
             ))}
             <div className="ml-auto flex items-center gap-4">
-              {(user?.user_metadata?.naam || user?.email) && (
+              {(user?.app_metadata?.naam || user?.email) && (
                 <span className="text-xs text-gray-400">
-                  {user.user_metadata?.naam || user.email}
+                  {user.app_metadata?.naam || user.email}
                 </span>
               )}
               <button

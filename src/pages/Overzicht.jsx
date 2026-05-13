@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { useAuth, isProjectleider } from '../context/AuthContext'
+import { useAuth, isGebruiker } from '../context/AuthContext'
 import { getMonteurs } from '../services/monteursService'
 import { getToewijzingen } from '../services/toewijzingenService'
 import { getProjecten } from '../services/projectenService'
@@ -78,7 +78,7 @@ export default function Overzicht() {
   const [error, setError] = useState(null)
   const [popup, setPopup] = useState(null)
   const [filterProjectleider, setFilterProjectleider] = useState(
-    () => isProjectleider(rol) ? (initialen ?? '') : ''
+    () => isGebruiker(rol) ? (initialen ?? '') : ''
   )
   const [toonUitgebreid, setToonUitgebreid] = useState(false)
 
