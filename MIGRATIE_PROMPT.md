@@ -7,6 +7,49 @@ Werk stap voor stap. Valideer elke stap voor je verdergaat. Breek niets in de be
 
 ---
 
+## STATUS (bijgewerkt 2026-05-13)
+
+### Afgerond ✅
+- **Stap 1** — Nieuw Supabase project aangemaakt + 001_initial_schema.sql uitgevoerd
+- **Stap 2** — 002_rls_policies.sql uitgevoerd
+- **Stap 3** — seed.sql uitgevoerd (demo tenant + Eissink tenant)
+- **Stap 4** — migrate_eissink.sql klaargemaakt (nog niet uitgevoerd — wacht op data-export)
+- **Stap 5** — TenantContext.jsx aangemaakt
+- **Stap 6** — Services bijgewerkt: tenant_id in alle inserts
+- **Stap 7** — App.jsx: TenantProvider + tenantnaam uit database in header
+- **Stap 8** — Hardcoded "Eissink" verwijderd: Login, monteur type 'Eissink'→'Intern'
+- **Stap 9** — kolomZichtbaar() + veldLabel() in Projecten + Monteurs; aanneemsom verwijderd; opmerkingen + adres toegevoegd; expertises per tenant uit DB
+- **Stap 10** — Voorbereiding klaar; SQL template beschikbaar; 2 Eissink-gebruikers worden bij stap 12 handmatig aangemaakt
+- **Stap 11** — Lokaal getest en gevalideerd ✅
+
+### Extra wijzigingen doorgevoerd (buiten originele prompt)
+- Rollen hernoemd: `beheerder`→`admin`, `projectleider`→`gebruiker`, `monteur` toegevoegd (005_rename_roles.sql)
+- Aanneemsom volledig verwijderd (geen financiële data in planningsapp)
+- `tenant_expertises` tabel: expertises per tenant configureerbaar
+- `veld_labels` JSONB in tenant_instellingen: kolomlabels per tenant aanpasbaar
+- Naam gebruiker in header komt uit `app_metadata.naam` (niet meer hardcoded)
+
+### Nog te doen ⬜
+- **Stap 12** — Eissink data migreren (zie hieronder)
+- **Stap 13** — Vercel omgevingsvariabelen bijwerken
+- **Stap 14** — CONTEXT.md bijwerken
+
+### Openstaande SQL (testproject — nog uitvoeren indien niet gedaan)
+- `005_rename_roles.sql` uitvoeren in Supabase SQL editor
+
+---
+
+## Supabase projecten
+
+| Omgeving | Project ID | Status |
+|---|---|---|
+| **Productie (Eissink live)** | `qrnsjldoeobipqclpdxu` | Ongewijzigd, Eissink werkt hier nog op |
+| **Nieuw testproject** | `ypzdytntsgmnjcbbyrsd` | Actief in `.env.local` |
+
+`.env.local` wijzigen? Zie onderaan dit bestand.
+
+---
+
 ## Context
 - Stack: React + Tailwind CSS, Supabase (PostgreSQL), Vercel
 - Huidig Supabase project: qrnsjldoeobipqclpdxu (Eissink productie)
