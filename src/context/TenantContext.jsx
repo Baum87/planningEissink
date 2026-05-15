@@ -11,7 +11,8 @@ export function TenantProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!user) {
+    if (user === undefined) return
+    if (user === null) {
       setTenant(null)
       setInstellingen(null)
       setLoading(false)

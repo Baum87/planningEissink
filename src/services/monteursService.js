@@ -19,10 +19,14 @@ export async function getMonteurs() {
   if (e1) throw e1
   if (e2) throw e2
 
-  const tvMap = Object.fromEntries(toewijzingen.map((t) => [t.monteur_id, t]))
+  const tvMap = toewijzingen.reduce((acc, t) => {
+    if (!acc[t.monteur_id]) acc[t.monteur_id] = []
+    acc[t.monteur_id].push(t)
+    return acc
+  }, {})
   return monteurs.map((m) => ({
     ...m,
-    toewijzing_vandaag: tvMap[m.id] ?? null,
+    toewijzingen_vandaag: tvMap[m.id] ?? [],
   }))
 }
 

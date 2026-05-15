@@ -9,7 +9,6 @@ function naarStr(d) {
 }
 
 function getWerkdagen(van, tot, skipDagen = new Set()) {
-  if (van === tot) return [van]
   const dagen = []
   let cur = new Date(van + 'T00:00:00')
   const eindD = new Date(tot + 'T00:00:00')

@@ -27,7 +27,7 @@ function AppInner() {
 
 
 
-  const ActivePage = TABS.find((t) => t.id === activeTab).component
+  const ActivePage = (TABS.find((t) => t.id === activeTab) ?? TABS[0]).component
 
   return (
     <div className="min-h-screen bg-white">

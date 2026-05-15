@@ -51,13 +51,7 @@ function berekenPers(toewijzingen) {
 }
 
 function berekenMandagen(toewijzingen) {
-  return toewijzingen.reduce((sum, t) => {
-    const dagen =
-      Math.round(
-        (new Date(t.datum_tot + 'T00:00:00') - new Date(t.datum_van + 'T00:00:00')) / 86400000
-      ) + 1
-    return sum + Math.max(0, dagen)
-  }, 0)
+  return toewijzingen.length
 }
 
 export default function Projecten() {
