@@ -13,29 +13,7 @@ import {
   setGroepLeden,
 } from '../services/monteursService'
 import { getExpertises } from '../services/expertisesService'
-
-const AVATAR_KLEUREN = [
-  ['#dbeafe', '#1e40af'],
-  ['#dcfce7', '#166534'],
-  ['#fef3c7', '#92400e'],
-  ['#fce7f3', '#9d174d'],
-  ['#ede9fe', '#5b21b6'],
-  ['#ffedd5', '#9a3412'],
-  ['#cffafe', '#155e75'],
-  ['#d1fae5', '#064e3b'],
-]
-
-function avatarKleur(naam = '') {
-  return AVATAR_KLEUREN[naam.charCodeAt(0) % AVATAR_KLEUREN.length]
-}
-
-function initialen(naam = '') {
-  return naam.trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase()
-}
-
-function monteurNaam(m) {
-  return [m.voornaam, m.achternaam].filter(Boolean).join(' ')
-}
+import { avatarKleur, initialen, monteurNaam } from '../lib/avatar'
 
 const LEEG_MONTEUR = {
   voornaam: '',

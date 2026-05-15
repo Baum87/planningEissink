@@ -9,6 +9,8 @@ import {
 import { getProjecten } from '../services/projectenService'
 import { getPeriodes } from '../services/periodesService'
 import { projKleur } from '../lib/kleurenpalet'
+import { avatarKleur, initialen, monteurNaam } from '../lib/avatar'
+import { getMaandag, plusDagen, naarStr, isoWeek, fDag, fDagNaam, fDatumLang } from '../lib/datum'
 
 // ─── Constanten ───────────────────────────────────────────────────────────────
 
@@ -17,72 +19,6 @@ const DAG_B  = 100
 const ROW_H  = 48
 const WEEK_H = 32
 const DAG_H  = 40
-
-const AVATAR_KLEUREN = [
-  ['#dbeafe', '#1e40af'], ['#dcfce7', '#166534'], ['#fef3c7', '#92400e'],
-  ['#fce7f3', '#9d174d'], ['#ede9fe', '#5b21b6'], ['#ffedd5', '#9a3412'],
-  ['#cffafe', '#155e75'], ['#d1fae5', '#064e3b'],
-]
-
-// ─── Hulpfuncties ─────────────────────────────────────────────────────────────
-
-function avatarKleur(naam = '') {
-  return AVATAR_KLEUREN[naam.charCodeAt(0) % AVATAR_KLEUREN.length]
-}
-
-function initialen(naam = '') {
-  return naam.trim().split(/\s+/).slice(0, 2).map((w) => w[0]).join('').toUpperCase()
-}
-
-function getMaandag(d) {
-  const r = new Date(d)
-  r.setHours(0, 0, 0, 0)
-  const dag = r.getDay()
-  r.setDate(r.getDate() - (dag === 0 ? 6 : dag - 1))
-  return r
-}
-
-function plusDagen(d, n) {
-  const r = new Date(d)
-  r.setDate(r.getDate() + n)
-  return r
-}
-
-function naarStr(d) {
-  return [
-    d.getFullYear(),
-    String(d.getMonth() + 1).padStart(2, '0'),
-    String(d.getDate()).padStart(2, '0'),
-  ].join('-')
-}
-
-function isoWeek(d) {
-  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()))
-  const dow = t.getUTCDay() || 7
-  t.setUTCDate(t.getUTCDate() + 4 - dow)
-  const y = new Date(Date.UTC(t.getUTCFullYear(), 0, 1))
-  return Math.ceil(((t - y) / 86400000 + 1) / 7)
-}
-
-function monteurNaam(m) {
-  return [m.voornaam, m.achternaam].filter(Boolean).join(' ')
-}
-
-function fDag(d) {
-  return d.toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit' })
-}
-
-function fDagNaam(d) {
-  return d.toLocaleDateString('nl-NL', { weekday: 'short' }).slice(0, 2)
-}
-
-function fDatumLang(str) {
-  return new Date(str + 'T00:00:00').toLocaleDateString('nl-NL', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  })
-}
 
 function fBereikLang(van, tot) {
   const opts = { weekday: 'short', day: 'numeric', month: 'long' }

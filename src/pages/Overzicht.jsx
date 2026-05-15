@@ -5,6 +5,7 @@ import { getToewijzingen } from '../services/toewijzingenService'
 import { getProjecten } from '../services/projectenService'
 import { getPeriodes } from '../services/periodesService'
 import { projKleur } from '../lib/kleurenpalet'
+import { getMaandag, plusDagen, naarStr, isoWeek, fDag, fDagNaam, fDatumLang } from '../lib/datum'
 
 // ─── Constanten ───────────────────────────────────────────────────────────────
 
@@ -16,52 +17,6 @@ const ROW_H  = 48
 
 // ─── Hulpfuncties ─────────────────────────────────────────────────────────────
 
-function getMaandag(d) {
-  const r = new Date(d)
-  r.setHours(0, 0, 0, 0)
-  const dag = r.getDay()
-  r.setDate(r.getDate() - (dag === 0 ? 6 : dag - 1))
-  return r
-}
-
-function plusDagen(d, n) {
-  const r = new Date(d)
-  r.setDate(r.getDate() + n)
-  return r
-}
-
-function naarStr(d) {
-  return [
-    d.getFullYear(),
-    String(d.getMonth() + 1).padStart(2, '0'),
-    String(d.getDate()).padStart(2, '0'),
-  ].join('-')
-}
-
-function isoWeek(d) {
-  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()))
-  const dow = t.getUTCDay() || 7
-  t.setUTCDate(t.getUTCDate() + 4 - dow)
-  const y = new Date(Date.UTC(t.getUTCFullYear(), 0, 1))
-  return Math.ceil(((t - y) / 86400000 + 1) / 7)
-}
-
-function fDag(d) {
-  return d.toLocaleDateString('nl-NL', { day: '2-digit', month: '2-digit' })
-}
-
-function fDagNaam(d) {
-  return d.toLocaleDateString('nl-NL', { weekday: 'short' }).slice(0, 2)
-}
-
-function fDatumLang(str) {
-  return new Date(str + 'T00:00:00').toLocaleDateString('nl-NL', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  })
-}
 
 // ─── Overzicht ────────────────────────────────────────────────────────────────
 
@@ -485,7 +440,7 @@ function DetailPopup({ project, dag, monteurs, onClose }) {
         <div className="flex items-start justify-between p-5 pb-4 border-b border-gray-100">
           <div className="min-w-0 pr-4">
             <div className="text-xs text-gray-400 capitalize mb-0.5">
-              {fDatumLang(dag)}
+              {fDatumLang(dag, true)}
             </div>
             <div className="text-sm font-semibold text-gray-900 truncate">
               {project.werknummer} — {project.omschrijving}
