@@ -327,10 +327,12 @@ export default function Planning({ onNavigate }) {
       const leden = (g.groep_leden ?? [])
         .map((gl) => monteurs.find((m) => m.id === gl.monteur_id))
         .filter(Boolean)
+      const matchendeLeden = leden.filter(match)
+      if (matchendeLeden.length === 0) return []
       const rij = [{ type: 'groep', groep: g, leden }]
       if (uitgeklapt.has(g.id)) {
         rij.push(
-          ...leden.filter(match).map((m) => ({ type: 'groeplid', monteur: m, groepId: g.id }))
+          ...matchendeLeden.map((m) => ({ type: 'groeplid', monteur: m, groepId: g.id }))
         )
       }
       return rij
