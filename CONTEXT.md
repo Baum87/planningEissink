@@ -144,6 +144,21 @@ Alle tabellen hebben RLS aan.
 - Profielen schrijven: alleen `admin`
 - Audit log: alleen leesbaar voor `admin`
 
+### RLS audit — mei 2026
+Analyse via pg_policies en helper-functies. Gevonden en opgelost:
+- UPDATE policy op toewijzingen miste with_check — toegevoegd in 009
+
+Bewust niet gewijzigd:
+- get_user_tenant_id() NULL-gedrag is al veilig in PostgreSQL
+- audit_log INSERT with_check was al correct
+- get_user_rol() fallback 'geen' is functioneel identiek aan ''
+
+Bewust uitgesteld:
+- gebruiker-rol ziet alle toewijzingen/monteurs van eigen tenant
+  (scope-beperking volgt via projectleider_id koppeling)
+
+Smoke test beschikbaar: supabase/tests/rls_smoke_test.sql
+
 ## UI — vier tabbladen
 1. **Planning** — tijdlijn (3 of 8 weken), monteurs als rijen, 100px dagkolommen,
    horizontaal scrollbaar, weekend aan/uit schakelaar,
@@ -203,6 +218,10 @@ supabase/
   migrate_eissink.sql
   migrate_eissink_prep.sql
 ```
+
+## Bekende verbeterpunten
+- [ ] Planning filter: groepen altijd zichtbaar ook als geen enkel groeplid een toewijzing heeft
+      die overeenkomt met het actieve filter — groep verbergen als alle leden leeg zijn na filtering
 
 ## Commerciële roadmap
 - [ ] Edge Function gebruikersbeheer (invite, rol wijzigen, delete via service_role)
