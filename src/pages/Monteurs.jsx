@@ -142,7 +142,7 @@ export default function Monteurs() {
   }
 
   return (
-    <div>
+    <div className="flex flex-col min-h-0 flex-1">
       {/* ── Groepen ─────────────────────────────────────────────────── */}
       <section className="mb-8">
         <div className="flex items-center justify-between mb-3">
@@ -222,7 +222,7 @@ export default function Monteurs() {
 
       {/* ── Tabel ───────────────────────────────────────────────────── */}
       {!loading && !error && (
-        <div className="border border-gray-200 rounded-xl overflow-hidden">
+        <div className="border border-gray-200 rounded-xl overflow-auto flex-1 min-h-0">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50">

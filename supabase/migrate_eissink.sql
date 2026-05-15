@@ -11,7 +11,7 @@
 -- ============================================================
 
 -- ─── Type rename: 'Eissink' → 'Intern' ─────────────────────────────────────
-alter table monteurs drop constraint monteurs_type_check;
+alter table monteurs drop constraint if exists monteurs_type_check;
 update monteurs set type = 'Intern' where type = 'Eissink';
 alter table monteurs add constraint monteurs_type_check
   check (type in ('Intern', 'Onderaannemer'));
@@ -46,6 +46,15 @@ insert into tenant_expertises (tenant_id, naam, volgorde) values
   ('a0000000-0000-0000-0000-000000000001', 'Systeemwanden', 3),
   ('a0000000-0000-0000-0000-000000000001', 'Afsmeren',      4),
   ('a0000000-0000-0000-0000-000000000001', 'Overig',        5);
+
+-- ─── NOT NULL herstellen ────────────────────────────────────
+-- (was tijdelijk losgelaten door migrate_eissink_prep.sql)
+
+alter table projecten    alter column tenant_id set not null;
+alter table monteurs     alter column tenant_id set not null;
+alter table groepen      alter column tenant_id set not null;
+alter table toewijzingen alter column tenant_id set not null;
+alter table periodes     alter column tenant_id set not null;
 
 -- ─── Validatie: alle counts moeten 0 zijn ───────────────────
 

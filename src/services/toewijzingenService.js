@@ -23,13 +23,22 @@ function getWerkdagen(van, tot, skipDagen = new Set()) {
 }
 
 export async function getToewijzingen(van, tot) {
-  const { data, error } = await supabase
-    .from('toewijzingen')
-    .select('*, projecten(id, werknummer, omschrijving, projectleider_initialen, kleur)')
-    .lte('datum_van', tot)
-    .gte('datum_tot', van)
-  if (error) throw error
-  return data
+  const PAGE = 1000
+  let all = []
+  let from = 0
+  while (true) {
+    const { data, error } = await supabase
+      .from('toewijzingen')
+      .select('*, projecten(id, werknummer, omschrijving, projectleider_initialen, kleur)')
+      .lte('datum_van', tot)
+      .gte('datum_tot', van)
+      .range(from, from + PAGE - 1)
+    if (error) throw error
+    all = all.concat(data)
+    if (data.length < PAGE) break
+    from += PAGE
+  }
+  return all
 }
 
 // Maakt één record per werkdag (ma-vr) — weekends en feestdagen/bouwvak worden overgeslagen

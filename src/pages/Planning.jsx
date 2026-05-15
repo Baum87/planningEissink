@@ -581,7 +581,7 @@ export default function Planning({ onNavigate }) {
                 <div
                   key={str}
                   className={`border-l border-gray-100 shrink-0 flex flex-col items-center justify-center gap-0.5 ${
-                    isWeekend ? 'bg-gray-100' : isPeriode ? 'bg-amber-100' : ''
+                    isWeekend ? 'bg-gray-100' : isPeriode ? 'bg-amber-100' : 'bg-gray-50'
                   }`}
                   style={{ flex: 1, minWidth: dagBreedte }}
                 >
@@ -620,7 +620,7 @@ export default function Planning({ onNavigate }) {
                 return (
                   <div
                     key={`groep-${rij.groep.id}`}
-                    className="flex border-b border-gray-100 bg-gray-50/80"
+                    className="flex border-b border-gray-200 bg-gray-50"
                     style={{ minHeight: 40 }}
                   >
                     <div
@@ -678,7 +678,7 @@ export default function Planning({ onNavigate }) {
               return (
                 <div
                   key={`${rij.type}-${monteur.id}${rij.groepId ? `-${rij.groepId}` : ''}`}
-                  className="flex border-b border-gray-100 group/rij"
+                  className="flex border-b border-gray-200 group/rij"
                   style={{ height: ROW_H }}
                 >
                   {/* Naam cel */}

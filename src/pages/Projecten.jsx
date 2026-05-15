@@ -232,7 +232,7 @@ export default function Projecten() {
   const zichtbareKolommen = KOLOMMEN.filter((k) => kolomZichtbaar('projecten', k.config))
 
   return (
-    <div>
+    <div className="flex flex-col min-h-0 flex-1">
       {/* Toolbar */}
       <div className="flex items-center mb-4 gap-3 flex-wrap">
         <input
@@ -280,7 +280,7 @@ export default function Projecten() {
 
       {/* Tabel */}
       {!loading && !error && (
-        <div className="border border-gray-200 rounded-xl overflow-x-auto">
+        <div className="border border-gray-200 rounded-xl overflow-auto flex-1 min-h-0">
           <table className="w-full min-w-[700px] text-sm">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50">
