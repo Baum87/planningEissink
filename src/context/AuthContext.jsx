@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 
 const AuthContext = createContext(null)
 
-export const ROLLEN = ['beheerder', 'planner', 'projectleider']
+export const ROLLEN = ['admin', 'planner', 'gebruiker', 'monteur']
 
 export function AuthProvider({ children }) {
   // undefined = sessie nog aan het laden, null = niet ingelogd, object = ingelogd
@@ -46,11 +46,11 @@ export function useAuth() {
   return useContext(AuthContext)
 }
 
-export function isBeheerder(rol)      { return rol === 'beheerder' }
+export function isAdmin(rol)          { return rol === 'admin' }
 export function isPlanner(rol)        { return rol === 'planner' }
-export function isProjectleider(rol)  { return rol === 'projectleider' }
+export function isGebruiker(rol)      { return rol === 'gebruiker' }
+export function isMonteur(rol)        { return rol === 'monteur' }
 
-// Volledige toegang voor beheerder en planner
 export function heeftVolledigeToegang(rol) {
-  return isBeheerder(rol) || isPlanner(rol)
+  return isAdmin(rol) || isPlanner(rol)
 }

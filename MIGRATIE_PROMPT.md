@@ -7,6 +7,49 @@ Werk stap voor stap. Valideer elke stap voor je verdergaat. Breek niets in de be
 
 ---
 
+## STATUS (bijgewerkt 2026-05-13)
+
+### Afgerond ✅
+- **Stap 1** — Nieuw Supabase project aangemaakt + 001_initial_schema.sql uitgevoerd
+- **Stap 2** — 002_rls_policies.sql uitgevoerd
+- **Stap 3** — seed.sql uitgevoerd (demo tenant + Eissink tenant)
+- **Stap 4** — migrate_eissink.sql klaargemaakt (nog niet uitgevoerd — wacht op data-export)
+- **Stap 5** — TenantContext.jsx aangemaakt
+- **Stap 6** — Services bijgewerkt: tenant_id in alle inserts
+- **Stap 7** — App.jsx: TenantProvider + tenantnaam uit database in header
+- **Stap 8** — Hardcoded "Eissink" verwijderd: Login, monteur type 'Eissink'→'Intern'
+- **Stap 9** — kolomZichtbaar() + veldLabel() in Projecten + Monteurs; aanneemsom verwijderd; opmerkingen + adres toegevoegd; expertises per tenant uit DB
+- **Stap 10** — Voorbereiding klaar; SQL template beschikbaar; 2 Eissink-gebruikers worden bij stap 12 handmatig aangemaakt
+- **Stap 11** — Lokaal getest en gevalideerd ✅
+
+### Extra wijzigingen doorgevoerd (buiten originele prompt)
+- Rollen hernoemd: `beheerder`→`admin`, `projectleider`→`gebruiker`, `monteur` toegevoegd (005_rename_roles.sql)
+- Aanneemsom volledig verwijderd (geen financiële data in planningsapp)
+- `tenant_expertises` tabel: expertises per tenant configureerbaar
+- `veld_labels` JSONB in tenant_instellingen: kolomlabels per tenant aanpasbaar
+- Naam gebruiker in header komt uit `app_metadata.naam` (niet meer hardcoded)
+
+### Nog te doen ⬜
+- **Stap 12** — Eissink data migreren (zie hieronder)
+- **Stap 13** — Vercel omgevingsvariabelen bijwerken
+- **Stap 14** — CONTEXT.md bijwerken
+
+### Openstaande SQL (testproject — nog uitvoeren indien niet gedaan)
+- `005_rename_roles.sql` uitvoeren in Supabase SQL editor
+
+---
+
+## Supabase projecten
+
+| Omgeving | Project ID | Status |
+|---|---|---|
+| **Productie (Eissink live)** | `qrnsjldoeobipqclpdxu` | Ongewijzigd, Eissink werkt hier nog op |
+| **Nieuw testproject** | `ypzdytntsgmnjcbbyrsd` | Actief in `.env.local` |
+
+`.env.local` wijzigen? Zie onderaan dit bestand.
+
+---
+
 ## Context
 - Stack: React + Tailwind CSS, Supabase (PostgreSQL), Vercel
 - Huidig Supabase project: qrnsjldoeobipqclpdxu (Eissink productie)
@@ -101,6 +144,9 @@ alter table groepen add column tenant_id uuid references tenants(id) on delete c
 
 -- Toewijzingen
 alter table toewijzingen add column tenant_id uuid references tenants(id) on delete cascade;
+
+-- Periodes (bouwvak, feestdagen — per tenant configureerbaar)
+alter table periodes add column tenant_id uuid references tenants(id) on delete cascade;
 ```
 
 ### Indexen voor performance
@@ -111,8 +157,9 @@ create index idx_projecten_datum on toewijzingen(datum);
 create index idx_monteurs_tenant_id on monteurs(tenant_id);
 create index idx_groepen_tenant_id on groepen(tenant_id);
 create index idx_toewijzingen_tenant_id on toewijzingen(tenant_id);
-create index idx_toewijzingen_monteur_datum on toewijzingen(monteur_id, datum);
-create index idx_toewijzingen_project_datum on toewijzingen(project_id, datum);
+create index idx_toewijzingen_monteur_datum on toewijzingen(monteur_id, datum_van);
+create index idx_toewijzingen_project_datum on toewijzingen(project_id, datum_van);
+create index idx_periodes_tenant_id on periodes(tenant_id);
 create index idx_audit_log_tenant_id on audit_log(tenant_id);
 create index idx_audit_log_created_at on audit_log(created_at);
 ```
@@ -245,6 +292,16 @@ create policy "toewijzingen_delete" on toewijzingen
     and get_user_rol() in ('beheerder', 'planner')
   );
 
+-- Periodes (bouwvak, feestdagen)
+alter table periodes enable row level security;
+create policy "periodes_select" on periodes
+  for select using (tenant_id = get_user_tenant_id());
+create policy "periodes_write" on periodes
+  for all using (
+    tenant_id = get_user_tenant_id()
+    and get_user_rol() in ('beheerder', 'planner')
+  );
+
 -- Audit log: alleen lezen voor beheerder
 alter table audit_log enable row level security;
 create policy "audit_log_select" on audit_log
@@ -301,13 +358,13 @@ values
   (gen_random_uuid(), 'Sven', 'Jansen', 'ZZP Jansen', 'Onderaannemer', array['Wand'], '0656789012', 'Eindhoven', 'b0000000-0000-0000-0000-000000000002');
 
 -- Demo projecten
-insert into projecten (id, werknummer, omschrijving, opdrachtgever, plaats, aanneemsom, projectleider_initialen, tenant_id)
+insert into projecten (id, werknummer, omschrijving, opdrachtgever, plaats, aanneemsom, projectleider_initialen, kleur, tenant_id)
 values
-  (gen_random_uuid(), '2024-001', 'Renovatie kantoor Zuidas', 'ING Bank', 'Amsterdam', 125000, 'JV', 'b0000000-0000-0000-0000-000000000002'),
-  (gen_random_uuid(), '2024-002', 'Nieuwbouw appartementen', 'Bouwfonds', 'Utrecht', 280000, 'PB', 'b0000000-0000-0000-0000-000000000002'),
-  (gen_random_uuid(), '2024-003', 'Plafond winkelcentrum', 'Vastgoed Noord', 'Rotterdam', 95000, 'JV', 'b0000000-0000-0000-0000-000000000002'),
-  (gen_random_uuid(), '2024-004', 'Wanden ziekenhuis vleugel B', 'UMCG', 'Groningen', 340000, 'ES', 'b0000000-0000-0000-0000-000000000002'),
-  (gen_random_uuid(), '2024-005', 'Interieur hotel centrum', 'NH Hotels', 'Amsterdam', 175000, 'PB', 'b0000000-0000-0000-0000-000000000002');
+  (gen_random_uuid(), '2024-001', 'Renovatie kantoor Zuidas', 'ING Bank', 'Amsterdam', 125000, 'JV', '#dbeafe', 'b0000000-0000-0000-0000-000000000002'),
+  (gen_random_uuid(), '2024-002', 'Nieuwbouw appartementen', 'Bouwfonds', 'Utrecht', 280000, 'PB', '#dcfce7', 'b0000000-0000-0000-0000-000000000002'),
+  (gen_random_uuid(), '2024-003', 'Plafond winkelcentrum', 'Vastgoed Noord', 'Rotterdam', 95000, 'JV', '#fef3c7', 'b0000000-0000-0000-0000-000000000002'),
+  (gen_random_uuid(), '2024-004', 'Wanden ziekenhuis vleugel B', 'UMCG', 'Groningen', 340000, 'ES', '#fce7f3', 'b0000000-0000-0000-0000-000000000002'),
+  (gen_random_uuid(), '2024-005', 'Interieur hotel centrum', 'NH Hotels', 'Amsterdam', 175000, 'PB', '#ede9fe', 'b0000000-0000-0000-0000-000000000002');
 
 -- Demo groepen
 insert into groepen (id, naam, tenant_id)
@@ -342,6 +399,10 @@ update toewijzingen
 set tenant_id = 'a0000000-0000-0000-0000-000000000001'
 where tenant_id is null;
 
+update periodes
+set tenant_id = 'a0000000-0000-0000-0000-000000000001'
+where tenant_id is null;
+
 -- Controleer of er geen records zonder tenant_id zijn
 select 'projecten zonder tenant_id' as check, count(*) from projecten where tenant_id is null
 union all
@@ -349,7 +410,9 @@ select 'monteurs zonder tenant_id', count(*) from monteurs where tenant_id is nu
 union all
 select 'groepen zonder tenant_id', count(*) from groepen where tenant_id is null
 union all
-select 'toewijzingen zonder tenant_id', count(*) from toewijzingen where tenant_id is null;
+select 'toewijzingen zonder tenant_id', count(*) from toewijzingen where tenant_id is null
+union all
+select 'periodes zonder tenant_id', count(*) from periodes where tenant_id is null;
 ```
 
 ---
@@ -580,8 +643,8 @@ set raw_app_meta_data = jsonb_set(
   '{tenant_id}',
   '"a0000000-0000-0000-0000-000000000001"'
 )
-where raw_app_meta_data->>'tenant_id' is null
-and email like '%eissink%'; -- pas aan op juiste emails
+where raw_app_meta_data->>'tenant_id' is null;
+-- Controleer daarna handmatig: select email, raw_app_meta_data->>'tenant_id' from auth.users;
 ```
 
 ---

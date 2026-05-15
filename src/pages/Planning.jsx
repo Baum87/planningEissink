@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { useAuth, heeftVolledigeToegang, isProjectleider } from '../context/AuthContext'
+import { useAuth, heeftVolledigeToegang, isGebruiker } from '../context/AuthContext'
 import { getMonteurs, getGroepen } from '../services/monteursService'
 import {
   getToewijzingen,
@@ -142,7 +142,7 @@ export default function Planning({ onNavigate }) {
   const [zoek, setZoek] = useState('')
   const [filterExpertise, setFilterExpertise] = useState('')
   const [filterProjectleider, setFilterProjectleider] = useState(
-    () => isProjectleider(rol) ? (mijnInitialen ?? '') : ''
+    () => isGebruiker(rol) ? (mijnInitialen ?? '') : ''
   )
   const [filterProject, setFilterProject] = useState('')
   const [alleenIngepland, setAlleenIngepland] = useState(false)
@@ -317,7 +317,7 @@ export default function Planning({ onNavigate }) {
       (!alleenIngepland || ingeplandeMonteurIds.has(m.id))
 
     const eigen = monteurs
-      .filter((m) => m.type === 'Eissink' && match(m) && !groepLedenIds.has(m.id))
+      .filter((m) => m.type === 'Intern' && match(m) && !groepLedenIds.has(m.id))
       .sort((a, b) => (a.achternaam ?? '').localeCompare(b.achternaam ?? '', 'nl'))
     const zzp = monteurs
       .filter((m) => m.type === 'Onderaannemer' && match(m) && !groepLedenIds.has(m.id))
@@ -581,7 +581,7 @@ export default function Planning({ onNavigate }) {
                 <div
                   key={str}
                   className={`border-l border-gray-100 shrink-0 flex flex-col items-center justify-center gap-0.5 ${
-                    isWeekend ? 'bg-gray-100' : isPeriode ? 'bg-amber-100' : ''
+                    isWeekend ? 'bg-gray-100' : isPeriode ? 'bg-amber-100' : 'bg-gray-50'
                   }`}
                   style={{ flex: 1, minWidth: dagBreedte }}
                 >
@@ -620,7 +620,7 @@ export default function Planning({ onNavigate }) {
                 return (
                   <div
                     key={`groep-${rij.groep.id}`}
-                    className="flex border-b border-gray-100 bg-gray-50/80"
+                    className="flex border-b border-gray-200 bg-gray-50"
                     style={{ minHeight: 40 }}
                   >
                     <div
@@ -678,7 +678,7 @@ export default function Planning({ onNavigate }) {
               return (
                 <div
                   key={`${rij.type}-${monteur.id}${rij.groepId ? `-${rij.groepId}` : ''}`}
-                  className="flex border-b border-gray-100 group/rij"
+                  className="flex border-b border-gray-200 group/rij"
                   style={{ height: ROW_H }}
                 >
                   {/* Naam cel */}
