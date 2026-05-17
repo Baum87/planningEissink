@@ -6,6 +6,7 @@ export default function Login() {
   const [wachtwoord, setWachtwoord] = useState('')
   const [fout, setFout] = useState(null)
   const [bezig, setBezig] = useState(false)
+  const [resetVerzonden, setResetVerzonden] = useState(false)
 
   async function handleInloggen(e) {
     e.preventDefault()
@@ -16,6 +17,20 @@ export default function Login() {
       password: wachtwoord,
     })
     if (error) setFout('Onbekend e-mailadres of onjuist wachtwoord.')
+    setBezig(false)
+  }
+
+  async function handleWachtwoordVergeten() {
+    if (!email) {
+      setFout('Vul eerst je e-mailadres in.')
+      return
+    }
+    setBezig(true)
+    setFout(null)
+    await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/`,
+    })
+    setResetVerzonden(true)
     setBezig(false)
   }
 
@@ -73,6 +88,20 @@ export default function Login() {
           >
             {bezig ? 'Inloggen…' : 'Inloggen'}
           </button>
+
+          {resetVerzonden ? (
+            <p className="text-center text-xs text-green-600">
+              Reset-link verstuurd — controleer je inbox.
+            </p>
+          ) : (
+            <button
+              type="button"
+              onClick={handleWachtwoordVergeten}
+              className="w-full text-center text-xs text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              Wachtwoord vergeten?
+            </button>
+          )}
         </form>
 
       </div>
