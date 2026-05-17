@@ -7,6 +7,13 @@ Bijgehouden naast CONTEXT.md — technische context staat daar.
 
 ## Nu — direct aanpakken
 
+- [ ] **Eigen SMTP instellen (Resend of Zoho)**
+      Supabase free tier: max 3 e-mails per uur — gedeeld door uitnodigingen,
+      wachtwoord reset en e-mailbevestiging. Blokkeert bij normaal gebruik.
+      Resend (aanbevolen): gratis tot 3.000/maand, eenvoudig te koppelen.
+      Zoho: als je sowieso zakelijke e-mail (@byggr.nl) wilt instellen.
+      → Uitstellen tot na testfase, maar dit is de eerste blocker bij meer gebruikers.
+
 - [x] **Supabase max_rows ophogen naar 5000**
       planning_app → Project Settings → API → Max Rows ✓ uitgevoerd
 
@@ -21,6 +28,15 @@ Bijgehouden naast CONTEXT.md — technische context staat daar.
 - [ ] **Wachtwoord reset flow testen**
       Supabase heeft dit ingebouwd maar het is nooit getest voor planning_app.
       Testen via "Vergeten wachtwoord" in de login-pagina.
+
+---
+
+## Morgen
+
+- [ ] **Projectleiders aanmaken als gebruiker + data migratie**
+      8 projectleiders (MB, GB, TJ, EK, RW, JH, JB, TP) uitnodigen via Beheer tab.
+      Daarna migratiescript: projectleider_initialen → projectleider_id (UUID) per persoon.
+      Vereiste: volledige namen + e-mailadressen van alle 8 ophalen bij Roy.
 
 ---
 

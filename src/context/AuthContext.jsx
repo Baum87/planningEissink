@@ -3,8 +3,6 @@ import { supabase } from '../lib/supabase'
 
 const AuthContext = createContext(null)
 
-export const ROLLEN = ['admin', 'planner', 'gebruiker', 'monteur']
-
 export function AuthProvider({ children }) {
   // undefined = sessie nog aan het laden, null = niet ingelogd, object = ingelogd
   const [user, setUser] = useState(undefined)
@@ -46,11 +44,8 @@ export function useAuth() {
   return useContext(AuthContext)
 }
 
-export function isAdmin(rol)          { return rol === 'admin' }
-export function isPlanner(rol)        { return rol === 'planner' }
 export function isGebruiker(rol)      { return rol === 'gebruiker' }
-export function isMonteur(rol)        { return rol === 'monteur' }
 
 export function heeftVolledigeToegang(rol) {
-  return isAdmin(rol) || isPlanner(rol)
+  return rol === 'admin' || rol === 'planner'
 }
