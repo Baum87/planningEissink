@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { TenantProvider, useTenant } from './context/TenantContext'
 import Login from './pages/Login'
@@ -6,18 +6,25 @@ import Planning from './pages/Planning'
 import Overzicht from './pages/Overzicht'
 import Projecten from './pages/Projecten'
 import Monteurs from './pages/Monteurs'
+import Beheer from './pages/Beheer'
 
-const TABS = [
-  { id: 'planning',  label: 'Planning',  component: Planning  },
-  { id: 'overzicht', label: 'Overzicht', component: Overzicht },
-  { id: 'projecten', label: 'Projecten', component: Projecten },
-  { id: 'monteurs',  label: 'Monteurs',  component: Monteurs  },
+const ALLE_TABS = [
+  { id: 'planning',  label: 'Planning',  component: Planning,  rollen: null },
+  { id: 'overzicht', label: 'Overzicht', component: Overzicht, rollen: null },
+  { id: 'projecten', label: 'Projecten', component: Projecten, rollen: null },
+  { id: 'monteurs',  label: 'Monteurs',  component: Monteurs,  rollen: null },
+  { id: 'beheer',    label: 'Beheer',    component: Beheer,    rollen: ['admin'] },
 ]
 
 function AppInner() {
   const { user, rol, uitloggen } = useAuth()
   const { tenant } = useTenant()
   const [activeTab, setActiveTab] = useState('planning')
+
+  const TABS = useMemo(
+    () => ALLE_TABS.filter((t) => !t.rollen || t.rollen.includes(rol)),
+    [rol]
+  )
 
   // Sessie wordt opgehaald — niets tonen om flicker te voorkomen
   if (user === undefined) return null
