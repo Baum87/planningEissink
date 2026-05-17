@@ -9,9 +9,13 @@ export function AuthProvider({ children }) {
   const [rol, setRol] = useState(null)
   const [initialen, setInitialen] = useState(null)
 
-  // TODO gebruikersbeheer: rol wordt nu handmatig gezet via Supabase Dashboard of Admin API.
-  // Koppel hier later een Edge Function aan (bijv. POST /functions/v1/set-user-rol) zodat
-  // beheerders rollen zelf kunnen toewijzen vanuit de app.
+  // Detecteer uitnodiging of wachtwoord-reset link vóór Supabase de hash verwerkt
+  const [moetWachtwoordInstellen, setMoetWachtwoordInstellen] = useState(() => {
+    const params = new URLSearchParams(window.location.hash.slice(1))
+    const type = params.get('type')
+    return type === 'invite' || type === 'recovery'
+  })
+
   function verwerkUser(u) {
     setUser(u ?? null)
     setRol(u?.app_metadata?.rol ?? null)
@@ -19,10 +23,10 @@ export function AuthProvider({ children }) {
   }
 
   useEffect(() => {
-    // getUser() haalt verse data op van de server (user_metadata altijd actueel)
     supabase.auth.getUser().then(({ data: { user } }) => verwerkUser(user))
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') setMoetWachtwoordInstellen(true)
       verwerkUser(session?.user)
     })
 
@@ -34,7 +38,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, rol, initialen, uitloggen }}>
+    <AuthContext.Provider value={{ user, rol, initialen, uitloggen, moetWachtwoordInstellen, setMoetWachtwoordInstellen }}>
       {children}
     </AuthContext.Provider>
   )

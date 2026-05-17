@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { supabase } from './lib/supabase'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { TenantProvider, useTenant } from './context/TenantContext'
 import Login from './pages/Login'
@@ -16,8 +17,65 @@ const ALLE_TABS = [
   { id: 'beheer',    label: 'Beheer',    component: Beheer,    rollen: ['admin'] },
 ]
 
+function WachtwoordInstellen() {
+  const { setMoetWachtwoordInstellen } = useAuth()
+  const [wachtwoord, setWachtwoord] = useState('')
+  const [bezig, setBezig] = useState(false)
+  const [fout, setFout] = useState(null)
+
+  async function submit(e) {
+    e.preventDefault()
+    setBezig(true)
+    setFout(null)
+    const { error } = await supabase.auth.updateUser({ password: wachtwoord })
+    if (error) {
+      setFout(error.message)
+      setBezig(false)
+      return
+    }
+    window.history.replaceState(null, '', window.location.pathname)
+    setMoetWachtwoordInstellen(false)
+  }
+
+  return (
+    <div className="min-h-screen bg-white flex flex-col items-center justify-center px-4">
+      <div className="w-full max-w-sm">
+        <div className="mb-10 text-center">
+          <span className="text-xl font-semibold text-gray-900 tracking-tight">Planning</span>
+        </div>
+        <p className="text-sm text-gray-500 text-center mb-6">Kies een wachtwoord om door te gaan.</p>
+        <form onSubmit={submit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1.5">Nieuw wachtwoord</label>
+            <input
+              type="password"
+              required
+              minLength={8}
+              autoFocus
+              value={wachtwoord}
+              onChange={(e) => setWachtwoord(e.target.value)}
+              className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl outline-none focus:border-gray-400 transition-colors"
+              placeholder="Minimaal 8 tekens"
+            />
+          </div>
+          {fout && (
+            <div className="px-3 py-2.5 bg-red-50 border border-red-100 rounded-xl text-xs text-red-600">{fout}</div>
+          )}
+          <button
+            type="submit"
+            disabled={bezig}
+            className="w-full py-2.5 text-sm font-medium bg-gray-900 text-white rounded-xl hover:bg-gray-700 disabled:opacity-50 transition-colors"
+          >
+            {bezig ? 'Opslaan…' : 'Wachtwoord instellen'}
+          </button>
+        </form>
+      </div>
+    </div>
+  )
+}
+
 function AppInner() {
-  const { user, rol, uitloggen } = useAuth()
+  const { user, rol, uitloggen, moetWachtwoordInstellen } = useAuth()
   const { tenant } = useTenant()
   const [activeTab, setActiveTab] = useState('planning')
 
@@ -28,6 +86,9 @@ function AppInner() {
 
   // Sessie wordt opgehaald — niets tonen om flicker te voorkomen
   if (user === undefined) return null
+
+  // Uitnodiging of wachtwoord-reset link aangeklikt
+  if (moetWachtwoordInstellen) return <WachtwoordInstellen />
 
   // Niet ingelogd
   if (user === null) return <Login />
