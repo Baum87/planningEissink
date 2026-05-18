@@ -7,7 +7,6 @@ import App from './App.jsx'
 Sentry.init({
   dsn: import.meta.env.VITE_SENTRY_DSN,
   environment: import.meta.env.MODE,
-  // Stuur geen fouten door in lokale ontwikkeling
   enabled: import.meta.env.PROD,
   integrations: [Sentry.browserTracingIntegration()],
   // Performance monitoring: 10% van sessies bijhouden
