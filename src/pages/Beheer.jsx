@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { fDatumKort } from '../lib/datum'
 import {
   lijstGebruikers,
   uitnodigen,
@@ -9,11 +10,6 @@ import {
 
 const ROLLEN = ['admin', 'planner', 'gebruiker', 'monteur']
 const ROL_LABELS = { admin: 'Admin', planner: 'Planner', gebruiker: 'Gebruiker', monteur: 'Monteur' }
-
-function fDatum(str) {
-  if (!str) return '—'
-  return new Date(str).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' })
-}
 
 export default function Beheer() {
   const { user } = useAuth()
@@ -122,8 +118,8 @@ export default function Beheer() {
                         ))}
                       </select>
                     </td>
-                    <td className="px-4 py-3 text-gray-500">{fDatum(g.created_at)}</td>
-                    <td className="px-4 py-3 text-gray-500">{fDatum(g.last_sign_in_at)}</td>
+                    <td className="px-4 py-3 text-gray-500">{fDatumKort(g.created_at)}</td>
+                    <td className="px-4 py-3 text-gray-500">{fDatumKort(g.last_sign_in_at)}</td>
                     <td className="px-4 py-3 text-right">
                       {!isZijzelf && (
                         <button

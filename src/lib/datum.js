@@ -45,3 +45,9 @@ export function fDatumLang(str, metJaar = false) {
     ...(metJaar ? { year: 'numeric' } : {}),
   })
 }
+
+// Kort formaat: "18 mei 2026" — voor lijsten en tabellen
+export function fDatumKort(str) {
+  if (!str) return '—'
+  return new Date(str).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' })
+}

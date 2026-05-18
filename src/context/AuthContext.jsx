@@ -19,7 +19,7 @@ export function AuthProvider({ children }) {
   function verwerkUser(u) {
     setUser(u ?? null)
     setRol(u?.app_metadata?.rol ?? null)
-    setInitialen(u?.user_metadata?.initialen ?? null)
+    setInitialen(u?.app_metadata?.afkorting ?? null)
   }
 
   useEffect(() => {

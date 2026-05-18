@@ -79,22 +79,35 @@ Deno.serve(async (req) => {
     const { data: invite, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email)
     if (inviteError) return json({ error: inviteError.message }, 400)
 
-    // Zet app_metadata (rol, naam, tenant_id) — invite zet alleen user_metadata
-    const { error: metaError } = await admin.auth.admin.updateUserById(invite.user.id, {
-      app_metadata: { rol, naam, tenant_id: callerTenantId },
+    const userId = invite.user.id
+
+    // Hulpfunctie: verwijder de net aangemaakte gebruiker bij rollback
+    async function rollback() {
+      await admin.auth.admin.deleteUser(userId)
+    }
+
+    // Zet app_metadata (rol, naam, tenant_id, afkorting) — invite zet alleen user_metadata
+    const { error: metaError } = await admin.auth.admin.updateUserById(userId, {
+      app_metadata: { rol, naam, tenant_id: callerTenantId, afkorting: afkorting || null },
     })
-    if (metaError) return json({ error: metaError.message }, 500)
+    if (metaError) {
+      await rollback()
+      return json({ error: metaError.message }, 500)
+    }
 
     // Maak profiel aan
     const { error: profielError } = await admin.from('profielen').insert({
-      id: invite.user.id,
+      id: userId,
       tenant_id: callerTenantId,
       weergave_naam: naam,
       afkorting: afkorting || null,
     })
-    if (profielError) return json({ error: profielError.message }, 500)
+    if (profielError) {
+      await rollback()
+      return json({ error: profielError.message }, 500)
+    }
 
-    return json({ ok: true, user_id: invite.user.id })
+    return json({ ok: true, user_id: userId })
   }
 
   // ── rol_wijzigen ───────────────────────────────────────────────────────
