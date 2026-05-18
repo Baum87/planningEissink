@@ -17,8 +17,8 @@ Bijgehouden naast CONTEXT.md — technische context staat daar.
 - [x] **Supabase max_rows ophogen naar 5000**
       planning_app → Project Settings → API → Max Rows ✓ uitgevoerd
 
-- [ ] **Backup strategie**
-      Zie BACKUP_STRATEGIE.md voor stappen en checklist.
+- [x] **Backup strategie gedocumenteerd**
+      Zie BACKUP_STRATEGIE.md. Voorlopig: handmatige CSV-export vóór elke migratie.
 
 - [x] **Foutlogging via Sentry (free tier)**
       @sentry/react geïnstalleerd, DSN in .env.local en Vercel ingesteld.
@@ -132,6 +132,12 @@ Bijgehouden naast CONTEXT.md — technische context staat daar.
 
 - [ ] **Supabase Pro upgrade**
       Bij eerste betalende klant: dagelijkse backups, geen pauzering, PITR.
+
+- [ ] **Automatische backup oplossing**
+      Huidige CSV-export is handwerk en foutgevoelig. Opties onderzoeken:
+      - Supabase Pro ($25/maand) — dagelijkse backups + PITR
+      - pg_dump via GitHub Actions (gratis, scheduled nightly backup naar repo of S3)
+      - Supabase CLI op thuispc instellen voor snelle dumps vóór migraties
 
 ---
 
