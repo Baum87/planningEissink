@@ -20,10 +20,8 @@ Bijgehouden naast CONTEXT.md — technische context staat daar.
 - [ ] **Backup strategie**
       Zie BACKUP_STRATEGIE.md voor stappen en checklist.
 
-- [ ] **Foutlogging via Sentry (free tier)**
-      Gebruikers zien nu geen foutmelding als een query mislukt.
-      Sentry free tier instellen zodat fouten zichtbaar zijn zonder dat Roy het hoeft te melden.
-      → In progress: @sentry/react installeren + DSN instellen in .env
+- [x] **Foutlogging via Sentry (free tier)**
+      @sentry/react geïnstalleerd, DSN in .env.local en Vercel ingesteld.
 
 - [x] **Wachtwoord reset flow testen**
       Getest en werkt correct.
