@@ -105,6 +105,27 @@ Bij overschrijding stopt Sentry met opslaan van nieuwe fouten tot de volgende ma
 
 ---
 
+## Resend
+
+**Wat het is:** Transactionele e-maildienst voor uitnodigingen en wachtwoord-resets.
+
+**Wat het doet:**
+- Verstuurt Supabase Auth-mails: uitnodigingen voor nieuwe gebruikers en wachtwoord-reset links
+- Werkt via een API key — geen SMTP-configuratie nodig (native Supabase integratie)
+- Verstuurt vanuit `noreply@byggr.nl`
+
+**Waarom dit:** Native integratie met Supabase (API key invullen, klaar), gratis tier ruim voldoende, eenvoudige DNS-verificatie via Cloudflare.
+
+**Invloed op de app:** Alleen bij uitnodigen en wachtwoord vergeten. App werkt normaal als Resend down is — alleen die twee acties mislukken.
+
+**Kosten:** Gratis (Free tier) — 3.000 e-mails/maand, 100/dag.
+
+**Status:** ⬜ Nog in te stellen — account aanmaken + `byggr.nl` verifiëren + Supabase koppelen.
+
+**Configuratie:** Supabase dashboard → Auth → SMTP Settings → Resend API key invullen.
+
+---
+
 ## React
 
 **Wat het is:** Het JavaScript-framework waarmee de gebruikersinterface is gebouwd.
@@ -151,6 +172,7 @@ Bij overschrijding stopt Sentry met opslaan van nieuwe fouten tot de volgende ma
 | Vercel     | Ja      | Gratis    | Hoog verkeersvolume       |
 | GitHub     | Nee     | Gratis    | Waarschijnlijk nooit      |
 | Sentry     | Nee     | Gratis    | Waarschijnlijk nooit      |
+| Resend     | Deels   | Gratis    | > 3.000 mails/maand       |
 | React      | n.v.t.  | Gratis    | n.v.t.                    |
 | Tailwind   | n.v.t.  | Gratis    | n.v.t.                    |
 | Vite       | n.v.t.  | Gratis    | n.v.t.                    |
