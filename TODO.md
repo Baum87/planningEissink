@@ -7,12 +7,10 @@ Bijgehouden naast CONTEXT.md — technische context staat daar.
 
 ## Nu — direct aanpakken
 
-- [ ] **Eigen SMTP instellen (Resend of Zoho)**
-      Supabase free tier: max 3 e-mails per uur — gedeeld door uitnodigingen,
-      wachtwoord reset en e-mailbevestiging. Blokkeert bij normaal gebruik.
-      Resend (aanbevolen): gratis tot 3.000/maand, eenvoudig te koppelen.
-      Zoho: als je sowieso zakelijke e-mail (@byggr.nl) wilt instellen.
-      → Uitstellen tot na testfase, maar dit is de eerste blocker bij meer gebruikers.
+- [x] **Eigen SMTP instellen (Resend of Zoho)**
+      Resend gekoppeld via smtp.resend.com, verstuurt vanaf noreply@byggr.nl.
+      Zoho ingesteld als zakelijke inbox op hello@byggr.nl.
+      DNS geconfigureerd via Cloudflare (MX, SPF, DKIM, DMARC). ✓ uitgevoerd op 18 mei 2026.
 
 - [x] **Supabase max_rows ophogen naar 5000**
       planning_app → Project Settings → API → Max Rows ✓ uitgevoerd
