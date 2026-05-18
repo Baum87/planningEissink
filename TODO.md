@@ -25,9 +25,8 @@ Bijgehouden naast CONTEXT.md — technische context staat daar.
       Sentry free tier instellen zodat fouten zichtbaar zijn zonder dat Roy het hoeft te melden.
       → In progress: @sentry/react installeren + DSN instellen in .env
 
-- [ ] **Wachtwoord reset flow testen**
-      Supabase heeft dit ingebouwd maar het is nooit getest voor planning_app.
-      Testen via "Vergeten wachtwoord" in de login-pagina.
+- [x] **Wachtwoord reset flow testen**
+      Getest en werkt correct.
 
 ---
 
@@ -46,9 +45,8 @@ Bijgehouden naast CONTEXT.md — technische context staat daar.
       Juridisch verplicht zodra je persoonsgegevens van anderen verwerkt.
       Supabase datacenter-locatie controleren voor AVG-compliance (EU vereist).
 
-- [ ] **Gebruikersbeheer via Edge Function + scherm**
-      Nu via handmatige SQL — niet schaalbaar en foutgevoelig.
-      Volgorde: Edge Function (invite/delete/rol) → admin scherm in de app.
+- [x] **Gebruikersbeheer via Edge Function + scherm**
+      Geïmplementeerd: Edge Function + Beheer.jsx pagina voor admins.
 
 - [ ] **Staging omgeving**
       Aparte Supabase project + Vercel preview branch zodat migraties
@@ -94,10 +92,8 @@ Bijgehouden naast CONTEXT.md — technische context staat daar.
       Bij een fout in laadTenant() wordt de fout nu geswallowed via console.error.
       Gebruiker ziet niets — fout naar UI doorgeven via een error-state.
 
-- [ ] **Bestaande gebruikers: afkorting toevoegen aan app_metadata**
-      Nieuwe gebruikers krijgen afkorting via Edge Function in app_metadata.
-      Bestaande gebruikers (bijv. Remco) missen dit nog — handmatig bijwerken via SQL:
-      `update auth.users set raw_app_meta_data = jsonb_set(raw_app_meta_data, '{afkorting}', '"XX"') where email = '...';`
+- [x] **Bestaande gebruikers: afkorting toevoegen aan app_metadata**
+      Uitgevoerd voor remco@baumeister.nl (RB) en initialen veld opgeruimd.
 
 ---
 
