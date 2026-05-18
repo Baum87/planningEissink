@@ -31,7 +31,7 @@ Bijgehouden naast CONTEXT.md — technische context staat daar.
 - [ ] **Projectleiders aanmaken als gebruiker + data migratie**
       8 projectleiders (MB, GB, TJ, EK, RW, JH, JB, TP) uitnodigen via Beheer tab.
       Daarna migratiescript: projectleider_initialen → projectleider_id (UUID) per persoon.
-      Vereiste: volledige namen + e-mailadressen van alle 8 ophalen bij Roy.
+      Vereiste: volledige namen + e-mailadressen van alle 8 ophalen bij de beheerder.
 
 ---
 
@@ -47,13 +47,13 @@ Bijgehouden naast CONTEXT.md — technische context staat daar.
 - [ ] **Staging omgeving**
       Aparte Supabase project + Vercel preview branch zodat migraties
       en nieuwe features getest worden vóór productie.
-      Nu gaan deploys direct naar de live app van Roy.
+      Nu gaan deploys direct naar de live app van de planner.
 
 - [ ] **Validatie server-side controleren**
       Nagaan welke constraints er in het DB-schema zitten (NOT NULL, CHECK).
       Client-side validatie aanvullen waar server-side ontbreekt.
 
-- [ ] **Gebruikersdocumentatie voor Roy en Martijn**
+- [ ] **Gebruikersdocumentatie voor Planner en Gebruiker**
       Korte handleiding: inplannen, periodes, filters, wat ze kunnen en niet kunnen.
 
 - [ ] **Onboarding documentatie voor nieuwe tenants**
@@ -96,7 +96,7 @@ Bijgehouden naast CONTEXT.md — technische context staat daar.
 ## Later
 
 - [ ] **Drag-and-drop via dnd-kit**
-      Grootste UX-verbetering voor Roy. CSS-structuur planning.jsx al rekening mee houden.
+      Grootste UX-verbetering voor Planner. CSS-structuur planning.jsx al rekening mee houden.
 
 - [ ] **Performance: tvVoorDag optimaliseren**
       Geneste Map monteur_id → datum → [tv] i.p.v. live filter per cel.
