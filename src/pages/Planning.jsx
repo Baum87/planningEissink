@@ -205,7 +205,22 @@ export default function Planning({ onNavigate }) {
     return map
   }, [periodes])
 
-  const skipDagen = useMemo(() => new Set(periodeMap.keys()), [periodeMap])
+  const hardSkipDagen = useMemo(() => {
+    const set = new Set()
+    for (const [date, p] of periodeMap) { if (p.blokkeer !== false) set.add(date) }
+    return set
+  }, [periodeMap])
+
+  const softSkipDagen = useMemo(() => {
+    const set = new Set()
+    for (const [date, p] of periodeMap) { if (p.blokkeer === false) set.add(date) }
+    return set
+  }, [periodeMap])
+
+  const skipDagen = useMemo(
+    () => new Set([...hardSkipDagen, ...softSkipDagen]),
+    [hardSkipDagen, softSkipDagen]
+  )
 
   const periodeData = useMemo(() => {
     if (!modal || modal.type !== 'bewerk') return null
@@ -307,7 +322,7 @@ export default function Planning({ onNavigate }) {
     if (modal.type === 'groep') {
       await Promise.all(
         modal.leden.map((m) =>
-          createToewijzing({ monteur_id: m.id, project_id: projectId, datum_van: van, datum_tot: tot }, skipDagen)
+          createToewijzing({ monteur_id: m.id, project_id: projectId, datum_van: van, datum_tot: tot }, hardSkipDagen)
         )
       )
     } else {
@@ -316,7 +331,7 @@ export default function Planning({ onNavigate }) {
         project_id: projectId,
         datum_van: van,
         datum_tot: tot,
-      }, skipDagen)
+      }, hardSkipDagen)
     }
     setModal(null)
     await laadToewijzingen()
@@ -514,12 +529,14 @@ export default function Planning({ onNavigate }) {
               const str = naarStr(d)
               const isVandaag = str === vandaag
               const isWeekend = d.getDay() === 0 || d.getDay() === 6
-              const isPeriode = !isWeekend && periodeMap.has(str)
+              const periode = !isWeekend ? periodeMap.get(str) : null
+              const isPeriode = !!periode
+              const isHardPeriode = isPeriode && periode.blokkeer !== false
               return (
                 <div
                   key={str}
                   className={`border-l border-gray-100 shrink-0 flex flex-col items-center justify-center gap-0.5 ${
-                    isWeekend ? 'bg-gray-100' : isPeriode ? 'bg-amber-100' : 'bg-gray-50'
+                    isWeekend ? 'bg-gray-100' : isHardPeriode ? 'bg-amber-100' : isPeriode ? 'bg-yellow-50' : 'bg-gray-50'
                   }`}
                   style={{ flex: 1, minWidth: dagBreedte }}
                 >
@@ -584,7 +601,9 @@ export default function Planning({ onNavigate }) {
                     {zDagen.map((d) => {
                       const dagStr = naarStr(d)
                       const isWeekend = d.getDay() === 0 || d.getDay() === 6
-                      const isPeriode = !isWeekend && periodeMap.has(dagStr)
+                      const periode = !isWeekend ? periodeMap.get(dagStr) : null
+                      const isPeriode = !!periode
+                      const isHardPeriode = isPeriode && periode.blokkeer !== false
                       return (
                         <div
                           key={dagStr}
@@ -592,7 +611,7 @@ export default function Planning({ onNavigate }) {
                           className={`border-l border-gray-100 flex items-center justify-center transition-colors ${
                             kanInplannen ? 'cursor-pointer group/cel' : ''
                           } ${
-                            isWeekend ? 'bg-gray-100/50 hover:bg-gray-100' : isPeriode ? 'bg-amber-50' : kanInplannen ? 'hover:bg-gray-100/60' : ''
+                            isWeekend ? 'bg-gray-100/50 hover:bg-gray-100' : isHardPeriode ? 'bg-amber-50' : isPeriode ? 'bg-yellow-50/60' : kanInplannen ? 'hover:bg-gray-100/60' : ''
                           }`}
                           style={{ flex: 1, minWidth: dagBreedte, minHeight: 40 }}
                         >
@@ -650,7 +669,9 @@ export default function Planning({ onNavigate }) {
                     const dagStr = naarStr(d)
                     const isVandaag = dagStr === vandaag
                     const isWeekend = d.getDay() === 0 || d.getDay() === 6
-                    const isPeriode = !isWeekend && periodeMap.has(dagStr)
+                    const periode = !isWeekend ? periodeMap.get(dagStr) : null
+                    const isPeriode = !!periode
+                    const isHardPeriode = isPeriode && periode.blokkeer !== false
                     const tvList = tvVoorDag(monteur.id, dagStr)
 
                     if (tvList.length > 0) {
@@ -727,8 +748,10 @@ export default function Planning({ onNavigate }) {
                             ? 'bg-blue-50/30'
                             : isWeekend
                             ? 'bg-gray-50'
-                            : isPeriode
+                            : isHardPeriode
                             ? 'bg-amber-50'
+                            : isPeriode
+                            ? 'bg-yellow-50/60'
                             : kanInplannen ? 'hover:bg-gray-50' : ''
                         }`}
                         style={{ flex: 1, minWidth: dagBreedte, height: ROW_H }}
