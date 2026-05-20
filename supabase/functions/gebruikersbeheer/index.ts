@@ -72,11 +72,13 @@ Deno.serve(async (req) => {
 
   // ── uitnodigen ─────────────────────────────────────────────────────────
   if (actie === 'uitnodigen') {
-    const { email, naam, afkorting, rol } = body
+    const { email, naam, afkorting, rol, redirectTo } = body
     if (!email || !naam || !rol) return json({ error: 'email, naam en rol zijn verplicht' }, 400)
     if (!GELDIGE_ROLLEN.includes(rol)) return json({ error: 'Ongeldig rol' }, 400)
 
-    const { data: invite, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email)
+    const { data: invite, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
+      redirectTo: redirectTo || undefined,
+    })
     if (inviteError) return json({ error: inviteError.message }, 400)
 
     const userId = invite.user.id
