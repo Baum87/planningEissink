@@ -7,16 +7,72 @@ import {
   rolWijzigen,
   verwijderen,
 } from '../services/gebruikersbeheerService'
+import { getPeriodes, createPeriode, updatePeriode, deletePeriode } from '../services/periodesService'
 
 const ROLLEN = ['admin', 'planner', 'gebruiker', 'monteur']
 const ROL_LABELS = { admin: 'Admin', planner: 'Planner', gebruiker: 'Gebruiker', monteur: 'Monteur' }
 
+const TABS = [
+  { id: 'gebruikers', label: 'Gebruikers' },
+  { id: 'periodes',   label: 'Periodes' },
+]
+
+function TrashIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="3 6 5 6 21 6" />
+      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+      <path d="M10 11v6" /><path d="M14 11v6" />
+      <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+    </svg>
+  )
+}
+
+function EditIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+    </svg>
+  )
+}
+
 export default function Beheer() {
+  const [actieveTab, setActieveTab] = useState('gebruikers')
+
+  return (
+    <div className="flex flex-col min-h-0 flex-1">
+      <div className="flex gap-1 mb-6 border-b border-gray-200">
+        {TABS.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActieveTab(tab.id)}
+            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
+              actieveTab === tab.id
+                ? 'border-gray-900 text-gray-900'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {actieveTab === 'gebruikers' && <GebruikersTab />}
+      {actieveTab === 'periodes'   && <PeriodesTab />}
+    </div>
+  )
+}
+
+// ─── Gebruikers tab ───────────────────────────────────────────────────────────
+
+function GebruikersTab() {
   const { user } = useAuth()
   const [gebruikers, setGebruikers] = useState([])
   const [laden, setLaden] = useState(true)
   const [fout, setFout] = useState(null)
   const [toonModal, setToonModal] = useState(false)
+  const [verwijderBevestig, setVerwijderBevestig] = useState(null)
 
   async function laad() {
     setLaden(true)
@@ -43,17 +99,17 @@ export default function Beheer() {
   }
 
   async function handleVerwijder(g) {
-    if (!confirm(`${g.naam || g.email} verwijderen? Dit kan niet ongedaan worden.`)) return
     try {
       await verwijderen(g.id)
       setGebruikers((prev) => prev.filter((x) => x.id !== g.id))
+      setVerwijderBevestig(null)
     } catch (e) {
       alert(e.message)
     }
   }
 
   return (
-    <div className="flex flex-col min-h-0 flex-1">
+    <>
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-xl font-semibold text-gray-900">Gebruikersbeheer</h1>
@@ -70,9 +126,7 @@ export default function Beheer() {
       </div>
 
       {fout && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-          {fout}
-        </div>
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{fout}</div>
       )}
 
       <div className="border border-gray-200 rounded-xl overflow-auto flex-1 min-h-0">
@@ -89,18 +143,14 @@ export default function Beheer() {
           </thead>
           <tbody>
             {laden ? (
-              <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-gray-400">Laden…</td>
-              </tr>
+              <tr><td colSpan={6} className="px-4 py-10 text-center text-gray-400">Laden…</td></tr>
             ) : gebruikers.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-gray-400">Geen gebruikers gevonden</td>
-              </tr>
+              <tr><td colSpan={6} className="px-4 py-10 text-center text-gray-400">Geen gebruikers gevonden</td></tr>
             ) : (
               gebruikers.map((g) => {
                 const isZijzelf = g.id === user?.id
                 return (
-                  <tr key={g.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
+                  <tr key={g.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50 group">
                     <td className="px-4 py-3 font-medium text-gray-900">
                       {g.naam || '—'}
                       {isZijzelf && <span className="ml-2 text-xs text-gray-400">(jij)</span>}
@@ -122,12 +172,21 @@ export default function Beheer() {
                     <td className="px-4 py-3 text-gray-500">{fDatumKort(g.last_sign_in_at)}</td>
                     <td className="px-4 py-3 text-right">
                       {!isZijzelf && (
-                        <button
-                          onClick={() => handleVerwijder(g)}
-                          className="text-xs text-red-500 hover:text-red-700 transition-colors"
-                        >
-                          Verwijderen
-                        </button>
+                        verwijderBevestig === g.id ? (
+                          <span className="inline-flex items-center gap-2">
+                            <span className="text-xs text-gray-500">Zeker?</span>
+                            <button onClick={() => handleVerwijder(g)} className="text-xs font-medium text-red-600 hover:text-red-700 transition-colors">Ja</button>
+                            <button onClick={() => setVerwijderBevestig(null)} className="text-xs text-gray-400 hover:text-gray-600 transition-colors">Nee</button>
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => setVerwijderBevestig(g.id)}
+                            title="Verwijderen"
+                            className="text-gray-300 hover:text-red-500 transition-colors"
+                          >
+                            <TrashIcon />
+                          </button>
+                        )
                       )}
                     </td>
                   </tr>
@@ -144,9 +203,140 @@ export default function Beheer() {
           onSuccess={() => { setToonModal(false); laad() }}
         />
       )}
-    </div>
+    </>
   )
 }
+
+// ─── Periodes tab ─────────────────────────────────────────────────────────────
+
+function PeriodesTab() {
+  const [periodes, setPeriodes] = useState([])
+  const [laden, setLaden] = useState(true)
+  const [fout, setFout] = useState(null)
+  const [modal, setModal] = useState(null) // null | periode-object (bewerk) | 'nieuw'
+  const [verwijderBevestig, setVerwijderBevestig] = useState(null)
+
+  async function laad() {
+    setLaden(true)
+    setFout(null)
+    try {
+      setPeriodes(await getPeriodes())
+    } catch (e) {
+      setFout(e.message)
+    } finally {
+      setLaden(false)
+    }
+  }
+
+  useEffect(() => { laad() }, [])
+
+  async function handleVerwijder(p) {
+    try {
+      await deletePeriode(p.id)
+      setPeriodes((prev) => prev.filter((x) => x.id !== p.id))
+      setVerwijderBevestig(null)
+    } catch (e) {
+      alert(e.message)
+    }
+  }
+
+  return (
+    <>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-xl font-semibold text-gray-900">Periodes</h1>
+          <p className="text-sm text-gray-500 mt-0.5">Feestdagen en vakantieperiodes</p>
+        </div>
+        <button
+          onClick={() => setModal('nieuw')}
+          className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition-colors"
+        >
+          Toevoegen
+        </button>
+      </div>
+
+      {fout && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{fout}</div>
+      )}
+
+      <div className="border border-gray-200 rounded-xl overflow-auto flex-1 min-h-0">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-gray-200 bg-gray-50">
+              <th className="text-left px-4 py-3 font-medium text-gray-600">Naam</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600">Van</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600">Tot</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600">Type</th>
+              <th className="px-4 py-3" />
+            </tr>
+          </thead>
+          <tbody>
+            {laden ? (
+              <tr><td colSpan={5} className="px-4 py-10 text-center text-gray-400">Laden…</td></tr>
+            ) : periodes.length === 0 ? (
+              <tr><td colSpan={5} className="px-4 py-10 text-center text-gray-400">Geen periodes gevonden</td></tr>
+            ) : (
+              periodes.map((p) => (
+                <tr key={p.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50 group">
+                  <td className="px-4 py-3 font-medium text-gray-900">{p.naam}</td>
+                  <td className="px-4 py-3 text-gray-600">{fDatumKort(p.datum_van)}</td>
+                  <td className="px-4 py-3 text-gray-600">{fDatumKort(p.datum_tot)}</td>
+                  <td className="px-4 py-3">
+                    {p.blokkeer !== false ? (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-amber-100 text-amber-800">
+                        Feestdag
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-yellow-50 text-yellow-700 border border-yellow-200">
+                        Bouwvak / vakantie
+                      </span>
+                    )}
+                  </td>
+                  <td className="sticky right-0 px-4 py-3 text-right bg-white group-hover:bg-gray-50 transition-colors">
+                    {verwijderBevestig === p.id ? (
+                      <span className="inline-flex items-center gap-2">
+                        <span className="text-xs text-gray-500">Zeker?</span>
+                        <button onClick={() => handleVerwijder(p)} className="text-xs font-medium text-red-600 hover:text-red-700 transition-colors">Ja</button>
+                        <button onClick={() => setVerwijderBevestig(null)} className="text-xs text-gray-400 hover:text-gray-600 transition-colors">Nee</button>
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-3">
+                        <button
+                          onClick={() => setModal(p)}
+                          title="Bewerken"
+                          className="text-gray-300 hover:text-gray-700 transition-colors"
+                        >
+                          <EditIcon />
+                        </button>
+                        <button
+                          onClick={() => setVerwijderBevestig(p.id)}
+                          title="Verwijderen"
+                          className="text-gray-300 hover:text-red-500 transition-colors"
+                        >
+                          <TrashIcon />
+                        </button>
+                      </span>
+                    )}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {modal && (
+        <PeriodeModal
+          periode={modal === 'nieuw' ? null : modal}
+          onClose={() => setModal(null)}
+          onSuccess={() => { setModal(null); laad() }}
+        />
+      )}
+    </>
+  )
+}
+
+// ─── Modals ───────────────────────────────────────────────────────────────────
 
 function UitnodigModal({ onClose, onSuccess }) {
   const [email, setEmail] = useState('')
@@ -176,68 +366,117 @@ function UitnodigModal({ onClose, onSuccess }) {
         <form onSubmit={submit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+            <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
-              placeholder="naam@bedrijf.nl"
-            />
+              placeholder="naam@bedrijf.nl" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Volledige naam</label>
-            <input
-              type="text"
-              required
-              value={naam}
-              onChange={(e) => setNaam(e.target.value)}
+            <input type="text" required value={naam} onChange={(e) => setNaam(e.target.value)}
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
-              placeholder="Jan Jansen"
-            />
+              placeholder="Jan Jansen" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Afkorting{' '}
-              <span className="text-gray-400 font-normal">(optioneel, max 4 tekens)</span>
+              Afkorting <span className="text-gray-400 font-normal">(optioneel, max 4 tekens)</span>
             </label>
-            <input
-              type="text"
-              value={afkorting}
-              onChange={(e) => setAfkorting(e.target.value.slice(0, 4).toUpperCase())}
+            <input type="text" value={afkorting} onChange={(e) => setAfkorting(e.target.value.slice(0, 4).toUpperCase())}
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
-              placeholder="JJ"
-            />
+              placeholder="JJ" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Rol</label>
-            <select
-              value={rol}
-              onChange={(e) => setRol(e.target.value)}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
-            >
-              {ROLLEN.map((r) => (
-                <option key={r} value={r}>{ROL_LABELS[r]}</option>
-              ))}
+            <select value={rol} onChange={(e) => setRol(e.target.value)}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900">
+              {ROLLEN.map((r) => <option key={r} value={r}>{ROL_LABELS[r]}</option>)}
             </select>
           </div>
-
           {fout && <p className="text-sm text-red-600">{fout}</p>}
-
           <div className="flex gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
-            >
+            <button type="button" onClick={onClose}
+              className="flex-1 px-4 py-2 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">
               Annuleren
             </button>
-            <button
-              type="submit"
-              disabled={bezig}
-              className="flex-1 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-700 disabled:opacity-50 transition-colors"
-            >
+            <button type="submit" disabled={bezig}
+              className="flex-1 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-700 disabled:opacity-50 transition-colors">
               {bezig ? 'Uitnodigen…' : 'Uitnodiging sturen'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+function PeriodeModal({ periode, onClose, onSuccess }) {
+  const isBewerk = !!periode
+  const [naam, setNaam] = useState(periode?.naam ?? '')
+  const [van, setVan] = useState(periode?.datum_van ?? '')
+  const [tot, setTot] = useState(periode?.datum_tot ?? '')
+  const [blokkeer, setBlokkeer] = useState(periode ? periode.blokkeer !== false : true)
+  const [bezig, setBezig] = useState(false)
+  const [fout, setFout] = useState(null)
+
+  async function submit(e) {
+    e.preventDefault()
+    setBezig(true)
+    setFout(null)
+    try {
+      if (isBewerk) {
+        await updatePeriode(periode.id, { naam: naam.trim(), datum_van: van, datum_tot: tot, blokkeer })
+      } else {
+        await createPeriode({ naam: naam.trim(), datum_van: van, datum_tot: tot, blokkeer })
+      }
+      onSuccess()
+    } catch (e) {
+      setFout(e.message)
+      setBezig(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-5">
+          {isBewerk ? 'Periode bewerken' : 'Periode toevoegen'}
+        </h2>
+        <form onSubmit={submit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Naam</label>
+            <input type="text" required value={naam} onChange={(e) => setNaam(e.target.value)}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+              placeholder="Kerst, Bouwvak 2025…" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Van</label>
+              <input type="date" required value={van}
+                onChange={(e) => { setVan(e.target.value); if (e.target.value > tot) setTot(e.target.value) }}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Tot</label>
+              <input type="date" required value={tot} min={van} onChange={(e) => setTot(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+            <select value={blokkeer ? 'feestdag' : 'bouwvak'} onChange={(e) => setBlokkeer(e.target.value === 'feestdag')}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900">
+              <option value="feestdag">Feestdag — altijd geblokkeerd</option>
+              <option value="bouwvak">Bouwvak / vakantie — wel inplanbaar</option>
+            </select>
+          </div>
+          {fout && <p className="text-sm text-red-600">{fout}</p>}
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={onClose}
+              className="flex-1 px-4 py-2 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">
+              Annuleren
+            </button>
+            <button type="submit" disabled={bezig}
+              className="flex-1 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-700 disabled:opacity-50 transition-colors">
+              {bezig ? 'Opslaan…' : isBewerk ? 'Opslaan' : 'Toevoegen'}
             </button>
           </div>
         </form>
