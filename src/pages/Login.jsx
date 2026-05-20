@@ -28,7 +28,7 @@ export default function Login() {
     setBezig(true)
     setFout(null)
     await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/`,
+      redirectTo: `${window.location.origin}/?type=recovery`,
     })
     setResetVerzonden(true)
     setBezig(false)

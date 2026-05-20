@@ -9,11 +9,14 @@ export function AuthProvider({ children }) {
   const [rol, setRol] = useState(null)
   const [initialen, setInitialen] = useState(null)
 
-  // Detecteer uitnodiging of wachtwoord-reset link vóór Supabase de hash verwerkt
+  // Detecteer uitnodiging of wachtwoord-reset link — implicit flow via hash, PKCE via query string
   const [moetWachtwoordInstellen, setMoetWachtwoordInstellen] = useState(() => {
-    const params = new URLSearchParams(window.location.hash.slice(1))
-    const type = params.get('type')
-    return type === 'invite' || type === 'recovery'
+    const hashParams = new URLSearchParams(window.location.hash.slice(1))
+    const hashType = hashParams.get('type')
+    if (hashType === 'invite' || hashType === 'recovery') return true
+    const queryParams = new URLSearchParams(window.location.search)
+    const queryType = queryParams.get('type')
+    return queryType === 'invite' || queryType === 'recovery'
   })
 
   function verwerkUser(u) {
