@@ -87,6 +87,9 @@ function AppInner() {
   // Sessie wordt opgehaald — niets tonen om flicker te voorkomen
   if (user === undefined) return null
 
+  // Recovery/invite: wacht tot PKCE code-exchange klaar is voor het formulier toont
+  if (moetWachtwoordInstellen && user === null) return null
+
   // Uitnodiging of wachtwoord-reset link aangeklikt
   if (moetWachtwoordInstellen) return <WachtwoordInstellen />
 
