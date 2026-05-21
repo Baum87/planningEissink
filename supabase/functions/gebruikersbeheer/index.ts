@@ -83,10 +83,7 @@ Deno.serve(async (req) => {
 
     const userId = invite.user.id
 
-    // Hulpfunctie: verwijder de net aangemaakte gebruiker bij rollback
-    async function rollback() {
-      await admin.auth.admin.deleteUser(userId)
-    }
+    const rollback = async () => { await admin.auth.admin.deleteUser(userId) }
 
     // Zet app_metadata (rol, naam, tenant_id, afkorting) — invite zet alleen user_metadata
     const { error: metaError } = await admin.auth.admin.updateUserById(userId, {
@@ -106,6 +103,38 @@ Deno.serve(async (req) => {
     })
     if (profielError) {
       await rollback()
+      return json({ error: profielError.message }, 500)
+    }
+
+    return json({ ok: true, user_id: userId })
+  }
+
+  // ── aanmaken (geen mail, direct wachtwoord) ────────────────────────────────
+  if (actie === 'aanmaken') {
+    const { email, naam, afkorting, rol, wachtwoord } = body
+    if (!email || !naam || !rol || !wachtwoord) return json({ error: 'email, naam, rol en wachtwoord zijn verplicht' }, 400)
+    if (!GELDIGE_ROLLEN.includes(rol)) return json({ error: 'Ongeldig rol' }, 400)
+
+    const { data: newUser, error: createError } = await admin.auth.admin.createUser({
+      email,
+      password: wachtwoord,
+      email_confirm: true,
+      app_metadata: { rol, naam, tenant_id: callerTenantId, afkorting: afkorting || null },
+    })
+    if (createError) return json({ error: createError.message }, 400)
+
+    const userId = newUser.user.id
+
+    const rollbackAanmaken = async () => { await admin.auth.admin.deleteUser(userId) }
+
+    const { error: profielError } = await admin.from('profielen').insert({
+      id: userId,
+      tenant_id: callerTenantId,
+      weergave_naam: naam,
+      afkorting: afkorting || null,
+    })
+    if (profielError) {
+      await rollbackAanmaken()
       return json({ error: profielError.message }, 500)
     }
 

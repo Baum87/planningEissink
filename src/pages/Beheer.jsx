@@ -4,6 +4,7 @@ import { fDatumKort } from '../lib/datum'
 import {
   lijstGebruikers,
   uitnodigen,
+  aanmaken,
   rolWijzigen,
   verwijderen,
 } from '../services/gebruikersbeheerService'
@@ -71,7 +72,7 @@ function GebruikersTab() {
   const [gebruikers, setGebruikers] = useState([])
   const [laden, setLaden] = useState(true)
   const [fout, setFout] = useState(null)
-  const [toonModal, setToonModal] = useState(false)
+  const [toonModal, setToonModal] = useState(null) // null | 'uitnodigen' | 'aanmaken'
   const [verwijderBevestig, setVerwijderBevestig] = useState(null)
 
   async function laad() {
@@ -117,12 +118,20 @@ function GebruikersTab() {
             {laden ? 'Laden…' : `${gebruikers.length} gebruiker${gebruikers.length !== 1 ? 's' : ''}`}
           </p>
         </div>
-        <button
-          onClick={() => setToonModal(true)}
-          className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition-colors"
-        >
-          Uitnodigen
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setToonModal('aanmaken')}
+            className="px-4 py-2 bg-white border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            Aanmaken
+          </button>
+          <button
+            onClick={() => setToonModal('uitnodigen')}
+            className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition-colors"
+          >
+            Uitnodigen
+          </button>
+        </div>
       </div>
 
       {fout && (
@@ -197,10 +206,16 @@ function GebruikersTab() {
         </table>
       </div>
 
-      {toonModal && (
+      {toonModal === 'uitnodigen' && (
         <UitnodigModal
-          onClose={() => setToonModal(false)}
-          onSuccess={() => { setToonModal(false); laad() }}
+          onClose={() => setToonModal(null)}
+          onSuccess={() => { setToonModal(null); laad() }}
+        />
+      )}
+      {toonModal === 'aanmaken' && (
+        <AanmakenModal
+          onClose={() => setToonModal(null)}
+          onSuccess={() => { setToonModal(null); laad() }}
         />
       )}
     </>
@@ -400,6 +415,84 @@ function UitnodigModal({ onClose, onSuccess }) {
             <button type="submit" disabled={bezig}
               className="flex-1 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-700 disabled:opacity-50 transition-colors">
               {bezig ? 'Uitnodigen…' : 'Uitnodiging sturen'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+function AanmakenModal({ onClose, onSuccess }) {
+  const [email, setEmail] = useState('')
+  const [naam, setNaam] = useState('')
+  const [afkorting, setAfkorting] = useState('')
+  const [rol, setRol] = useState('gebruiker')
+  const [wachtwoord, setWachtwoord] = useState('')
+  const [bezig, setBezig] = useState(false)
+  const [fout, setFout] = useState(null)
+
+  async function submit(e) {
+    e.preventDefault()
+    setBezig(true)
+    setFout(null)
+    try {
+      await aanmaken(email.trim(), naam.trim(), afkorting.trim() || null, rol, wachtwoord)
+      onSuccess()
+    } catch (e) {
+      setFout(e.message)
+      setBezig(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-1">Gebruiker aanmaken</h2>
+        <p className="text-sm text-gray-400 mb-5">Geen e-mail verstuurd — deel de inloggegevens zelf.</p>
+        <form onSubmit={submit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
+            <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+              placeholder="naam@bedrijf.nl" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Volledige naam</label>
+            <input type="text" required value={naam} onChange={(e) => setNaam(e.target.value)}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+              placeholder="Jan Jansen" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Afkorting <span className="text-gray-400 font-normal">(optioneel, max 4 tekens)</span>
+            </label>
+            <input type="text" value={afkorting} onChange={(e) => setAfkorting(e.target.value.slice(0, 4).toUpperCase())}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+              placeholder="JJ" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Rol</label>
+            <select value={rol} onChange={(e) => setRol(e.target.value)}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900">
+              {ROLLEN.map((r) => <option key={r} value={r}>{ROL_LABELS[r]}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Wachtwoord</label>
+            <input type="text" required minLength={8} value={wachtwoord} onChange={(e) => setWachtwoord(e.target.value)}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+              placeholder="Minimaal 8 tekens" />
+          </div>
+          {fout && <p className="text-sm text-red-600">{fout}</p>}
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={onClose}
+              className="flex-1 px-4 py-2 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">
+              Annuleren
+            </button>
+            <button type="submit" disabled={bezig}
+              className="flex-1 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-700 disabled:opacity-50 transition-colors">
+              {bezig ? 'Aanmaken…' : 'Aanmaken'}
             </button>
           </div>
         </form>

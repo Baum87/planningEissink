@@ -20,5 +20,7 @@ async function roepAan(actie, body = {}) {
 export const lijstGebruikers = () => roepAan('lijst')
 export const uitnodigen = (email, naam, afkorting, rol) =>
   roepAan('uitnodigen', { email, naam, afkorting, rol, redirectTo: `${window.location.origin}/?type=invite` })
+export const aanmaken = (email, naam, afkorting, rol, wachtwoord) =>
+  roepAan('aanmaken', { email, naam, afkorting, rol, wachtwoord })
 export const rolWijzigen = (user_id, rol) => roepAan('rol_wijzigen', { user_id, rol })
 export const verwijderen = (user_id) => roepAan('verwijderen', { user_id })
