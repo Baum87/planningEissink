@@ -138,7 +138,7 @@ export default function Monteurs() {
         {!loading && groepen.length === 0 ? (
           <p className="text-sm text-gray-400">Nog geen groepen aangemaakt.</p>
         ) : (
-          <div className="flex flex-wrap gap-2">
+          <div className="grid grid-cols-4 gap-2 max-h-52 overflow-y-auto">
             {groepen.map((g) => (
               <GroepKaart
                 key={g.id}
@@ -208,7 +208,7 @@ export default function Monteurs() {
                   <th
                     key={k.veld}
                     onClick={() => toggleSort(k.veld)}
-                    className="px-4 py-2.5 text-left font-medium text-gray-500 cursor-pointer select-none hover:text-gray-900 transition-colors whitespace-nowrap"
+                    className="sticky top-0 bg-gray-50 px-4 py-2.5 text-left font-medium text-gray-500 cursor-pointer select-none hover:text-gray-900 transition-colors whitespace-nowrap"
                   >
                     <span className="inline-flex items-center gap-1">
                       {veldLabel('monteurs', k.config, k.label)}
@@ -220,7 +220,7 @@ export default function Monteurs() {
                     </span>
                   </th>
                 ))}
-                {kanBewerken && <th className="w-20 px-4 py-2.5" />}
+                {kanBewerken && <th className="sticky top-0 bg-gray-50 w-20 px-4 py-2.5" />}
               </tr>
             </thead>
             <tbody>

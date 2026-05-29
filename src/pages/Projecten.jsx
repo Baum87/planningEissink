@@ -278,13 +278,13 @@ export default function Projecten() {
           <table className="w-full min-w-[700px] text-sm">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50">
-                <th className="w-8 pl-4 py-2.5" />
+                <th className="sticky top-0 bg-gray-50 w-8 pl-4 py-2.5" />
                 {zichtbareKolommen.map((k) => (
                   <th
                     key={k.veld}
                     onClick={() => toggleSort(k.veld)}
                     style={k.breedte ? { width: k.breedte } : undefined}
-                    className={`px-4 py-2.5 font-medium text-gray-500 cursor-pointer select-none hover:text-gray-900 transition-colors whitespace-nowrap ${
+                    className={`sticky top-0 bg-gray-50 px-4 py-2.5 font-medium text-gray-500 cursor-pointer select-none hover:text-gray-900 transition-colors whitespace-nowrap ${
                       k.rechts ? 'text-right' : 'text-left'
                     }`}
                   >
@@ -298,7 +298,7 @@ export default function Projecten() {
                     </span>
                   </th>
                 ))}
-                <th className="sticky right-0 w-20 px-4 py-2.5 bg-gray-50" />
+                <th className="sticky top-0 right-0 w-20 px-4 py-2.5 bg-gray-50" />
               </tr>
             </thead>
             <tbody>
