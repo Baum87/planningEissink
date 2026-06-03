@@ -1039,7 +1039,7 @@ function InplanModal({ modal, projecten, kanInplannen, onInplannen, onVerwijder,
 
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/25" onClick={onClose}>
-        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        <div className="bg-white w-full h-full overflow-y-auto sm:h-auto sm:rounded-2xl sm:shadow-2xl sm:max-w-sm sm:mx-4 sm:overflow-hidden" onClick={(e) => e.stopPropagation()}>
 
           {/* Header */}
           <div className="flex items-center gap-3 p-5 pb-4 border-b border-gray-100">
@@ -1128,13 +1128,13 @@ function InplanModal({ modal, projecten, kanInplannen, onInplannen, onVerwijder,
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/25" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 overflow-y-auto max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-white w-full h-full overflow-y-auto sm:h-auto sm:rounded-2xl sm:shadow-2xl sm:max-w-sm sm:mx-4 sm:max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="flex items-center gap-3 p-5 pb-4">
           <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold shrink-0" style={{ backgroundColor: avgBg, color: avgFg }}>
             {isGroep ? modal.groep.naam.slice(0, 2).toUpperCase() : initialen(monteurNaam(modal.monteur))}
           </div>
-          <div>
+          <div className="flex-1 min-w-0">
             {isGroep ? (
               <>
                 <div className="text-sm font-semibold text-gray-900">Groep: {modal.groep.naam}</div>
@@ -1147,6 +1147,7 @@ function InplanModal({ modal, projecten, kanInplannen, onInplannen, onVerwijder,
               </>
             )}
           </div>
+          <button onClick={onClose} className="text-gray-300 hover:text-gray-600 transition-colors shrink-0 text-base leading-none ml-2">✕</button>
         </div>
 
         <form onSubmit={handleInplannen} className="px-5 pb-5 space-y-3">

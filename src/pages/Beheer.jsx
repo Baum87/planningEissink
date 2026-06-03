@@ -6,6 +6,7 @@ import {
   uitnodigen,
   aanmaken,
   rolWijzigen,
+  updateGebruiker,
   verwijderen,
 } from '../services/gebruikersbeheerService'
 import { getPeriodes, createPeriode, updatePeriode, deletePeriode } from '../services/periodesService'
@@ -74,6 +75,7 @@ function GebruikersTab() {
   const [fout, setFout] = useState(null)
   const [toonModal, setToonModal] = useState(null) // null | 'uitnodigen' | 'aanmaken'
   const [verwijderBevestig, setVerwijderBevestig] = useState(null)
+  const [bewerkenGebruiker, setBewerkenGebruiker] = useState(null)
 
   async function laad() {
     setLaden(true)
@@ -91,12 +93,8 @@ function GebruikersTab() {
   useEffect(() => { laad() }, [])
 
   async function handleRolWijzig(user_id, rol) {
-    try {
-      await rolWijzigen(user_id, rol)
-      setGebruikers((prev) => prev.map((g) => g.id === user_id ? { ...g, rol } : g))
-    } catch (e) {
-      alert(e.message)
-    }
+    await rolWijzigen(user_id, rol)
+    setGebruikers((prev) => prev.map((g) => g.id === user_id ? { ...g, rol } : g))
   }
 
   async function handleVerwijder(g) {
@@ -159,23 +157,20 @@ function GebruikersTab() {
               gebruikers.map((g) => {
                 const isZijzelf = g.id === user?.id
                 return (
-                  <tr key={g.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50 group">
+                  <tr
+                    key={g.id}
+                    onClick={() => verwijderBevestig !== g.id && setBewerkenGebruiker(g)}
+                    className="border-b border-gray-100 last:border-0 hover:bg-gray-50 group cursor-pointer"
+                  >
                     <td className="px-4 py-3 font-medium text-gray-900">
                       {g.naam || '—'}
                       {isZijzelf && <span className="ml-2 text-xs text-gray-400">(jij)</span>}
                     </td>
                     <td className="px-4 py-3 text-gray-600">{g.email}</td>
                     <td className="px-4 py-3">
-                      <select
-                        value={g.rol}
-                        disabled={isZijzelf}
-                        onChange={(e) => handleRolWijzig(g.id, e.target.value)}
-                        className="text-sm border border-gray-200 rounded-md px-2 py-1 bg-white disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {ROLLEN.map((r) => (
-                          <option key={r} value={r}>{ROL_LABELS[r]}</option>
-                        ))}
-                      </select>
+                      <span className="inline-flex px-2 py-0.5 rounded-md text-xs font-medium bg-gray-100 text-gray-700">
+                        {ROL_LABELS[g.rol] ?? g.rol}
+                      </span>
                     </td>
                     <td className="px-4 py-3 text-gray-500">{fDatumKort(g.created_at)}</td>
                     <td className="px-4 py-3 text-gray-500">{fDatumKort(g.last_sign_in_at)}</td>
@@ -184,12 +179,12 @@ function GebruikersTab() {
                         verwijderBevestig === g.id ? (
                           <span className="inline-flex items-center gap-2">
                             <span className="text-xs text-gray-500">Zeker?</span>
-                            <button onClick={() => handleVerwijder(g)} className="text-xs font-medium text-red-600 hover:text-red-700 transition-colors">Ja</button>
-                            <button onClick={() => setVerwijderBevestig(null)} className="text-xs text-gray-400 hover:text-gray-600 transition-colors">Nee</button>
+                            <button onClick={(e) => { e.stopPropagation(); handleVerwijder(g) }} className="text-xs font-medium text-red-600 hover:text-red-700 transition-colors">Ja</button>
+                            <button onClick={(e) => { e.stopPropagation(); setVerwijderBevestig(null) }} className="text-xs text-gray-400 hover:text-gray-600 transition-colors">Nee</button>
                           </span>
                         ) : (
                           <button
-                            onClick={() => setVerwijderBevestig(g.id)}
+                            onClick={(e) => { e.stopPropagation(); setVerwijderBevestig(g.id) }}
                             title="Verwijderen"
                             className="text-gray-300 hover:text-red-500 transition-colors"
                           >
@@ -216,6 +211,14 @@ function GebruikersTab() {
         <AanmakenModal
           onClose={() => setToonModal(null)}
           onSuccess={() => { setToonModal(null); laad() }}
+        />
+      )}
+      {bewerkenGebruiker && (
+        <GebruikerModal
+          gebruiker={bewerkenGebruiker}
+          isZijzelf={bewerkenGebruiker.id === user?.id}
+          onOpgeslagen={(bijgewerkt) => setGebruikers((prev) => prev.map((g) => g.id === bijgewerkt.id ? bijgewerkt : g))}
+          onClose={() => setBewerkenGebruiker(null)}
         />
       )}
     </>
@@ -292,7 +295,11 @@ function PeriodesTab() {
               <tr><td colSpan={5} className="px-4 py-10 text-center text-gray-400">Geen periodes gevonden</td></tr>
             ) : (
               periodes.map((p) => (
-                <tr key={p.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50 group">
+                <tr
+                  key={p.id}
+                  onClick={() => verwijderBevestig !== p.id && setModal(p)}
+                  className="border-b border-gray-100 last:border-0 hover:bg-gray-50 group cursor-pointer"
+                >
                   <td className="px-4 py-3 font-medium text-gray-900">{p.naam}</td>
                   <td className="px-4 py-3 text-gray-600">{fDatumKort(p.datum_van)}</td>
                   <td className="px-4 py-3 text-gray-600">{fDatumKort(p.datum_tot)}</td>
@@ -311,26 +318,17 @@ function PeriodesTab() {
                     {verwijderBevestig === p.id ? (
                       <span className="inline-flex items-center gap-2">
                         <span className="text-xs text-gray-500">Zeker?</span>
-                        <button onClick={() => handleVerwijder(p)} className="text-xs font-medium text-red-600 hover:text-red-700 transition-colors">Ja</button>
-                        <button onClick={() => setVerwijderBevestig(null)} className="text-xs text-gray-400 hover:text-gray-600 transition-colors">Nee</button>
+                        <button onClick={(e) => { e.stopPropagation(); handleVerwijder(p) }} className="text-xs font-medium text-red-600 hover:text-red-700 transition-colors">Ja</button>
+                        <button onClick={(e) => { e.stopPropagation(); setVerwijderBevestig(null) }} className="text-xs text-gray-400 hover:text-gray-600 transition-colors">Nee</button>
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-3">
-                        <button
-                          onClick={() => setModal(p)}
-                          title="Bewerken"
-                          className="text-gray-300 hover:text-gray-700 transition-colors"
-                        >
-                          <EditIcon />
-                        </button>
-                        <button
-                          onClick={() => setVerwijderBevestig(p.id)}
-                          title="Verwijderen"
-                          className="text-gray-300 hover:text-red-500 transition-colors"
-                        >
-                          <TrashIcon />
-                        </button>
-                      </span>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setVerwijderBevestig(p.id) }}
+                        title="Verwijderen"
+                        className="text-gray-300 hover:text-red-500 transition-colors"
+                      >
+                        <TrashIcon />
+                      </button>
                     )}
                   </td>
                 </tr>
@@ -493,6 +491,82 @@ function AanmakenModal({ onClose, onSuccess }) {
             <button type="submit" disabled={bezig}
               className="flex-1 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-700 disabled:opacity-50 transition-colors">
               {bezig ? 'Aanmaken…' : 'Aanmaken'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+function GebruikerModal({ gebruiker, isZijzelf, onOpgeslagen, onClose }) {
+  const [naam, setNaam] = useState(gebruiker.naam ?? '')
+  const [email, setEmail] = useState(gebruiker.email ?? '')
+  const [rol, setRol] = useState(gebruiker.rol)
+  const [wachtwoord, setWachtwoord] = useState('')
+  const [bezig, setBezig] = useState(false)
+  const [fout, setFout] = useState(null)
+
+  async function submit(e) {
+    e.preventDefault()
+    setBezig(true)
+    setFout(null)
+    try {
+      await updateGebruiker(gebruiker.id, {
+        naam:      naam.trim()     || undefined,
+        email:     email.trim()    || undefined,
+        wachtwoord: wachtwoord     || undefined,
+        rol:       rol !== gebruiker.rol ? rol : undefined,
+      })
+      onOpgeslagen({ ...gebruiker, naam: naam.trim(), email: email.trim(), rol })
+      onClose()
+    } catch (e) {
+      setFout(e.message)
+      setBezig(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6" onClick={(e) => e.stopPropagation()}>
+        <h2 className="text-base font-semibold text-gray-900 mb-5">Gebruiker bewerken</h2>
+        <form onSubmit={submit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Naam</label>
+            <input type="text" value={naam} onChange={(e) => setNaam(e.target.value)}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+              placeholder="Volledige naam" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Nieuw wachtwoord <span className="text-gray-400 font-normal">(laat leeg om niet te wijzigen)</span>
+            </label>
+            <input type="text" value={wachtwoord} onChange={(e) => setWachtwoord(e.target.value)}
+              minLength={wachtwoord ? 8 : undefined}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+              placeholder="Minimaal 8 tekens" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Rol</label>
+            <select value={rol} disabled={isZijzelf} onChange={(e) => setRol(e.target.value)}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 disabled:opacity-50 disabled:cursor-not-allowed">
+              {ROLLEN.map((r) => <option key={r} value={r}>{ROL_LABELS[r]}</option>)}
+            </select>
+          </div>
+          {fout && <p className="text-sm text-red-600">{fout}</p>}
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={onClose}
+              className="flex-1 px-4 py-2 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">
+              Annuleren
+            </button>
+            <button type="submit" disabled={bezig}
+              className="flex-1 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-700 disabled:opacity-50 transition-colors">
+              {bezig ? 'Opslaan…' : 'Opslaan'}
             </button>
           </div>
         </form>

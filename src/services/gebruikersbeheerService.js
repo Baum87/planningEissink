@@ -23,4 +23,6 @@ export const uitnodigen = (email, naam, afkorting, rol) =>
 export const aanmaken = (email, naam, afkorting, rol, wachtwoord) =>
   roepAan('aanmaken', { email, naam, afkorting, rol, wachtwoord })
 export const rolWijzigen = (user_id, rol) => roepAan('rol_wijzigen', { user_id, rol })
+export const updateGebruiker = (user_id, { naam, email, wachtwoord, rol }) =>
+  roepAan('wijzigen', { user_id, naam, email, wachtwoord, rol })
 export const verwijderen = (user_id) => roepAan('verwijderen', { user_id })

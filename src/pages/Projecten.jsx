@@ -315,11 +315,12 @@ export default function Projecten() {
                 gesorteerd.map((p) => (
                   <tr
                     key={p.id}
-                    className="group border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors"
+                    onClick={() => kanBewerken && verwijderBevestig !== p.id && openBewerk(p)}
+                    className={`group border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors ${kanBewerken ? 'cursor-pointer' : ''}`}
                   >
                     <td className="pl-4 py-3">
                       <button
-                        onClick={kanBewerken ? (e) => openKleurPicker(e, p.id) : undefined}
+                        onClick={kanBewerken ? (e) => { e.stopPropagation(); openKleurPicker(e, p.id) } : undefined}
                         style={{
                           width: 18,
                           height: 18,
@@ -378,35 +379,26 @@ export default function Projecten() {
                           <span className="inline-flex items-center gap-2">
                             <span className="text-xs text-gray-500">Zeker?</span>
                             <button
-                              onClick={() => handleVerwijder(p.id)}
+                              onClick={(e) => { e.stopPropagation(); handleVerwijder(p.id) }}
                               className="text-xs font-medium text-red-600 hover:text-red-700 transition-colors"
                             >
                               Ja
                             </button>
                             <button
-                              onClick={() => setVerwijderBevestig(null)}
+                              onClick={(e) => { e.stopPropagation(); setVerwijderBevestig(null) }}
                               className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
                             >
                               Nee
                             </button>
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-3">
-                            <button
-                              onClick={() => openBewerk(p)}
-                              title="Bewerken"
-                              className="text-gray-300 hover:text-gray-700 transition-colors"
-                            >
-                              <EditIcon />
-                            </button>
-                            <button
-                              onClick={() => setVerwijderBevestig(p.id)}
-                              title="Verwijderen"
-                              className="text-gray-300 hover:text-red-500 transition-colors"
-                            >
-                              <TrashIcon />
-                            </button>
-                          </span>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setVerwijderBevestig(p.id) }}
+                            title="Verwijderen"
+                            className="text-gray-300 hover:text-red-500 transition-colors"
+                          >
+                            <TrashIcon />
+                          </button>
                         )
                       )}
                     </td>

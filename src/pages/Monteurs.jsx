@@ -138,7 +138,7 @@ export default function Monteurs() {
         {!loading && groepen.length === 0 ? (
           <p className="text-sm text-gray-400">Nog geen groepen aangemaakt.</p>
         ) : (
-          <div className="grid grid-cols-4 gap-2 max-h-52 overflow-y-auto">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-2 max-h-[120px] md:max-h-40 overflow-y-auto">
             {groepen.map((g) => (
               <GroepKaart
                 key={g.id}
@@ -154,13 +154,6 @@ export default function Monteurs() {
 
       {/* ── Toolbar ─────────────────────────────────────────────────── */}
       <div className="flex flex-wrap items-center gap-3 mb-4">
-        <input
-          type="search"
-          placeholder="Zoek op naam, bedrijf of expertise…"
-          value={zoek}
-          onChange={(e) => setZoek(e.target.value)}
-          className="w-72 px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors"
-        />
         {kolomZichtbaar('monteurs', 'expertises') && <div className="flex gap-1.5 flex-wrap">
           {['Allemaal', ...expertiseOpties].map((opt) => (
             <button
@@ -176,14 +169,23 @@ export default function Monteurs() {
             </button>
           ))}
         </div>}
-        {kanBewerken && (
-          <button
-            onClick={() => setMonteurModal({ mode: 'nieuw' })}
-            className="ml-auto px-4 py-2 text-sm font-medium bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition-colors whitespace-nowrap"
-          >
-            + Nieuwe monteur
-          </button>
-        )}
+        <div className="ml-auto flex items-center gap-2">
+          <input
+            type="search"
+            placeholder="Zoek monteur…"
+            value={zoek}
+            onChange={(e) => setZoek(e.target.value)}
+            className="w-48 px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors"
+          />
+          {kanBewerken && (
+            <button
+              onClick={() => setMonteurModal({ mode: 'nieuw' })}
+              className="px-4 py-2 text-sm font-medium bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition-colors whitespace-nowrap"
+            >
+              + Nieuwe monteur
+            </button>
+          )}
+        </div>
       </div>
 
       {/* ── Error / Loading ──────────────────────────────────────────── */}
@@ -237,7 +239,8 @@ export default function Monteurs() {
                 gesorteerd.map((m) => (
                   <tr
                     key={m.id}
-                    className="border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors"
+                    onClick={() => kanBewerken && verwijderBevestig !== m.id && setMonteurModal({ mode: 'bewerk', monteur: m })}
+                    className={`border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors ${kanBewerken ? 'cursor-pointer' : ''}`}
                   >
                     {kolomZichtbaar('monteurs', 'naam') && (
                       <td className="px-4 py-3 text-gray-600">{m.voornaam || '—'}</td>
@@ -281,35 +284,26 @@ export default function Monteurs() {
                           <span className="inline-flex items-center gap-2">
                             <span className="text-xs text-gray-500">Zeker?</span>
                             <button
-                              onClick={() => handleVerwijder(m.id)}
+                              onClick={(e) => { e.stopPropagation(); handleVerwijder(m.id) }}
                               className="text-xs font-medium text-red-600 hover:text-red-700 transition-colors"
                             >
                               Ja
                             </button>
                             <button
-                              onClick={() => setVerwijderBevestig(null)}
+                              onClick={(e) => { e.stopPropagation(); setVerwijderBevestig(null) }}
                               className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
                             >
                               Nee
                             </button>
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-3">
-                            <button
-                              onClick={() => setMonteurModal({ mode: 'bewerk', monteur: m })}
-                              title="Bewerken"
-                              className="text-gray-300 hover:text-gray-700 transition-colors"
-                            >
-                              <EditIcon />
-                            </button>
-                            <button
-                              onClick={() => setVerwijderBevestig(m.id)}
-                              title="Verwijderen"
-                              className="text-gray-300 hover:text-red-500 transition-colors"
-                            >
-                              <TrashIcon />
-                            </button>
-                          </span>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setVerwijderBevestig(m.id) }}
+                            title="Verwijderen"
+                            className="text-gray-300 hover:text-red-500 transition-colors"
+                          >
+                            <TrashIcon />
+                          </button>
                         )}
                       </td>
                     )}
@@ -355,21 +349,16 @@ function GroepKaart({ groep, monteurs, kanBewerken, onBeheer }) {
     .filter(Boolean)
 
   return (
-    <div className="flex items-center gap-4 px-4 py-3 border border-gray-200 rounded-xl bg-white">
-      <div className="min-w-0">
-        <div className="text-sm font-medium text-gray-900">{groep.naam}</div>
-        <div className="text-xs text-gray-400 mt-0.5 max-w-xs truncate">
-          {leden.length === 0 ? 'Geen leden' : leden.join(', ')}
+    <div
+      className={`flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg bg-white ${kanBewerken ? 'cursor-pointer hover:border-gray-400 transition-colors' : ''}`}
+      onClick={kanBewerken ? onBeheer : undefined}
+    >
+      <div className="min-w-0 flex-1">
+        <div className="text-xs font-medium text-gray-900 truncate">{groep.naam}</div>
+        <div className="hidden md:block text-[10px] text-gray-400 truncate">
+          {leden.length === 0 ? 'Geen leden' : `${leden.length} leden`}
         </div>
       </div>
-      {kanBewerken && (
-        <button
-          onClick={onBeheer}
-          className="text-xs text-gray-400 hover:text-gray-700 whitespace-nowrap transition-colors"
-        >
-          Beheren
-        </button>
-      )}
     </div>
   )
 }
@@ -734,10 +723,12 @@ function Modal({ onClose, children }) {
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 max-h-[90vh] overflow-y-auto"
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        {children}
+        <div className="p-6 max-h-[90vh] overflow-y-auto">
+          {children}
+        </div>
       </div>
     </div>
   )

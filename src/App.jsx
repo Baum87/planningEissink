@@ -17,6 +17,14 @@ const ALLE_TABS = [
   { id: 'beheer',    label: 'Beheer',    component: Beheer,    rollen: ['admin'] },
 ]
 
+function HamburgerIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+      <path d="M3 5h14M3 10h14M3 15h14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  )
+}
+
 function WachtwoordInstellen() {
   const { setMoetWachtwoordInstellen } = useAuth()
   const [wachtwoord, setWachtwoord] = useState('')
@@ -78,6 +86,12 @@ function AppInner() {
   const { user, rol, uitloggen, moetWachtwoordInstellen } = useAuth()
   const { tenant } = useTenant()
   const [activeTab, setActiveTab] = useState('planning')
+  const [hamburgerOpen, setHamburgerOpen] = useState(false)
+
+  function navigeerNaar(tabId) {
+    setActiveTab(tabId)
+    setHamburgerOpen(false)
+  }
 
   const TABS = useMemo(
     () => ALLE_TABS.filter((t) => !t.rollen || t.rollen.includes(rol)),
@@ -102,17 +116,37 @@ function AppInner() {
 
   return (
     <div className="min-h-screen bg-white">
-      <header className="border-b border-gray-200 bg-white">
+      <header className="border-b border-gray-200 bg-white sticky top-0 z-50">
         <div className="max-w-screen-xl mx-auto px-6">
-          <div className="flex items-center gap-1 h-14">
-            <span className="text-sm font-semibold text-gray-900 mr-6">
+          <div className="relative flex items-center gap-1 h-14">
+
+            {/* Mobiel: logo links (vaste breedte zodat naam gecentreerd blijft) */}
+            <div className="md:hidden w-8 shrink-0 flex items-center">
+              {tenant?.logo_url && (
+                <img src={tenant.logo_url} alt="" className="h-7 w-7 object-contain rounded" />
+              )}
+            </div>
+
+            {/* Tenant naam — desktop links, mobiel gecentreerd — beide klikbaar naar planning */}
+            <button
+              onClick={() => navigeerNaar('planning')}
+              className="hidden md:block text-sm font-semibold text-gray-900 mr-6 hover:text-gray-600 transition-colors"
+            >
               {tenant?.naam ?? 'Planning'}
-            </span>
+            </button>
+            <button
+              onClick={() => navigeerNaar('planning')}
+              className="md:hidden absolute left-1/2 -translate-x-1/2 text-sm font-semibold text-gray-900 hover:text-gray-600 transition-colors"
+            >
+              {tenant?.naam ?? 'Planning'}
+            </button>
+
+            {/* Desktop tabs */}
             {TABS.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                onClick={() => navigeerNaar(tab.id)}
+                className={`hidden md:flex px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
                   activeTab === tab.id
                     ? 'bg-gray-100 text-gray-900'
                     : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
@@ -121,28 +155,62 @@ function AppInner() {
                 {tab.label}
               </button>
             ))}
-            <div className="ml-auto flex items-center gap-4">
+
+            {/* Desktop: gebruiker + uitloggen */}
+            <div className="hidden md:flex ml-auto items-center gap-4">
               {(user?.app_metadata?.naam || user?.email) && (
                 <span className="text-xs text-gray-400">
                   {user.app_metadata?.naam || user.email}
                 </span>
               )}
+              <button onClick={uitloggen} className="text-xs text-gray-400 hover:text-gray-700 transition-colors">
+                Uitloggen
+              </button>
+            </div>
+
+            {/* Mobiel: hamburger rechts (zelfde breedte als logo voor symmetrie) */}
+            <button
+              className="md:hidden ml-auto w-8 flex justify-end p-1 text-gray-500 hover:text-gray-900 transition-colors"
+              onClick={() => setHamburgerOpen((v) => !v)}
+            >
+              <HamburgerIcon />
+            </button>
+          </div>
+        </div>
+
+        {/* Mobiel dropdown — zweeft over de pagina */}
+        {hamburgerOpen && (
+          <div className="md:hidden absolute top-full left-0 right-0 z-20 bg-white border-b border-gray-200 shadow-lg">
+            {TABS.map((tab) => (
               <button
-                onClick={uitloggen}
-                className="text-xs text-gray-400 hover:text-gray-700 transition-colors"
+                key={tab.id}
+                onClick={() => navigeerNaar(tab.id)}
+                className={`w-full px-6 py-3.5 text-center text-sm font-medium transition-colors ${
+                  activeTab === tab.id ? 'bg-gray-50 text-gray-900' : 'text-gray-600 hover:bg-gray-50'
+                }`}
               >
+                {tab.label}
+              </button>
+            ))}
+            <div className="px-6 py-3.5 border-t border-gray-100 flex items-center justify-between">
+              {(user?.app_metadata?.naam || user?.email) && (
+                <span className="text-xs text-gray-400">
+                  {user.app_metadata?.naam || user.email}
+                </span>
+              )}
+              <button onClick={uitloggen} className="text-xs text-gray-400 hover:text-gray-700 transition-colors">
                 Uitloggen
               </button>
             </div>
           </div>
-        </div>
+        )}
       </header>
 
       <main
         className={`px-6 py-6${activeTab !== 'planning' && activeTab !== 'overzicht' ? ' max-w-screen-xl mx-auto' : ''}${activeTab === 'projecten' || activeTab === 'monteurs' ? ' flex flex-col overflow-hidden' : ''}`}
         style={activeTab === 'projecten' || activeTab === 'monteurs' ? { height: 'calc(100vh - 57px)' } : undefined}
       >
-        <ActivePage onNavigate={setActiveTab} />
+        <ActivePage onNavigate={navigeerNaar} />
       </main>
     </div>
   )

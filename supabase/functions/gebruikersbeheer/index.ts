@@ -161,6 +161,45 @@ Deno.serve(async (req) => {
     return json({ ok: true })
   }
 
+  // ── wijzigen (naam, email, wachtwoord, rol) ───────────────────────────
+  if (actie === 'wijzigen') {
+    const { user_id, naam, email, wachtwoord, rol } = body
+    if (!user_id) return json({ error: 'user_id is verplicht' }, 400)
+    if (rol && !GELDIGE_ROLLEN.includes(rol)) return json({ error: 'Ongeldig rol' }, 400)
+
+    const { data: target, error: targetError } = await admin.auth.admin.getUserById(user_id)
+    if (targetError || !target.user) return json({ error: 'Gebruiker niet gevonden' }, 404)
+    if (target.user.app_metadata?.tenant_id !== callerTenantId) {
+      return json({ error: 'Geen toegang tot deze gebruiker' }, 403)
+    }
+
+    const authUpdates: Record<string, unknown> = {}
+    if (email) authUpdates.email = email
+    if (wachtwoord) authUpdates.password = wachtwoord
+    if (naam || rol) {
+      authUpdates.app_metadata = {
+        ...target.user.app_metadata,
+        ...(naam ? { naam } : {}),
+        ...(rol  ? { rol  } : {}),
+      }
+    }
+
+    if (Object.keys(authUpdates).length > 0) {
+      const { error } = await admin.auth.admin.updateUserById(user_id, authUpdates)
+      if (error) return json({ error: error.message }, 500)
+    }
+
+    if (naam) {
+      const { error: profielError } = await admin
+        .from('profielen')
+        .update({ weergave_naam: naam })
+        .eq('id', user_id)
+      if (profielError) return json({ error: profielError.message }, 500)
+    }
+
+    return json({ ok: true })
+  }
+
   // ── verwijderen ────────────────────────────────────────────────────────
   if (actie === 'verwijderen') {
     const { user_id } = body
