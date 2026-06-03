@@ -44,9 +44,11 @@ Kleine, veilige wijzigingen. Na elk punt lokaal testen.
 
 ## Code kwaliteit — laag 2: extractie & consistentie
 
-- [ ] **`useAsyncData` custom hook**
+- [x] **`useAsyncData` custom hook**
       Het laad/loading/error/useEffect-patroon staat 5× gekopieerd (Planning, Overzicht,
       Projecten, Monteurs, Beheer). Eén generieke hook elimineert dit.
+      Toegepast op Projecten en Beheer (gebruikers + periodes). Planning/Monteurs/Overzicht
+      hebben complexere patronen en worden later aangepakt.
 
 - [ ] **Modals uit Planning.jsx extraheren naar `src/components/`**
       `InplanModal`, `ProjectZoeker`, `MonteurPopup` zijn nu gedefinieerd ín Planning.jsx

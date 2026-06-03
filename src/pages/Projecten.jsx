@@ -8,6 +8,8 @@ import {
   deleteProject,
 } from '../services/projectenService'
 import { KLEURENPALET, projKleur, minstGebruikteKleur } from '../lib/kleurenpalet'
+import { useAsyncData } from '../hooks/useAsyncData'
+import { naarStr } from '../lib/datum'
 
 function TrashIcon() {
   return (
@@ -44,7 +46,7 @@ const KOLOMMEN = [
 ]
 
 function berekenPers(toewijzingen) {
-  const today = new Date().toISOString().split('T')[0]
+  const today = naarStr(new Date())
   return toewijzingen.filter(
     (t) => t.datum_van <= today && t.datum_tot >= today
   ).length
@@ -59,9 +61,8 @@ export default function Projecten() {
   const { kolomZichtbaar, veldLabel } = useTenant()
   const kanBewerken = heeftVolledigeToegang(rol)
 
-  const [projecten, setProjecten] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const { data: _projecten, loading, error, herlaad: laadProjecten } = useAsyncData(getProjectenMetStats)
+  const projecten = _projecten ?? []
   const [zoek, setZoek] = useState('')
   const [filterPL, setFilterPL] = useState('')
   const [sort, setSort] = useState({ veld: 'created_at', dir: 'desc' })
@@ -72,24 +73,6 @@ export default function Projecten() {
   const [kleurPicker, setKleurPicker] = useState(null) // { projectId, top, left }
   const kleurPickerRef = useRef(null)
 
-  async function laadProjecten() {
-    setLoading(true)
-    setError(null)
-    try {
-      const data = await getProjectenMetStats()
-      setProjecten(data)
-    } catch {
-      setError(
-        'Kon projecten niet ophalen. Controleer de verbinding met Supabase.'
-      )
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    laadProjecten()
-  }, [])
 
   useEffect(() => {
     if (!kleurPicker) return

@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { useAsyncData } from '../hooks/useAsyncData'
 import { useAuth } from '../context/AuthContext'
 import { fDatumKort } from '../lib/datum'
 import {
@@ -70,27 +71,20 @@ export default function Beheer() {
 
 function GebruikersTab() {
   const { user } = useAuth()
-  const [gebruikers, setGebruikers] = useState([])
-  const [laden, setLaden] = useState(true)
-  const [fout, setFout] = useState(null)
+  const {
+    data,
+    setData: setGebruikers,
+    loading: laden,
+    error: fout,
+    herlaad: laad,
+  } = useAsyncData(async () => {
+    const { gebruikers: lijst } = await lijstGebruikers()
+    return lijst
+  })
+  const gebruikers = data ?? []
   const [toonModal, setToonModal] = useState(null) // null | 'uitnodigen' | 'aanmaken'
   const [verwijderBevestig, setVerwijderBevestig] = useState(null)
   const [bewerkenGebruiker, setBewerkenGebruiker] = useState(null)
-
-  async function laad() {
-    setLaden(true)
-    setFout(null)
-    try {
-      const { gebruikers: lijst } = await lijstGebruikers()
-      setGebruikers(lijst)
-    } catch (e) {
-      setFout(e.message)
-    } finally {
-      setLaden(false)
-    }
-  }
-
-  useEffect(() => { laad() }, [])
 
   async function handleRolWijzig(user_id, rol) {
     await rolWijzigen(user_id, rol)
@@ -228,25 +222,10 @@ function GebruikersTab() {
 // ─── Periodes tab ─────────────────────────────────────────────────────────────
 
 function PeriodesTab() {
-  const [periodes, setPeriodes] = useState([])
-  const [laden, setLaden] = useState(true)
-  const [fout, setFout] = useState(null)
+  const { data, setData: setPeriodes, loading: laden, error: fout, herlaad: laad } = useAsyncData(getPeriodes)
+  const periodes = data ?? []
   const [modal, setModal] = useState(null) // null | periode-object (bewerk) | 'nieuw'
   const [verwijderBevestig, setVerwijderBevestig] = useState(null)
-
-  async function laad() {
-    setLaden(true)
-    setFout(null)
-    try {
-      setPeriodes(await getPeriodes())
-    } catch (e) {
-      setFout(e.message)
-    } finally {
-      setLaden(false)
-    }
-  }
-
-  useEffect(() => { laad() }, [])
 
   async function handleVerwijder(p) {
     try {
