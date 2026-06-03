@@ -51,3 +51,53 @@ export function fDatumKort(str) {
   if (!str) return '—'
   return new Date(str).toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' })
 }
+
+// "wo 18 juni" of "wo 18 juni t/m vr 20 juni"
+export function fBereikLang(van, tot) {
+  const opts = { weekday: 'short', day: 'numeric', month: 'long' }
+  const v = new Date(van + 'T00:00:00').toLocaleDateString('nl-NL', opts)
+  const t = new Date(tot + 'T00:00:00').toLocaleDateString('nl-NL', opts)
+  return van === tot ? v : `${v} t/m ${t}`
+}
+
+export function prevWerkdag(str) {
+  let d = new Date(str + 'T00:00:00')
+  d.setDate(d.getDate() - 1)
+  while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() - 1)
+  return naarStr(d)
+}
+
+export function nextWerkdag(str) {
+  let d = new Date(str + 'T00:00:00')
+  d.setDate(d.getDate() + 1)
+  while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1)
+  return naarStr(d)
+}
+
+export function plusWerkdagen(datum, n) {
+  let d = new Date(datum)
+  const stap = n > 0 ? 1 : -1
+  let over = Math.abs(n)
+  while (over > 0) {
+    d.setDate(d.getDate() + stap)
+    if (d.getDay() !== 0 && d.getDay() !== 6) over--
+  }
+  return d
+}
+
+export function aaneengesloten(daten, vanDag) {
+  const set = new Set(daten)
+  if (!set.has(vanDag)) return [vanDag]
+  const block = [vanDag]
+  let cur = vanDag
+  while (true) {
+    const prev = prevWerkdag(cur)
+    if (set.has(prev)) { block.unshift(prev); cur = prev } else break
+  }
+  cur = vanDag
+  while (true) {
+    const next = nextWerkdag(cur)
+    if (set.has(next)) { block.push(next); cur = next } else break
+  }
+  return block
+}

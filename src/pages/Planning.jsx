@@ -10,7 +10,7 @@ import { getProjecten } from '../services/projectenService'
 import { getPeriodes } from '../services/periodesService'
 import { projKleur } from '../lib/kleurenpalet'
 import { avatarKleur, initialen, monteurNaam } from '../lib/avatar'
-import { getMaandag, plusDagen, naarStr, isoWeek, fDag, fDagNaam, fDatumLang } from '../lib/datum'
+import { getMaandag, plusDagen, naarStr, isoWeek, fDag, fDagNaam, fDatumLang, fBereikLang, prevWerkdag, nextWerkdag, plusWerkdagen, aaneengesloten } from '../lib/datum'
 import { useIsMobile } from '../hooks/useIsMobile'
 
 // ─── Constanten ───────────────────────────────────────────────────────────────
@@ -20,55 +20,6 @@ const DAG_B  = 100
 const ROW_H  = 48
 const WEEK_H = 32
 const DAG_H  = 40
-
-function fBereikLang(van, tot) {
-  const opts = { weekday: 'short', day: 'numeric', month: 'long' }
-  const v = new Date(van + 'T00:00:00').toLocaleDateString('nl-NL', opts)
-  const t = new Date(tot + 'T00:00:00').toLocaleDateString('nl-NL', opts)
-  return van === tot ? v : `${v} t/m ${t}`
-}
-
-function prevWerkdag(str) {
-  let d = new Date(str + 'T00:00:00')
-  d.setDate(d.getDate() - 1)
-  while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() - 1)
-  return naarStr(d)
-}
-
-function nextWerkdag(str) {
-  let d = new Date(str + 'T00:00:00')
-  d.setDate(d.getDate() + 1)
-  while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1)
-  return naarStr(d)
-}
-
-function plusWerkdagen(datum, n) {
-  let d = new Date(datum)
-  const stap = n > 0 ? 1 : -1
-  let over = Math.abs(n)
-  while (over > 0) {
-    d.setDate(d.getDate() + stap)
-    if (d.getDay() !== 0 && d.getDay() !== 6) over--
-  }
-  return d
-}
-
-function aaneengesloten(daten, vanDag) {
-  const set = new Set(daten)
-  if (!set.has(vanDag)) return [vanDag]
-  const block = [vanDag]
-  let cur = vanDag
-  while (true) {
-    const prev = prevWerkdag(cur)
-    if (set.has(prev)) { block.unshift(prev); cur = prev } else break
-  }
-  cur = vanDag
-  while (true) {
-    const next = nextWerkdag(cur)
-    if (set.has(next)) { block.push(next); cur = next } else break
-  }
-  return block
-}
 
 // ─── Planning ─────────────────────────────────────────────────────────────────
 
@@ -150,7 +101,7 @@ export default function Planning({ onNavigate }) {
       const van = naarStr(startDatum)
       const tot = naarStr(plusDagen(startDatum, aantalDagen - 1))
       const [m, g, tv, p, per] = await Promise.all([
-        getMonteurs(),
+        getMonteurs({ metVandaag: true }),
         getGroepen(),
         getToewijzingen(van, tot),
         getProjecten(),
@@ -240,11 +191,6 @@ export default function Planning({ onNavigate }) {
     for (const [date, p] of periodeMap) { if (p.blokkeer === false) set.add(date) }
     return set
   }, [periodeMap])
-
-  const skipDagen = useMemo(
-    () => new Set([...hardSkipDagen, ...softSkipDagen]),
-    [hardSkipDagen, softSkipDagen]
-  )
 
   const periodeData = useMemo(() => {
     if (!modal || modal.type !== 'bewerk') return null
@@ -889,14 +835,21 @@ function MonteurPopup({ monteur, onClose }) {
           <Regel label="Type"       waarde={monteur.type || '—'} />
           <Regel label="Telefoon"   waarde={monteur.telefoon || '—'} />
           <Regel label="Woonplaats" waarde={monteur.woonplaats || '—'} />
-          <Regel
-            label="Vandaag"
-            waarde={
-              monteur.toewijzing_vandaag
-                ? `${monteur.toewijzing_vandaag.projecten?.werknummer} — ${monteur.toewijzing_vandaag.projecten?.omschrijving}`
-                : '—'
-            }
-          />
+          <div className="flex items-baseline gap-3">
+            <span className="text-xs font-medium text-gray-400 uppercase tracking-wide w-20 shrink-0">
+              Vandaag
+            </span>
+            <div className="flex flex-col gap-0.5">
+              {(monteur.toewijzingen_vandaag ?? []).length > 0
+                ? monteur.toewijzingen_vandaag.map((t) => (
+                    <span key={t.projecten?.id} className="text-sm text-gray-900">
+                      {t.projecten?.werknummer} — {t.projecten?.omschrijving}
+                    </span>
+                  ))
+                : <span className="text-sm text-gray-900">—</span>
+              }
+            </div>
+          </div>
           <div>
             <div className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-1.5">
               Expertises

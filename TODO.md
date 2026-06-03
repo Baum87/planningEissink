@@ -5,6 +5,87 @@ Bijgehouden naast CONTEXT.md — technische context staat daar.
 
 ---
 
+## Code kwaliteit — laag 1: bugs & dead code
+
+Kleine, veilige wijzigingen. Na elk punt lokaal testen.
+
+- [x] **Duplicate `naarStr` verwijderen**
+      Staat zowel in `datum.js` als in `toewijzingenService.js`. Import de versie uit datum.js.
+
+- [x] **Timezone-bug in `getMonteurs` fixen**
+      `new Date().toISOString().split('T')[0]` geeft UTC-datum → verkeerd na middernacht in NL.
+      Vervangen door `naarStr(new Date())` (lokale methoden, consistent met rest van codebase).
+
+- [x] **Dead code `skipDagen` verwijderen uit Planning.jsx**
+      `skipDagen` = hardSkipDagen ∪ softSkipDagen, maar wordt nergens gebruikt.
+      Alleen `hardSkipDagen` wordt doorgegeven aan `createToewijzing`. Verwijderen.
+
+- [x] **Date utilities verplaatsen uit Planning.jsx naar datum.js**
+      `prevWerkdag`, `nextWerkdag`, `plusWerkdagen`, `fBereikLang`, `aaneengesloten` horen in datum.js.
+      Nu onvindbaar en niet herbruikbaar vanuit andere pagina's.
+
+- [x] **TenantContext: sequentiële fetches → parallel (Promise.all)**
+      `laadTenant()` wacht eerst op tenant, dan op instellingen. Kan tegelijk.
+      Twee onafhankelijke queries, ~2× sneller bij trage verbinding.
+
+- [~] **`avatarKleur` hash: volledige naam i.p.v. eerste teken** *(bewust overgeslagen)*
+      `naam.charCodeAt(0)` → "Jan", "Johan", "Joost" krijgen allemaal dezelfde kleur.
+      Vervangen door hash over de volledige naam.
+
+- [x] **`setGroepLeden` atomair maken**
+      Delete + insert in twee losse queries: als insert faalt zijn leden weg zonder herstel.
+      Oplossing: upsert-patroon of delete-only-na-succesvolle-insert.
+
+- [x] **`getMonteurs`: vandaag-toewijzingen optioneel maken**
+      Planning.jsx roept `getMonteurs()` aan maar gebruikt `toewijzingen_vandaag` nooit.
+      Parameter toevoegen: `getMonteurs({ metVandaag = true } = {})` — Planning geeft `false`.
+
+---
+
+## Code kwaliteit — laag 2: extractie & consistentie
+
+- [ ] **`useAsyncData` custom hook**
+      Het laad/loading/error/useEffect-patroon staat 5× gekopieerd (Planning, Overzicht,
+      Projecten, Monteurs, Beheer). Eén generieke hook elimineert dit.
+
+- [ ] **Modals uit Planning.jsx extraheren naar `src/components/`**
+      `InplanModal`, `ProjectZoeker`, `MonteurPopup` zijn nu gedefinieerd ín Planning.jsx
+      en daardoor niet herbruikbaar. Verplaatsen naar losse bestanden.
+
+- [ ] **`alert()` vervangen door inline fout-state in modals**
+      `alert('Verwijderen mislukt: ' + err.message)` blokkeert de UI.
+      Consistent maken met het patroon in Projecten.jsx (`fout`-state in modal).
+
+- [ ] **`getTenantId()` cachen**
+      Elke mutatie roept `getSession()` aan om tenant_id op te halen.
+      Tenant-id is stabiel na login — eenmalig in geheugen bewaren.
+
+- [ ] **`laad()` in Planning.jsx: bewaar `uitgeklapt` bij data-refresh**
+      `setUitgeklapt(new Set(g.map(...)))` klapt bij elke refresh alle groepen open.
+      Alleen initialiseren als `uitgeklapt` nog leeg is.
+
+---
+
+## Code kwaliteit — laag 3: performance (bij groei)
+
+- [ ] **Request cancellation via AbortController**
+      Snelle weeknavigatie verstuurt meerdere fetch-requests tegelijk.
+      Laatste response wint — kan stale data tonen. AbortController lost dit op.
+
+- [ ] **Debounce zoekbalken**
+      Elke toetsaanslag filtert direct over alle rijen. `useDeferredValue` of 200ms debounce
+      voorkomt geblokkeerde frames bij grote datasets.
+
+- [ ] **`getProjecten` / `getProjectenMetStats` samenvoegen**
+      Twee bijna-identieke service-functies. Één functie met parameter `metStats = false`.
+
+- [ ] **`naam` normaliseren in AuthContext**
+      `user?.app_metadata?.naam` wordt direct in App.jsx aangesproken buiten de context om.
+      AuthContext exporteert al `initialen` — `naam` toevoegen zodat metadata-structuur
+      op één plek zit.
+
+---
+
 ## Nu — direct aanpakken
 
 - [x] **Eigen SMTP instellen (Resend of Zoho)**

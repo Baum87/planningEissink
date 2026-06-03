@@ -60,7 +60,7 @@ export default function Monteurs() {
     setLoading(true)
     setError(null)
     try {
-      const [m, g, e] = await Promise.all([getMonteurs(), getGroepen(), getExpertises()])
+      const [m, g, e] = await Promise.all([getMonteurs({ metVandaag: false }), getGroepen(), getExpertises()])
       setMonteurs(m)
       setGroepen(g)
       setExpertiseOpties(e.map((ex) => ex.naam))
@@ -420,7 +420,7 @@ function MonteurModal({ modal, expertiseOpties, onClose, onOpgeslagen }) {
   }
 
   return (
-    <Modal onClose={onClose}>
+    <Modal>
       <h2 className="text-base font-semibold text-gray-900 mb-5">
         {modal.mode === 'nieuw' ? 'Nieuwe monteur' : 'Monteur bewerken'}
       </h2>
@@ -594,7 +594,7 @@ function GroepModal({ modal, monteurs, onClose, onOpgeslagen }) {
   }
 
   return (
-    <Modal onClose={onClose}>
+    <Modal>
       <h2 className="text-base font-semibold text-gray-900 mb-5">
         {modal.mode === 'nieuw' ? 'Nieuwe groep' : 'Groep beheren'}
       </h2>
@@ -716,16 +716,10 @@ function GroepModal({ modal, monteurs, onClose, onOpgeslagen }) {
 
 // ─── Gedeelde hulpcomponenten ─────────────────────────────────────────────────
 
-function Modal({ onClose, children }) {
+function Modal({ children }) {
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/25"
-      onClick={onClose}
-    >
-      <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/25">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
         <div className="p-6 max-h-[90vh] overflow-y-auto">
           {children}
         </div>

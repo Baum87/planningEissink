@@ -77,7 +77,7 @@ export default function Overzicht() {
       const van = naarStr(startDatum)
       const tot = naarStr(plusDagen(startDatum, aantalDagen - 1))
       const [m, tv, p, per] = await Promise.all([
-        getMonteurs(),
+        getMonteurs({ metVandaag: false }),
         getToewijzingen(van, tot),
         getProjecten(),
         getPeriodes(),

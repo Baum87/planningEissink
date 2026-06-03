@@ -1,14 +1,22 @@
 import { supabase, getTenantId } from '../lib/supabase'
+import { naarStr } from '../lib/datum'
 
-export async function getMonteurs() {
-  const today = new Date().toISOString().split('T')[0]
+export async function getMonteurs({ metVandaag = false } = {}) {
+  const monteursQuery = supabase
+    .from('monteurs')
+    .select('id, voornaam, achternaam, bedrijfsnaam, type, expertises, telefoon, woonplaats, adres, created_at')
+    .order('achternaam')
 
+  if (!metVandaag) {
+    const { data, error } = await monteursQuery
+    if (error) throw error
+    return data
+  }
+
+  const today = naarStr(new Date())
   const [{ data: monteurs, error: e1 }, { data: toewijzingen, error: e2 }] =
     await Promise.all([
-      supabase
-        .from('monteurs')
-        .select('id, voornaam, achternaam, bedrijfsnaam, type, expertises, telefoon, woonplaats, adres, created_at')
-        .order('achternaam'),
+      monteursQuery,
       supabase
         .from('toewijzingen')
         .select('monteur_id, datum_van, datum_tot, projecten(id, werknummer, omschrijving)')
@@ -96,14 +104,33 @@ export async function deleteGroep(id) {
 }
 
 export async function setGroepLeden(groepId, monteurIds) {
-  const { error: delError } = await supabase
+  const nieuw = new Set(monteurIds)
+
+  const { data: huidig, error: fetchError } = await supabase
     .from('groep_leden')
-    .delete()
+    .select('monteur_id')
     .eq('groep_id', groepId)
-  if (delError) throw delError
-  if (monteurIds.length === 0) return
-  const { error: insError } = await supabase
-    .from('groep_leden')
-    .insert(monteurIds.map((mid) => ({ groep_id: groepId, monteur_id: mid })))
-  if (insError) throw insError
+  if (fetchError) throw fetchError
+
+  const huidigSet = new Set(huidig.map((r) => r.monteur_id))
+  const toevoegen   = monteurIds.filter((id) => !huidigSet.has(id))
+  const verwijderen = [...huidigSet].filter((id) => !nieuw.has(id))
+
+  // Eerst toevoegen — als dit faalt blijven de huidige leden intact
+  if (toevoegen.length > 0) {
+    const { error: insError } = await supabase
+      .from('groep_leden')
+      .insert(toevoegen.map((mid) => ({ groep_id: groepId, monteur_id: mid })))
+    if (insError) throw insError
+  }
+
+  // Dan verwijderen
+  if (verwijderen.length > 0) {
+    const { error: delError } = await supabase
+      .from('groep_leden')
+      .delete()
+      .eq('groep_id', groepId)
+      .in('monteur_id', verwijderen)
+    if (delError) throw delError
+  }
 }

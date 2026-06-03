@@ -1,12 +1,5 @@
 import { supabase, getTenantId } from '../lib/supabase'
-
-function naarStr(d) {
-  return [
-    d.getFullYear(),
-    String(d.getMonth() + 1).padStart(2, '0'),
-    String(d.getDate()).padStart(2, '0'),
-  ].join('-')
-}
+import { naarStr } from '../lib/datum'
 
 function getWerkdagen(van, tot, skipDagen = new Set()) {
   const dagen = []
