@@ -11,6 +11,7 @@ import { getPeriodes } from '../services/periodesService'
 import { projKleur } from '../lib/kleurenpalet'
 import { avatarKleur, initialen, monteurNaam } from '../lib/avatar'
 import { getMaandag, plusDagen, naarStr, isoWeek, fDag, fDagNaam, fDatumLang } from '../lib/datum'
+import { useIsMobile } from '../hooks/useIsMobile'
 
 // ─── Constanten ───────────────────────────────────────────────────────────────
 
@@ -39,6 +40,17 @@ function nextWerkdag(str) {
   d.setDate(d.getDate() + 1)
   while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1)
   return naarStr(d)
+}
+
+function plusWerkdagen(datum, n) {
+  let d = new Date(datum)
+  const stap = n > 0 ? 1 : -1
+  let over = Math.abs(n)
+  while (over > 0) {
+    d.setDate(d.getDate() + stap)
+    if (d.getDay() !== 0 && d.getDay() !== 6) over--
+  }
+  return d
 }
 
 function aaneengesloten(daten, vanDag) {
@@ -86,20 +98,31 @@ export default function Planning({ onNavigate }) {
   const [monteurPopup, setMonteurPopup] = useState(null)
   const [toonUitgebreid, setToonUitgebreid] = useState(false)
 
+  const isMobile = useIsMobile()
+
   // ── Datum berekeningen ──────────────────────────────────────────────────────
 
   const aantalDagen = toonUitgebreid ? 56 : 21
-  const dagBreedte = toonUitgebreid ? 40 : DAG_B
+  const dagBreedte  = isMobile ? 0 : toonUitgebreid ? 40 : DAG_B
+  const naamBreedte = isMobile ? 70 : NAAM_B
 
   const alleDagen = useMemo(
     () => Array.from({ length: aantalDagen }, (_, i) => plusDagen(startDatum, i)),
     [startDatum, aantalDagen]
   )
 
-  const zDagen = useMemo(
-    () => alleDagen.filter((d) => toonWeekend || (d.getDay() !== 0 && d.getDay() !== 6)),
-    [alleDagen, toonWeekend]
-  )
+  const zDagen = useMemo(() => {
+    if (isMobile) {
+      const result = []
+      let cur = new Date(startDatum)
+      while (result.length < 3) {
+        if (cur.getDay() !== 0 && cur.getDay() !== 6) result.push(new Date(cur))
+        cur.setDate(cur.getDate() + 1)
+      }
+      return result
+    }
+    return alleDagen.filter((d) => toonWeekend || (d.getDay() !== 0 && d.getDay() !== 6))
+  }, [alleDagen, toonWeekend, isMobile, startDatum])
 
   const weekGroepen = useMemo(() => {
     const gs = []
@@ -113,9 +136,10 @@ export default function Planning({ onNavigate }) {
   }, [zDagen])
 
   const periodeLabel = useMemo(() => {
-    const wks = [...new Set(alleDagen.map(isoWeek))]
+    const basis = isMobile ? zDagen : alleDagen
+    const wks = [...new Set(basis.map(isoWeek))]
     return wks.length === 1 ? `Wk ${wks[0]}` : `Wk ${wks[0]} – ${wks[wks.length - 1]}`
-  }, [alleDagen])
+  }, [alleDagen, zDagen, isMobile])
 
   // ── Data laden ─────────────────────────────────────────────────────────────
 
@@ -366,7 +390,7 @@ export default function Planning({ onNavigate }) {
         <select
           value={filterExpertise}
           onChange={(e) => setFilterExpertise(e.target.value)}
-          className="px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors bg-white text-gray-600"
+          className="hidden md:block px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors bg-white text-gray-600"
         >
           <option value="">Alle expertises</option>
           {alleExpertises.map((ex) => (
@@ -377,7 +401,7 @@ export default function Planning({ onNavigate }) {
         <select
           value={filterProjectleider}
           onChange={(e) => setFilterProjectleider(e.target.value)}
-          className="px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors bg-white text-gray-600"
+          className="hidden md:block px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors bg-white text-gray-600"
         >
           <option value="">Alle PL</option>
           {alleInitialen.map((ini) => (
@@ -388,7 +412,7 @@ export default function Planning({ onNavigate }) {
         <select
           value={filterProject}
           onChange={(e) => setFilterProject(e.target.value)}
-          className="px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors bg-white text-gray-600 max-w-[200px]"
+          className="hidden md:block px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors bg-white text-gray-600 max-w-[200px]"
         >
           <option value="">Alle projecten</option>
           {[...projecten]
@@ -402,7 +426,7 @@ export default function Planning({ onNavigate }) {
 
         <div className="flex items-center gap-0.5">
           <button
-            onClick={() => setStartDatum((d) => plusDagen(d, -aantalDagen))}
+            onClick={() => setStartDatum((d) => isMobile ? plusWerkdagen(d, -3) : plusDagen(d, -aantalDagen))}
             className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors text-lg leading-none"
           >
             ‹
@@ -414,7 +438,7 @@ export default function Planning({ onNavigate }) {
             Vandaag
           </button>
           <button
-            onClick={() => setStartDatum((d) => plusDagen(d, aantalDagen))}
+            onClick={() => setStartDatum((d) => isMobile ? plusWerkdagen(d, 3) : plusDagen(d, aantalDagen))}
             className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors text-lg leading-none"
           >
             ›
@@ -442,7 +466,7 @@ export default function Planning({ onNavigate }) {
               />
             </button>
           </label>
-          <label className="flex items-center gap-2 cursor-pointer select-none">
+          <label className="hidden md:flex items-center gap-2 cursor-pointer select-none">
             <span className="text-sm text-gray-500">8 weken</span>
             <button
               type="button"
@@ -460,7 +484,7 @@ export default function Planning({ onNavigate }) {
               />
             </button>
           </label>
-          <label className="flex items-center gap-2 cursor-pointer select-none">
+          <label className="hidden md:flex items-center gap-2 cursor-pointer select-none">
             <span className="text-sm text-gray-500">Weekend</span>
             <button
               type="button"
@@ -501,7 +525,7 @@ export default function Planning({ onNavigate }) {
           >
             <div
               className="sticky left-0 z-30 bg-white border-r border-gray-100 shrink-0"
-              style={{ width: NAAM_B }}
+              style={{ width: naamBreedte }}
             />
             {weekGroepen.map((wg) => (
               <div
@@ -523,7 +547,7 @@ export default function Planning({ onNavigate }) {
           >
             <div
               className="sticky left-0 z-30 bg-gray-50 border-r border-gray-100 shrink-0"
-              style={{ width: NAAM_B }}
+              style={{ width: naamBreedte }}
             />
             {zDagen.map((d) => {
               const str = naarStr(d)
@@ -579,8 +603,8 @@ export default function Planning({ onNavigate }) {
                     style={{ minHeight: 40 }}
                   >
                     <div
-                      className="sticky left-0 z-10 bg-gray-50 border-r border-gray-100 flex items-center gap-2 px-3 shrink-0 cursor-pointer select-none"
-                      style={{ width: NAAM_B }}
+                      className={`sticky left-0 z-10 bg-gray-50 border-r border-gray-100 flex items-center shrink-0 cursor-pointer select-none ${isMobile ? 'gap-0.5 px-1' : 'gap-2 px-3'}`}
+                      style={{ width: naamBreedte }}
                       onClick={() => toggleGroep(rij.groep.id)}
                     >
                       <span
@@ -590,12 +614,14 @@ export default function Planning({ onNavigate }) {
                         ›
                       </span>
                       <div className="min-w-0">
-                        <div className="text-xs font-semibold text-gray-700 truncate">
+                        <div className={`font-semibold text-gray-700 truncate ${isMobile ? 'text-[10px]' : 'text-xs'}`}>
                           {rij.groep.naam}
                         </div>
-                        <div className="text-xs text-gray-400">
-                          {rij.leden.length} leden
-                        </div>
+                        {!isMobile && (
+                          <div className="text-xs text-gray-400">
+                            {rij.leden.length} leden
+                          </div>
+                        )}
                       </div>
                     </div>
                     {zDagen.map((d) => {
@@ -640,28 +666,43 @@ export default function Planning({ onNavigate }) {
                 >
                   {/* Naam cel */}
                   <div
-                    className={`sticky left-0 z-10 border-r border-gray-100 flex items-center gap-2 shrink-0 cursor-pointer hover:bg-gray-50 transition-colors ${
-                      isGroeplid ? 'bg-gray-50 pl-8 pr-3 py-2' : 'bg-white px-3 py-2'
+                    className={`sticky left-0 z-10 border-r border-gray-100 flex items-center shrink-0 cursor-pointer hover:bg-gray-50 transition-colors ${
+                      isGroeplid
+                        ? isMobile ? 'bg-gray-50 pl-4 pr-1 py-2' : 'bg-gray-50 pl-8 pr-3 py-2 gap-2'
+                        : isMobile ? 'bg-white px-2 py-2' : 'bg-white px-3 py-2 gap-2'
                     }`}
-                    style={{ width: NAAM_B }}
+                    style={{ width: naamBreedte }}
                     onClick={() => setMonteurPopup(monteur)}
                   >
-                    <div
-                      className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0"
-                      style={{ backgroundColor: avgBg, color: avgFg }}
-                    >
-                      {initialen(monteurNaam(monteur))}
-                    </div>
-                    <div className="min-w-0">
-                      <div className="text-xs font-medium text-gray-900 truncate leading-tight">
-                        {monteurNaam(monteur)}
-                      </div>
-                      {monteur.bedrijfsnaam && (
-                        <div className="text-[10px] text-gray-400 truncate leading-tight">
-                          {monteur.bedrijfsnaam}
+                    {isMobile ? (
+                      <div className="min-w-0 w-full">
+                        <div className="text-[11px] font-semibold text-gray-900 leading-tight">
+                          {(monteur.voornaam?.[0] ?? monteur.bedrijfsnaam?.[0] ?? '?').toUpperCase()}.
                         </div>
-                      )}
-                    </div>
+                        <div className="text-[11px] text-gray-500 truncate leading-tight">
+                          {monteur.achternaam ?? monteur.bedrijfsnaam ?? ''}
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div
+                          className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0"
+                          style={{ backgroundColor: avgBg, color: avgFg }}
+                        >
+                          {initialen(monteurNaam(monteur))}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="text-xs font-medium text-gray-900 truncate leading-tight">
+                            {monteurNaam(monteur)}
+                          </div>
+                          {monteur.bedrijfsnaam && (
+                            <div className="text-[10px] text-gray-400 truncate leading-tight">
+                              {monteur.bedrijfsnaam}
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    )}
                   </div>
 
                   {/* Dag cellen */}
@@ -683,7 +724,7 @@ export default function Planning({ onNavigate }) {
                         >
                           {tvList.map((tv, i) => {
                             const kleur = projKleur(tv.projecten)
-                            const compact = toonUitgebreid || (dagBreedte / tvList.length < 40)
+                            const compact = toonUitgebreid || ((dagBreedte || 90) / tvList.length < 40)
                             return (
                               <div
                                 key={tv.id}
