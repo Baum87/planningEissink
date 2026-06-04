@@ -163,7 +163,7 @@ Kleine, veilige wijzigingen. Na elk punt lokaal testen.
 - [ ] **Smoke test stap 2 en 3 uitvoeren**
       Na volgende RLS-migratie: planner en gebruiker-rol testen via rls_smoke_test.sql.
 
-- [ ] **UNIQUE constraint op afkorting per tenant**
+- [x] **UNIQUE constraint op afkorting per tenant**
       Twee gebruikers kunnen nu dezelfde afkorting krijgen (bijv. "JJ").
       `alter table profielen add constraint afkorting_unique_per_tenant unique(tenant_id, afkorting);`
 
