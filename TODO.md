@@ -50,7 +50,7 @@ Kleine, veilige wijzigingen. Na elk punt lokaal testen.
       Toegepast op Projecten en Beheer (gebruikers + periodes). Planning/Monteurs/Overzicht
       hebben complexere patronen en worden later aangepakt.
 
-- [ ] **Modals uit Planning.jsx extraheren naar `src/components/`**
+- [x] **Modals uit Planning.jsx extraheren naar `src/components/`**
       `InplanModal`, `ProjectZoeker`, `MonteurPopup` zijn nu gedefinieerd ín Planning.jsx
       en daardoor niet herbruikbaar. Verplaatsen naar losse bestanden.
 
@@ -58,11 +58,11 @@ Kleine, veilige wijzigingen. Na elk punt lokaal testen.
       `alert('Verwijderen mislukt: ' + err.message)` blokkeert de UI.
       Consistent maken met het patroon in Projecten.jsx (`fout`-state in modal).
 
-- [ ] **`getTenantId()` cachen**
+- [x] **`getTenantId()` cachen**
       Elke mutatie roept `getSession()` aan om tenant_id op te halen.
       Tenant-id is stabiel na login — eenmalig in geheugen bewaren.
 
-- [ ] **`laad()` in Planning.jsx: bewaar `uitgeklapt` bij data-refresh**
+- [x] **`laad()` in Planning.jsx: bewaar `uitgeklapt` bij data-refresh**
       `setUitgeklapt(new Set(g.map(...)))` klapt bij elke refresh alle groepen open.
       Alleen initialiseren als `uitgeklapt` nog leeg is.
 

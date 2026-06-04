@@ -111,7 +111,7 @@ export default function Planning({ onNavigate }) {
       ])
       setMonteurs(m)
       setGroepen(g)
-      setUitgeklapt(new Set(g.map((gr) => gr.id)))
+      setUitgeklapt((prev) => prev.size > 0 ? prev : new Set(g.map((gr) => gr.id)))
       setToewijzingen(tv)
       setProjecten(p)
       setPeriodes(per)
