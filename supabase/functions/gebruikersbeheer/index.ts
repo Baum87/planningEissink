@@ -62,6 +62,7 @@ Deno.serve(async (req) => {
         id: u.id,
         email: u.email,
         naam: u.app_metadata?.naam ?? '',
+        afkorting: u.app_metadata?.afkorting ?? null,
         rol: u.app_metadata?.rol ?? '',
         created_at: u.created_at,
         last_sign_in_at: u.last_sign_in_at,
@@ -161,9 +162,9 @@ Deno.serve(async (req) => {
     return json({ ok: true })
   }
 
-  // ── wijzigen (naam, email, wachtwoord, rol) ───────────────────────────
+  // ── wijzigen (naam, email, afkorting, wachtwoord, rol) ───────────────
   if (actie === 'wijzigen') {
-    const { user_id, naam, email, wachtwoord, rol } = body
+    const { user_id, naam, email, afkorting, wachtwoord, rol } = body
     if (!user_id) return json({ error: 'user_id is verplicht' }, 400)
     if (rol && !GELDIGE_ROLLEN.includes(rol)) return json({ error: 'Ongeldig rol' }, 400)
 
@@ -176,11 +177,12 @@ Deno.serve(async (req) => {
     const authUpdates: Record<string, unknown> = {}
     if (email) authUpdates.email = email
     if (wachtwoord) authUpdates.password = wachtwoord
-    if (naam || rol) {
+    if (naam || rol || afkorting !== undefined) {
       authUpdates.app_metadata = {
         ...target.user.app_metadata,
-        ...(naam ? { naam } : {}),
-        ...(rol  ? { rol  } : {}),
+        ...(naam      ? { naam }           : {}),
+        ...(rol       ? { rol }            : {}),
+        ...(afkorting !== undefined ? { afkorting: afkorting || null } : {}),
       }
     }
 
@@ -189,10 +191,14 @@ Deno.serve(async (req) => {
       if (error) return json({ error: error.message }, 500)
     }
 
-    if (naam) {
+    const profielUpdates: Record<string, unknown> = {}
+    if (naam)             profielUpdates.weergave_naam = naam
+    if (afkorting !== undefined) profielUpdates.afkorting = afkorting || null
+
+    if (Object.keys(profielUpdates).length > 0) {
       const { error: profielError } = await admin
         .from('profielen')
-        .update({ weergave_naam: naam })
+        .update(profielUpdates)
         .eq('id', user_id)
       if (profielError) return json({ error: profielError.message }, 500)
     }

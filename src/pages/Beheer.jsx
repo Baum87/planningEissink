@@ -493,6 +493,7 @@ function AanmakenModal({ onClose, onSuccess }) {
 function GebruikerModal({ gebruiker, isZijzelf, onOpgeslagen, onClose }) {
   const [naam, setNaam] = useState(gebruiker.naam ?? '')
   const [email, setEmail] = useState(gebruiker.email ?? '')
+  const [afkorting, setAfkorting] = useState(gebruiker.afkorting ?? '')
   const [rol, setRol] = useState(gebruiker.rol)
   const [wachtwoord, setWachtwoord] = useState('')
   const [bezig, setBezig] = useState(false)
@@ -504,12 +505,13 @@ function GebruikerModal({ gebruiker, isZijzelf, onOpgeslagen, onClose }) {
     setFout(null)
     try {
       await updateGebruiker(gebruiker.id, {
-        naam:      naam.trim()     || undefined,
-        email:     email.trim()    || undefined,
-        wachtwoord: wachtwoord     || undefined,
-        rol:       rol !== gebruiker.rol ? rol : undefined,
+        naam:       naam.trim()                          || undefined,
+        email:      email.trim()                         || undefined,
+        afkorting:  afkorting.trim()                     || null,
+        wachtwoord: wachtwoord                           || undefined,
+        rol:        rol !== gebruiker.rol ? rol : undefined,
       })
-      onOpgeslagen({ ...gebruiker, naam: naam.trim(), email: email.trim(), rol })
+      onOpgeslagen({ ...gebruiker, naam: naam.trim(), email: email.trim(), afkorting: afkorting.trim() || null, rol })
       onClose()
     } catch (e) {
       setFout(e.message)
@@ -532,6 +534,15 @@ function GebruikerModal({ gebruiker, isZijzelf, onOpgeslagen, onClose }) {
             <label className="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Afkorting <span className="text-gray-400 font-normal">(optioneel, max 4 tekens)</span>
+            </label>
+            <input type="text" value={afkorting}
+              onChange={(e) => setAfkorting(e.target.value.slice(0, 4).toUpperCase())}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+              placeholder="bijv. JK" />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
