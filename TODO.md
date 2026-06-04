@@ -54,7 +54,7 @@ Kleine, veilige wijzigingen. Na elk punt lokaal testen.
       `InplanModal`, `ProjectZoeker`, `MonteurPopup` zijn nu gedefinieerd ín Planning.jsx
       en daardoor niet herbruikbaar. Verplaatsen naar losse bestanden.
 
-- [ ] **`alert()` vervangen door inline fout-state in modals**
+- [x] **`alert()` vervangen door inline fout-state in modals**
       `alert('Verwijderen mislukt: ' + err.message)` blokkeert de UI.
       Consistent maken met het patroon in Projecten.jsx (`fout`-state in modal).
 

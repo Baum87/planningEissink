@@ -91,18 +91,26 @@ function GebruikersTab() {
     setGebruikers((prev) => prev.map((g) => g.id === user_id ? { ...g, rol } : g))
   }
 
+  const [actiFout, setActiFout] = useState(null)
+
   async function handleVerwijder(g) {
     try {
       await verwijderen(g.id)
       setGebruikers((prev) => prev.filter((x) => x.id !== g.id))
       setVerwijderBevestig(null)
     } catch (e) {
-      alert(e.message)
+      setActiFout(e.message)
     }
   }
 
   return (
     <>
+      {actiFout && (
+        <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex items-center justify-between gap-3">
+          <span>{actiFout}</span>
+          <button onClick={() => setActiFout(null)} className="text-red-400 hover:text-red-700 shrink-0">✕</button>
+        </div>
+      )}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-xl font-semibold text-gray-900">Gebruikersbeheer</h1>
@@ -226,6 +234,7 @@ function PeriodesTab() {
   const periodes = data ?? []
   const [modal, setModal] = useState(null) // null | periode-object (bewerk) | 'nieuw'
   const [verwijderBevestig, setVerwijderBevestig] = useState(null)
+  const [actiFout, setActiFout] = useState(null)
 
   async function handleVerwijder(p) {
     try {
@@ -233,7 +242,7 @@ function PeriodesTab() {
       setPeriodes((prev) => prev.filter((x) => x.id !== p.id))
       setVerwijderBevestig(null)
     } catch (e) {
-      alert(e.message)
+      setActiFout(e.message)
     }
   }
 
@@ -252,8 +261,11 @@ function PeriodesTab() {
         </button>
       </div>
 
-      {fout && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{fout}</div>
+      {(fout || actiFout) && (
+        <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex items-center justify-between gap-3">
+          <span>{fout || actiFout}</span>
+          {actiFout && <button onClick={() => setActiFout(null)} className="text-red-400 hover:text-red-700 shrink-0">✕</button>}
+        </div>
       )}
 
       <div className="border border-gray-200 rounded-xl overflow-auto flex-1 min-h-0">

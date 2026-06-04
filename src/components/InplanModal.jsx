@@ -14,21 +14,22 @@ export default function InplanModal({ modal, projecten, kanInplannen, onInplanne
   const [tot, setTot] = useState(dag)
   const [bezig, setBezig] = useState(false)
   const [periodeConfirm, setPeriodeConfirm] = useState(false)
+  const [fout, setFout] = useState(null)
 
   const [avgBg, avgFg] = avatarKleur(isGroep ? modal.groep?.naam ?? '' : monteurNaam(modal.monteur ?? {}))
 
   const heeftPeriode = isBewerk && periodeData && periodeData.aantalDagen > 1
 
   async function handleVerwijderDag() {
-    setBezig(true)
+    setBezig(true); setFout(null)
     try { await onVerwijder(modal.tv.id) }
-    catch (err) { alert('Verwijderen mislukt: ' + err.message); setBezig(false) }
+    catch (err) { setFout(err.message); setBezig(false) }
   }
 
   async function handleVerwijderPeriode() {
-    setBezig(true)
+    setBezig(true); setFout(null)
     try { await onVerwijderPeriode(periodeData.ids) }
-    catch (err) { alert('Verwijderen mislukt: ' + err.message); setBezig(false) }
+    catch (err) { setFout(err.message); setBezig(false) }
   }
 
   // ── Modus 1: bestaande toewijzing bekijken ─────────────────────────────────
@@ -109,6 +110,7 @@ export default function InplanModal({ modal, projecten, kanInplannen, onInplanne
                   Wijzigen
                 </button>
               </div>
+              {fout && <p className="text-xs text-red-600 pt-1">{fout}</p>}
             </div>
           )}
         </div>
@@ -119,9 +121,9 @@ export default function InplanModal({ modal, projecten, kanInplannen, onInplanne
   // ── Nieuw / Groep: toewijzing aanmaken ─────────────────────────────────────
   async function handleInplannen(e) {
     e.preventDefault()
-    setBezig(true)
+    setBezig(true); setFout(null)
     try { await onInplannen(projectId, van, tot) }
-    catch (err) { alert('Opslaan mislukt: ' + err.message) }
+    catch (err) { setFout(err.message) }
     finally { setBezig(false) }
   }
 
@@ -166,6 +168,7 @@ export default function InplanModal({ modal, projecten, kanInplannen, onInplanne
                 className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors" />
             </div>
           </div>
+          {fout && <p className="text-xs text-red-600">{fout}</p>}
           <div className="flex items-center justify-end gap-2 pt-1">
             <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-gray-500 hover:text-gray-900 transition-colors">
               Annuleren

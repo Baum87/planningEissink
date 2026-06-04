@@ -55,6 +55,7 @@ export default function Monteurs() {
   const [monteurModal, setMonteurModal] = useState(null)
   const [groepModal, setGroepModal] = useState(null)
   const [verwijderBevestig, setVerwijderBevestig] = useState(null)
+  const [actiFout, setActiFout] = useState(null)
 
   async function laad() {
     setLoading(true)
@@ -115,12 +116,18 @@ export default function Monteurs() {
       setVerwijderBevestig(null)
       await laad()
     } catch (err) {
-      alert('Verwijderen mislukt: ' + err.message)
+      setActiFout('Verwijderen mislukt: ' + err.message)
     }
   }
 
   return (
     <div className="flex flex-col min-h-0 flex-1">
+      {actiFout && (
+        <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex items-center justify-between gap-3">
+          <span>{actiFout}</span>
+          <button onClick={() => setActiFout(null)} className="text-red-400 hover:text-red-700 shrink-0">✕</button>
+        </div>
+      )}
       {/* ── Groepen ─────────────────────────────────────────────────── */}
       <section className="mb-8">
         <div className="flex items-center justify-between mb-3">
@@ -381,6 +388,7 @@ function MonteurModal({ modal, expertiseOpties, onClose, onOpgeslagen }) {
       : { ...LEEG_MONTEUR }
   )
   const [bezig, setBezig] = useState(false)
+  const [fout, setFout] = useState(null)
 
   function toggleExpertise(opt) {
     setFormulier((f) => ({
@@ -413,7 +421,7 @@ function MonteurModal({ modal, expertiseOpties, onClose, onOpgeslagen }) {
       onOpgeslagen()
       onClose()
     } catch (err) {
-      alert('Opslaan mislukt: ' + err.message)
+      setFout('Opslaan mislukt: ' + err.message)
     } finally {
       setBezig(false)
     }
@@ -520,6 +528,7 @@ function MonteurModal({ modal, expertiseOpties, onClose, onOpgeslagen }) {
           />
         </Veld>
 
+        {fout && <p className="text-xs text-red-600 pt-1">{fout}</p>}
         <div className="flex justify-end gap-2 pt-2">
           <button type="button" onClick={onClose} className={ANNULEER}>
             Annuleren
@@ -544,6 +553,7 @@ function GroepModal({ modal, monteurs, onClose, onOpgeslagen }) {
   const [toevoegenId, setToevoegenId] = useState('')
   const [bevestigVerwijder, setBevestigVerwijder] = useState(false)
   const [bezig, setBezig] = useState(false)
+  const [fout, setFout] = useState(null)
 
   const beschikbaar = monteurs.filter((m) => !leden.includes(m.id))
 
@@ -574,7 +584,7 @@ function GroepModal({ modal, monteurs, onClose, onOpgeslagen }) {
       onOpgeslagen()
       onClose()
     } catch (err) {
-      alert('Opslaan mislukt: ' + err.message)
+      setFout('Opslaan mislukt: ' + err.message)
     } finally {
       setBezig(false)
     }
@@ -587,7 +597,7 @@ function GroepModal({ modal, monteurs, onClose, onOpgeslagen }) {
       onOpgeslagen()
       onClose()
     } catch (err) {
-      alert('Verwijderen mislukt: ' + err.message)
+      setFout('Verwijderen mislukt: ' + err.message)
     } finally {
       setBezig(false)
     }
@@ -700,6 +710,7 @@ function GroepModal({ modal, monteurs, onClose, onOpgeslagen }) {
                 </button>
               ))}
           </div>
+          {fout && <p className="text-xs text-red-600 pt-1">{fout}</p>}
           <div className="flex gap-2">
             <button type="button" onClick={onClose} className={ANNULEER}>
               Annuleren

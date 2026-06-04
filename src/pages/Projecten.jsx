@@ -70,6 +70,8 @@ export default function Projecten() {
   const [formulier, setFormulier] = useState(LEEG)
   const [bezig, setBezig] = useState(false)
   const [verwijderBevestig, setVerwijderBevestig] = useState(null)
+  const [actiFout, setActiFout] = useState(null)
+  const [modalFout, setModalFout] = useState(null)
   const [kleurPicker, setKleurPicker] = useState(null) // { projectId, top, left }
   const kleurPickerRef = useRef(null)
 
@@ -91,7 +93,7 @@ export default function Projecten() {
       setKleurPicker(null)
       await laadProjecten()
     } catch (err) {
-      alert('Kleur opslaan mislukt: ' + err.message)
+      setActiFout('Kleur opslaan mislukt: ' + err.message)
     }
   }
 
@@ -154,6 +156,7 @@ export default function Projecten() {
 
   function openNieuw() {
     setFormulier({ ...LEEG, kleur: minstGebruikteKleur(projecten) })
+    setModalFout(null)
     setModal({ mode: 'nieuw' })
   }
 
@@ -163,11 +166,12 @@ export default function Projecten() {
       setVerwijderBevestig(null)
       await laadProjecten()
     } catch (err) {
-      alert('Verwijderen mislukt: ' + err.message)
+      setActiFout('Verwijderen mislukt: ' + err.message)
     }
   }
 
   function openBewerk(project) {
+    setModalFout(null)
     setFormulier({
       werknummer: project.werknummer ?? '',
       omschrijving: project.omschrijving ?? '',
@@ -199,7 +203,7 @@ export default function Projecten() {
       setModal(null)
       await laadProjecten()
     } catch (err) {
-      alert('Opslaan mislukt: ' + err.message)
+      setModalFout('Opslaan mislukt: ' + err.message)
     } finally {
       setBezig(false)
     }
@@ -241,10 +245,11 @@ export default function Projecten() {
         </div>
       </div>
 
-      {/* Fout */}
-      {error && (
-        <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-          {error}
+      {/* Laad- of actiefout */}
+      {(error || actiFout) && (
+        <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex items-center justify-between gap-3">
+          <span>{error || actiFout}</span>
+          {actiFout && <button onClick={() => setActiFout(null)} className="text-red-400 hover:text-red-700 shrink-0">✕</button>}
         </div>
       )}
 
@@ -512,6 +517,7 @@ export default function Projecten() {
                 />
               </Veld>
 
+              {modalFout && <p className="text-xs text-red-600 pt-1">{modalFout}</p>}
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
