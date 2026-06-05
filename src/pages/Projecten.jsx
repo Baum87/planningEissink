@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { useAuth, heeftVolledigeToegang } from '../context/AuthContext'
 import { useTenant } from '../context/TenantContext'
 import {
-  getProjectenMetStats,
+  getProjecten,
   createProject,
   updateProject,
   deleteProject,
@@ -61,7 +61,7 @@ export default function Projecten() {
   const { kolomZichtbaar, veldLabel } = useTenant()
   const kanBewerken = heeftVolledigeToegang(rol)
 
-  const { data: _projecten, loading, error, herlaad: laadProjecten } = useAsyncData(getProjectenMetStats)
+  const { data: _projecten, loading, error, herlaad: laadProjecten } = useAsyncData(() => getProjecten({ metStats: true }))
   const projecten = _projecten ?? []
   const [zoek, setZoek] = useState('')
   const [filterPL, setFilterPL] = useState('')

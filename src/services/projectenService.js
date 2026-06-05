@@ -1,18 +1,12 @@
 import { supabase, getTenantId } from '../lib/supabase'
 
-export async function getProjecten() {
+export async function getProjecten({ metStats = false } = {}) {
+  const select = metStats
+    ? '*, toewijzingen(id, monteur_id, datum_van, datum_tot)'
+    : '*'
   const { data, error } = await supabase
     .from('projecten')
-    .select('*')
-    .order('created_at', { ascending: false })
-  if (error) throw error
-  return data
-}
-
-export async function getProjectenMetStats() {
-  const { data, error } = await supabase
-    .from('projecten')
-    .select('*, toewijzingen(id, monteur_id, datum_van, datum_tot)')
+    .select(select)
     .order('created_at', { ascending: false })
   if (error) throw error
   return data
