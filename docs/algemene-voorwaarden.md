@@ -39,7 +39,7 @@
 
 4.1 Opdrachtgever zorgt voor correcte invoer van gegevens en is verantwoordelijk voor het beheer van gebruikersaccounts.
 
-4.2 Opdrachtgever meldt storingen of problemen zo spoedig mogelijk via info@byggr.nl.
+4.2 Opdrachtgever meldt storingen of problemen zo spoedig mogelijk via hello@byggr.nl.
 
 4.3 Opdrachtgever verstrekt tijdig de benodigde informatie voor onboarding en ondersteuning.
 
@@ -109,5 +109,5 @@ De verwerking van persoonsgegevens in het kader van de Dienst is geregeld in de 
 
 ---
 
-*Byggr — info@byggr.nl*  
+*Byggr — hello@byggr.nl*  
 *Versie 1.0, juni 2026*

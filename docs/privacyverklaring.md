@@ -6,7 +6,7 @@
 
 ## Wie zijn wij?
 
-Deze applicatie is ontwikkeld en wordt beheerd door **Byggr**. Voor vragen over privacy kunt u contact opnemen via info@byggr.nl.
+Deze applicatie is ontwikkeld en wordt beheerd door **Byggr**. Voor vragen over privacy kunt u contact opnemen via hello@byggr.nl.
 
 ---
 
@@ -55,7 +55,7 @@ U heeft het recht om:
 - Uw gegevens te laten verwijderen
 - Bezwaar te maken tegen de verwerking
 
-Voor het uitoefenen van deze rechten kunt u contact opnemen met uw werkgever of direct met ons via info@byggr.nl.
+Voor het uitoefenen van deze rechten kunt u contact opnemen met uw werkgever of direct met ons via hello@byggr.nl.
 
 ---
 

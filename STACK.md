@@ -175,6 +175,23 @@ Bij overschrijding stopt Sentry met opslaan van nieuwe fouten tot de volgende ma
 
 ---
 
+## Zoho Mail
+
+**Wat het is:** E-maildienst voor zakelijke communicatie vanuit Byggr.
+
+**Wat het doet:**
+- Beheert het zakelijke e-mailadres `hello@byggr.nl`
+- Verstuurt en ontvangt klantcommunicatie, offertes en projectupdates
+- Geen directe koppeling met de app — losststaand van de technische stack
+
+**Invloed op de app:** Geen — Zoho Mail is alleen voor zakelijke communicatie. Als Zoho down is, werkt de app gewoon door.
+
+**Kosten:** Gratis (Free tier) — 1 gebruiker, 5 GB opslag.
+
+**E-mailadres:** hello@byggr.nl
+
+---
+
 ## React
 
 **Wat het is:** Het JavaScript-framework waarmee de gebruikersinterface is gebouwd.
@@ -222,6 +239,7 @@ Bij overschrijding stopt Sentry met opslaan van nieuwe fouten tot de volgende ma
 | GitHub     | Nee     | Gratis    | Waarschijnlijk nooit      |
 | Sentry     | Nee     | Gratis    | Waarschijnlijk nooit      |
 | Resend     | Deels   | Gratis    | > 3.000 mails/maand       |
+| Zoho Mail  | Nee     | Gratis    | > 1 gebruiker / 5 GB      |
 | React      | n.v.t.  | Gratis    | n.v.t.                    |
 | Tailwind   | n.v.t.  | Gratis    | n.v.t.                    |
 | Vite       | n.v.t.  | Gratis    | n.v.t.                    |

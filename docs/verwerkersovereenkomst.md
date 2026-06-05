@@ -9,7 +9,7 @@
 **Verwerker:**
 Remco Baumeister, handelend onder de naam Byggr  
 KvK-nummer: [invullen]  
-E-mail: info@byggr.nl  
+E-mail: hello@byggr.nl  
 Hierna te noemen: **Verwerker**
 
 **Verwerkingsverantwoordelijke:**

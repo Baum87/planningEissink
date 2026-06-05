@@ -19,7 +19,7 @@ Adres: ___________________________________
 
 **Byggr**  
 Remco Baumeister  
-E-mail: info@byggr.nl  
+E-mail: hello@byggr.nl  
 KvK: [invullen]  
 
 ---
