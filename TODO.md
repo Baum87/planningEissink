@@ -13,15 +13,15 @@ Bijgehouden naast CONTEXT.md — technische context staat daar.
 - [x] **Migratie 011 uitvoeren in Supabase (profielen zonder login)**
       011_profielen_zonder_login.sql uitgevoerd. Validatie: 5 profielen, 5 met loginaccount, 0 zonder. ✓
 
-- [ ] **Beheer UI: projectleider aanmaken zonder loginaccount**
-      Knop toevoegen in Beheer.jsx: "Persoon toevoegen" (naam + afkorting, geen e-mail).
-      Roept Edge Function actie `profiel_aanmaken` aan.
-      Aparte knop "Loginaccount koppelen" voor als PL later wil inloggen (actie `profiel_koppelen`).
+- [x] **Beheer UI: projectleider aanmaken zonder loginaccount**
+      "Persoon toevoegen" knop live. Tabel toont voornaam/achternaam/afkorting apart.
+      "Koppel account" knop: via uitnodiging of direct aanmaken met wachtwoord.
+      Personen zonder account zijn klikbaar en bewerkbaar.
 
 - [ ] **Projectleiders aanmaken + data migratie**
-      Na UI: 8 projectleiders aanmaken via "Persoon toevoegen" (MB, GB, TJ, EK, RW, JH, JB, TP).
-      Daarna migratiescript: projectleider_initialen → projectleider_id (UUID) per persoon.
-      Vereiste: volledige namen van alle 8 ophalen bij de beheerder (e-mailadressen niet verplicht).
+      Volledige namen van 8 PLs ophalen bij beheerder Eissink (MB, GB, TJ, EK, RW, JH, JB, TP).
+      Aanmaken via "Persoon toevoegen" in Beheer tab.
+      Daarna koppelscript draaien: projectleider_initialen → projectleider_id (UUID).
 
 ---
 
