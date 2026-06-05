@@ -111,6 +111,9 @@ Kleine, veilige wijzigingen. Na elk punt lokaal testen.
 
 ## Morgen
 
+- [ ] **KvK-nummer invullen in verwerkersovereenkomst**
+      docs/verwerkersovereenkomst.md — regel 8. Nog geen KvK aangevraagd.
+
 - [ ] **Projectleiders aanmaken als gebruiker + data migratie**
       8 projectleiders (MB, GB, TJ, EK, RW, JH, JB, TP) uitnodigen via Beheer tab.
       Daarna migratiescript: projectleider_initialen → projectleider_id (UUID) per persoon.
