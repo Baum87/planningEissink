@@ -107,29 +107,14 @@ export default function Login() {
       </div>
 
       {/* Privacy & disclaimer */}
-      <div className="mt-12 flex items-center justify-center gap-4">
-        <a
-          href="/privacy"
-          className="text-xs text-gray-300 hover:text-gray-500 transition-colors"
-        >
+      <div className="mt-12 flex items-center justify-center gap-3">
+        <a href="/privacy" className="text-xs text-gray-300 hover:text-gray-500 transition-colors">
           Privacyverklaring
         </a>
-        <span className="text-gray-200 text-xs">·</span>
-      </div>
-
-      {/* Technische disclaimer */}
-      <div className="mt-2 relative group">
-        <span className="text-xs text-gray-300 cursor-default">Disclaimer</span>
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-80 hidden group-hover:block z-10">
-          <div className="border border-amber-200 bg-amber-50 rounded-xl p-4 shadow-md">
-            <p className="text-xs font-medium text-amber-800 mb-2">⚠ Technische afhankelijkheden</p>
-            <ul className="text-xs text-amber-700 space-y-1.5">
-              <li>• Deze applicatie draait op externe diensten van derden (Supabase, Vercel). Beschikbaarheid, prijswijzigingen en continuïteit zijn afhankelijk van deze partijen.</li>
-              <li>• De applicatie vereist doorlopend technisch beheer en maandelijkse hostingkosten. Zonder actief onderhoud kunnen functionaliteit en beveiliging achterstallig raken.</li>
-              <li>• Dit betreft een maatwerkapplicatie zonder SLA, professionele backupstrategie of gedocumenteerd continuïteitsplan. Gebruik in productieomgevingen vereist aanvullende afspraken.</li>
-            </ul>
-          </div>
-        </div>
+        <span className="text-xs text-gray-300">·</span>
+        <a href="/disclaimer" className="text-xs text-gray-300 hover:text-gray-500 transition-colors">
+          Disclaimer
+        </a>
       </div>
 
     </div>
