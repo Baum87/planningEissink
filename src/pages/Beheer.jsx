@@ -9,6 +9,12 @@ import {
   rolWijzigen,
   updateGebruiker,
   verwijderen,
+  profielAanmaken,
+  profielKoppelen,
+  profielKoppelenAanmaken,
+  profielenZonderAccount,
+  profielVerwijderen,
+  profielUpdaten,
 } from '../services/gebruikersbeheerService'
 import { getPeriodes, createPeriode, updatePeriode, deletePeriode } from '../services/periodesService'
 
@@ -78,13 +84,28 @@ function GebruikersTab() {
     error: fout,
     herlaad: laad,
   } = useAsyncData(async () => {
-    const { gebruikers: lijst } = await lijstGebruikers()
-    return lijst
+    const [{ gebruikers: lijst }, profielen] = await Promise.all([
+      lijstGebruikers(),
+      profielenZonderAccount(),
+    ])
+    const metAccount = lijst.map((g) => ({ ...g, heeftAccount: true }))
+    const zonderAccount = profielen.map((p) => ({
+      id: p.id,
+      naam: p.weergave_naam,
+      afkorting: p.afkorting,
+      email: null,
+      rol: null,
+      created_at: p.created_at,
+      last_sign_in_at: null,
+      heeftAccount: false,
+    }))
+    return [...metAccount, ...zonderAccount]
   })
   const gebruikers = data ?? []
-  const [toonModal, setToonModal] = useState(null) // null | 'uitnodigen' | 'aanmaken'
+  const [toonModal, setToonModal] = useState(null) // null | 'uitnodigen' | 'aanmaken' | 'persoon' | { koppelen: id }
   const [verwijderBevestig, setVerwijderBevestig] = useState(null)
   const [bewerkenGebruiker, setBewerkenGebruiker] = useState(null)
+  const [bewerkenProfiel, setBewerkenProfiel] = useState(null)
 
   async function handleRolWijzig(user_id, rol) {
     await rolWijzigen(user_id, rol)
@@ -95,7 +116,11 @@ function GebruikersTab() {
 
   async function handleVerwijder(g) {
     try {
-      await verwijderen(g.id)
+      if (g.heeftAccount) {
+        await verwijderen(g.id)
+      } else {
+        await profielVerwijderen(g.id)
+      }
       setGebruikers((prev) => prev.filter((x) => x.id !== g.id))
       setVerwijderBevestig(null)
     } catch (e) {
@@ -120,6 +145,12 @@ function GebruikersTab() {
         </div>
         <div className="flex gap-2">
           <button
+            onClick={() => setToonModal('persoon')}
+            className="px-4 py-2 bg-white border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            Persoon toevoegen
+          </button>
+          <button
             onClick={() => setToonModal('aanmaken')}
             className="px-4 py-2 bg-white border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
           >
@@ -142,7 +173,9 @@ function GebruikersTab() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-gray-200 bg-gray-50">
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Naam</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600">Voornaam</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600">Achternaam</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600"></th>
               <th className="text-left px-4 py-3 font-medium text-gray-600">E-mail</th>
               <th className="text-left px-4 py-3 font-medium text-gray-600">Rol</th>
               <th className="text-left px-4 py-3 font-medium text-gray-600">Toegevoegd</th>
@@ -152,30 +185,42 @@ function GebruikersTab() {
           </thead>
           <tbody>
             {laden ? (
-              <tr><td colSpan={6} className="px-4 py-10 text-center text-gray-400">Laden…</td></tr>
+              <tr><td colSpan={8} className="px-4 py-10 text-center text-gray-400">Laden…</td></tr>
             ) : gebruikers.length === 0 ? (
-              <tr><td colSpan={6} className="px-4 py-10 text-center text-gray-400">Geen gebruikers gevonden</td></tr>
+              <tr><td colSpan={8} className="px-4 py-10 text-center text-gray-400">Geen gebruikers gevonden</td></tr>
             ) : (
               gebruikers.map((g) => {
                 const isZijzelf = g.id === user?.id
                 return (
                   <tr
                     key={g.id}
-                    onClick={() => verwijderBevestig !== g.id && setBewerkenGebruiker(g)}
+                    onClick={() => {
+                      if (verwijderBevestig === g.id) return
+                      if (g.heeftAccount) setBewerkenGebruiker(g)
+                      else setBewerkenProfiel(g)
+                    }}
                     className="border-b border-gray-100 last:border-0 hover:bg-gray-50 group cursor-pointer"
                   >
                     <td className="px-4 py-3 font-medium text-gray-900">
-                      {g.naam || '—'}
+                      {g.naam?.split(' ')[0] || '—'}
                       {isZijzelf && <span className="ml-2 text-xs text-gray-400">(jij)</span>}
                     </td>
-                    <td className="px-4 py-3 text-gray-600">{g.email}</td>
+                    <td className="px-4 py-3 text-gray-900">{g.naam?.split(' ').slice(1).join(' ') || '—'}</td>
+                    <td className="px-4 py-3 text-xs text-gray-400">{g.afkorting ?? ''}</td>
+                    <td className="px-4 py-3 text-gray-500">{g.email ?? '—'}</td>
                     <td className="px-4 py-3">
-                      <span className="inline-flex px-2 py-0.5 rounded-md text-xs font-medium bg-gray-100 text-gray-700">
-                        {ROL_LABELS[g.rol] ?? g.rol}
-                      </span>
+                      {g.heeftAccount ? (
+                        <span className="inline-flex px-2 py-0.5 rounded-md text-xs font-medium bg-gray-100 text-gray-700">
+                          {ROL_LABELS[g.rol] ?? g.rol}
+                        </span>
+                      ) : (
+                        <span className="inline-flex px-2 py-0.5 rounded-md text-xs font-medium bg-blue-50 text-blue-600 border border-blue-100">
+                          Geen account
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-gray-500">{fDatumKort(g.created_at)}</td>
-                    <td className="px-4 py-3 text-gray-500">{fDatumKort(g.last_sign_in_at)}</td>
+                    <td className="px-4 py-3 text-gray-500">{g.last_sign_in_at ? fDatumKort(g.last_sign_in_at) : '—'}</td>
                     <td className="px-4 py-3 text-right">
                       {!isZijzelf && (
                         verwijderBevestig === g.id ? (
@@ -185,13 +230,23 @@ function GebruikersTab() {
                             <button onClick={(e) => { e.stopPropagation(); setVerwijderBevestig(null) }} className="text-xs text-gray-400 hover:text-gray-600 transition-colors">Nee</button>
                           </span>
                         ) : (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); setVerwijderBevestig(g.id) }}
-                            title="Verwijderen"
-                            className="text-gray-300 hover:text-red-500 transition-colors"
-                          >
-                            <TrashIcon />
-                          </button>
+                          <span className="inline-flex items-center gap-3">
+                            {!g.heeftAccount && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setToonModal({ koppelen: g.id }) }}
+                                className="text-xs text-blue-500 hover:text-blue-700 transition-colors whitespace-nowrap"
+                              >
+                                Koppel account
+                              </button>
+                            )}
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setVerwijderBevestig(g.id) }}
+                              title="Verwijderen"
+                              className="text-gray-300 hover:text-red-500 transition-colors"
+                            >
+                              <TrashIcon />
+                            </button>
+                          </span>
                         )
                       )}
                     </td>
@@ -213,6 +268,26 @@ function GebruikersTab() {
         <AanmakenModal
           onClose={() => setToonModal(null)}
           onSuccess={() => { setToonModal(null); laad() }}
+        />
+      )}
+      {toonModal === 'persoon' && (
+        <ProfielAanmakenModal
+          onClose={() => setToonModal(null)}
+          onSuccess={() => { setToonModal(null); laad() }}
+        />
+      )}
+      {toonModal?.koppelen && (
+        <ProfielKoppelenModal
+          profielId={toonModal.koppelen}
+          onClose={() => setToonModal(null)}
+          onSuccess={() => { setToonModal(null); laad() }}
+        />
+      )}
+      {bewerkenProfiel && (
+        <ProfielBewerkenModal
+          profiel={bewerkenProfiel}
+          onOpgeslagen={(bijgewerkt) => setGebruikers((prev) => prev.map((g) => g.id === bijgewerkt.id ? bijgewerkt : g))}
+          onClose={() => setBewerkenProfiel(null)}
         />
       )}
       {bewerkenGebruiker && (
@@ -344,7 +419,8 @@ function PeriodesTab() {
 
 function UitnodigModal({ onClose, onSuccess }) {
   const [email, setEmail] = useState('')
-  const [naam, setNaam] = useState('')
+  const [voornaam, setVoornaam] = useState('')
+  const [achternaam, setAchternaam] = useState('')
   const [afkorting, setAfkorting] = useState('')
   const [rol, setRol] = useState('gebruiker')
   const [bezig, setBezig] = useState(false)
@@ -355,7 +431,8 @@ function UitnodigModal({ onClose, onSuccess }) {
     setBezig(true)
     setFout(null)
     try {
-      await uitnodigen(email.trim(), naam.trim(), afkorting.trim() || null, rol)
+      const naam = `${voornaam.trim()} ${achternaam.trim()}`.trim()
+      await uitnodigen(email.trim(), naam, afkorting.trim() || null, rol)
       onSuccess()
     } catch (e) {
       setFout(e.message)
@@ -374,11 +451,19 @@ function UitnodigModal({ onClose, onSuccess }) {
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
               placeholder="naam@bedrijf.nl" />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Volledige naam</label>
-            <input type="text" required value={naam} onChange={(e) => setNaam(e.target.value)}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
-              placeholder="Jan Jansen" />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Voornaam</label>
+              <input type="text" required value={voornaam} onChange={(e) => setVoornaam(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                placeholder="Jan" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Achternaam</label>
+              <input type="text" required value={achternaam} onChange={(e) => setAchternaam(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                placeholder="Jansen" />
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -414,7 +499,8 @@ function UitnodigModal({ onClose, onSuccess }) {
 
 function AanmakenModal({ onClose, onSuccess }) {
   const [email, setEmail] = useState('')
-  const [naam, setNaam] = useState('')
+  const [voornaam, setVoornaam] = useState('')
+  const [achternaam, setAchternaam] = useState('')
   const [afkorting, setAfkorting] = useState('')
   const [rol, setRol] = useState('gebruiker')
   const [wachtwoord, setWachtwoord] = useState('')
@@ -426,7 +512,8 @@ function AanmakenModal({ onClose, onSuccess }) {
     setBezig(true)
     setFout(null)
     try {
-      await aanmaken(email.trim(), naam.trim(), afkorting.trim() || null, rol, wachtwoord)
+      const naam = `${voornaam.trim()} ${achternaam.trim()}`.trim()
+      await aanmaken(email.trim(), naam, afkorting.trim() || null, rol, wachtwoord)
       onSuccess()
     } catch (e) {
       setFout(e.message)
@@ -446,11 +533,19 @@ function AanmakenModal({ onClose, onSuccess }) {
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
               placeholder="naam@bedrijf.nl" />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Volledige naam</label>
-            <input type="text" required value={naam} onChange={(e) => setNaam(e.target.value)}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
-              placeholder="Jan Jansen" />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Voornaam</label>
+              <input type="text" required value={voornaam} onChange={(e) => setVoornaam(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                placeholder="Jan" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Achternaam</label>
+              <input type="text" required value={achternaam} onChange={(e) => setAchternaam(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                placeholder="Jansen" />
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -491,7 +586,9 @@ function AanmakenModal({ onClose, onSuccess }) {
 }
 
 function GebruikerModal({ gebruiker, isZijzelf, onOpgeslagen, onClose }) {
-  const [naam, setNaam] = useState(gebruiker.naam ?? '')
+  const naamDelen = (gebruiker.naam ?? '').split(' ')
+  const [voornaam, setVoornaam] = useState(naamDelen[0] ?? '')
+  const [achternaam, setAchternaam] = useState(naamDelen.slice(1).join(' ') ?? '')
   const [email, setEmail] = useState(gebruiker.email ?? '')
   const [afkorting, setAfkorting] = useState(gebruiker.afkorting ?? '')
   const [rol, setRol] = useState(gebruiker.rol)
@@ -504,14 +601,15 @@ function GebruikerModal({ gebruiker, isZijzelf, onOpgeslagen, onClose }) {
     setBezig(true)
     setFout(null)
     try {
+      const naam = `${voornaam.trim()} ${achternaam.trim()}`.trim()
       await updateGebruiker(gebruiker.id, {
-        naam:       naam.trim()                          || undefined,
+        naam:       naam                                 || undefined,
         email:      email.trim()                         || undefined,
         afkorting:  afkorting.trim()                     || null,
         wachtwoord: wachtwoord                           || undefined,
         rol:        rol !== gebruiker.rol ? rol : undefined,
       })
-      onOpgeslagen({ ...gebruiker, naam: naam.trim(), email: email.trim(), afkorting: afkorting.trim() || null, rol })
+      onOpgeslagen({ ...gebruiker, naam, email: email.trim(), afkorting: afkorting.trim() || null, rol })
       onClose()
     } catch (e) {
       setFout(e.message)
@@ -524,11 +622,19 @@ function GebruikerModal({ gebruiker, isZijzelf, onOpgeslagen, onClose }) {
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6" onClick={(e) => e.stopPropagation()}>
         <h2 className="text-base font-semibold text-gray-900 mb-5">Gebruiker bewerken</h2>
         <form onSubmit={submit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Naam</label>
-            <input type="text" value={naam} onChange={(e) => setNaam(e.target.value)}
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
-              placeholder="Volledige naam" />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Voornaam</label>
+              <input type="text" value={voornaam} onChange={(e) => setVoornaam(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                placeholder="Jan" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Achternaam</label>
+              <input type="text" value={achternaam} onChange={(e) => setAchternaam(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                placeholder="Jansen" />
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
@@ -569,6 +675,221 @@ function GebruikerModal({ gebruiker, isZijzelf, onOpgeslagen, onClose }) {
             <button type="submit" disabled={bezig}
               className="flex-1 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-700 disabled:opacity-50 transition-colors">
               {bezig ? 'Opslaan…' : 'Opslaan'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+function ProfielBewerkenModal({ profiel, onOpgeslagen, onClose }) {
+  const naamDelen = (profiel.naam ?? '').split(' ')
+  const [voornaam, setVoornaam] = useState(naamDelen[0] ?? '')
+  const [achternaam, setAchternaam] = useState(naamDelen.slice(1).join(' ') ?? '')
+  const [afkorting, setAfkorting] = useState(profiel.afkorting ?? '')
+  const [bezig, setBezig] = useState(false)
+  const [fout, setFout] = useState(null)
+
+  async function submit(e) {
+    e.preventDefault()
+    setBezig(true)
+    setFout(null)
+    try {
+      const naam = `${voornaam.trim()} ${achternaam.trim()}`.trim()
+      await profielUpdaten(profiel.id, { weergave_naam: naam, afkorting: afkorting.trim() || null })
+      onOpgeslagen({ ...profiel, naam, afkorting: afkorting.trim() || null })
+      onClose()
+    } catch (e) {
+      setFout(e.message)
+      setBezig(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6" onClick={(e) => e.stopPropagation()}>
+        <h2 className="text-base font-semibold text-gray-900 mb-5">Persoon bewerken</h2>
+        <form onSubmit={submit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Voornaam</label>
+              <input type="text" value={voornaam} onChange={(e) => setVoornaam(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                placeholder="Jan" autoFocus />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Achternaam</label>
+              <input type="text" value={achternaam} onChange={(e) => setAchternaam(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                placeholder="Jansen" />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Afkorting <span className="text-gray-400 font-normal">(max 4 tekens)</span>
+            </label>
+            <input type="text" value={afkorting} onChange={(e) => setAfkorting(e.target.value.slice(0, 4).toUpperCase())}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+              placeholder="JJ" />
+          </div>
+          {fout && <p className="text-sm text-red-600">{fout}</p>}
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={onClose}
+              className="flex-1 px-4 py-2 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">
+              Annuleren
+            </button>
+            <button type="submit" disabled={bezig}
+              className="flex-1 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-700 disabled:opacity-50 transition-colors">
+              {bezig ? 'Opslaan…' : 'Opslaan'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+function ProfielAanmakenModal({ onClose, onSuccess }) {
+  const [voornaam, setVoornaam] = useState('')
+  const [achternaam, setAchternaam] = useState('')
+  const [afkorting, setAfkorting] = useState('')
+  const [bezig, setBezig] = useState(false)
+  const [fout, setFout] = useState(null)
+
+  async function submit(e) {
+    e.preventDefault()
+    setBezig(true)
+    setFout(null)
+    try {
+      const naam = `${voornaam.trim()} ${achternaam.trim()}`.trim()
+      await profielAanmaken(naam, afkorting.trim() || null)
+      onSuccess()
+    } catch (e) {
+      setFout(e.message)
+      setBezig(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-1">Persoon toevoegen</h2>
+        <p className="text-sm text-gray-400 mb-5">Geen loginaccount — alleen naam en afkorting. Geschikt voor projectleiders als referentie.</p>
+        <form onSubmit={submit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Voornaam</label>
+              <input type="text" required value={voornaam} onChange={(e) => setVoornaam(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                placeholder="Jan" autoFocus />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Achternaam</label>
+              <input type="text" required value={achternaam} onChange={(e) => setAchternaam(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                placeholder="Jansen" />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Afkorting <span className="text-gray-400 font-normal">(max 4 tekens)</span>
+            </label>
+            <input type="text" value={afkorting} onChange={(e) => setAfkorting(e.target.value.slice(0, 4).toUpperCase())}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+              placeholder="JJ" />
+          </div>
+          {fout && <p className="text-sm text-red-600">{fout}</p>}
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={onClose}
+              className="flex-1 px-4 py-2 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">
+              Annuleren
+            </button>
+            <button type="submit" disabled={bezig}
+              className="flex-1 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-700 disabled:opacity-50 transition-colors">
+              {bezig ? 'Toevoegen…' : 'Toevoegen'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+function ProfielKoppelenModal({ profielId, onClose, onSuccess }) {
+  const [modus, setModus] = useState('uitnodigen') // 'uitnodigen' | 'aanmaken'
+  const [email, setEmail] = useState('')
+  const [wachtwoord, setWachtwoord] = useState('')
+  const [bezig, setBezig] = useState(false)
+  const [fout, setFout] = useState(null)
+
+  async function submit(e) {
+    e.preventDefault()
+    setBezig(true)
+    setFout(null)
+    try {
+      if (modus === 'uitnodigen') {
+        await profielKoppelen(profielId, email.trim())
+      } else {
+        await profielKoppelenAanmaken(profielId, email.trim(), wachtwoord)
+      }
+      onSuccess()
+    } catch (e) {
+      setFout(e.message)
+      setBezig(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Loginaccount koppelen</h2>
+
+        <div className="flex gap-1 p-1 bg-gray-100 rounded-lg mb-5">
+          {[['uitnodigen', 'Via uitnodiging'], ['aanmaken', 'Direct aanmaken']].map(([val, label]) => (
+            <button
+              key={val}
+              type="button"
+              onClick={() => { setModus(val); setFout(null) }}
+              className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                modus === val ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        <p className="text-sm text-gray-400 mb-5">
+          {modus === 'uitnodigen'
+            ? 'Stuurt een e-mail waarmee de persoon zelf een wachtwoord instelt.'
+            : 'Geen e-mail verstuurd — deel de inloggegevens zelf.'}
+        </p>
+
+        <form onSubmit={submit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">E-mailadres</label>
+            <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+              placeholder="naam@bedrijf.nl" autoFocus />
+          </div>
+          {modus === 'aanmaken' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Wachtwoord</label>
+              <input type="text" required minLength={8} value={wachtwoord} onChange={(e) => setWachtwoord(e.target.value)}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                placeholder="Minimaal 8 tekens" />
+            </div>
+          )}
+          {fout && <p className="text-sm text-red-600">{fout}</p>}
+          <div className="flex gap-3 pt-2">
+            <button type="button" onClick={onClose}
+              className="flex-1 px-4 py-2 border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">
+              Annuleren
+            </button>
+            <button type="submit" disabled={bezig}
+              className="flex-1 px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-700 disabled:opacity-50 transition-colors">
+              {bezig ? 'Bezig…' : modus === 'uitnodigen' ? 'Uitnodiging sturen' : 'Aanmaken'}
             </button>
           </div>
         </form>

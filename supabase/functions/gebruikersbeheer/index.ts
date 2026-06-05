@@ -203,6 +203,47 @@ Deno.serve(async (req) => {
     return json({ ok: true, user_id: userId })
   }
 
+  // ── profiel_koppelen_aanmaken (koppel bestaand profiel, geen uitnodigingsmail) ──
+  if (actie === 'profiel_koppelen_aanmaken') {
+    const { profiel_id, email, wachtwoord } = body
+    if (!profiel_id || !email || !wachtwoord) return json({ error: 'profiel_id, email en wachtwoord zijn verplicht' }, 400)
+
+    const { data: profiel, error: profielError } = await admin
+      .from('profielen')
+      .select('id, weergave_naam, afkorting, user_id')
+      .eq('id', profiel_id)
+      .eq('tenant_id', callerTenantId)
+      .single()
+    if (profielError || !profiel) return json({ error: 'Profiel niet gevonden' }, 404)
+    if (profiel.user_id) return json({ error: 'Dit profiel heeft al een loginaccount' }, 400)
+
+    const { data: newUser, error: createError } = await admin.auth.admin.createUser({
+      email,
+      password: wachtwoord,
+      email_confirm: true,
+      app_metadata: {
+        rol: 'gebruiker',
+        naam: profiel.weergave_naam,
+        tenant_id: callerTenantId,
+        afkorting: profiel.afkorting || null,
+      },
+    })
+    if (createError) return json({ error: createError.message }, 400)
+
+    const userId = newUser.user.id
+
+    const { error: updateError } = await admin
+      .from('profielen')
+      .update({ user_id: userId })
+      .eq('id', profiel_id)
+    if (updateError) {
+      await admin.auth.admin.deleteUser(userId)
+      return json({ error: updateError.message }, 500)
+    }
+
+    return json({ ok: true, user_id: userId })
+  }
+
   // ── rol_wijzigen ───────────────────────────────────────────────────────
   if (actie === 'rol_wijzigen') {
     const { user_id, rol } = body

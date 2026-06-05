@@ -26,3 +26,38 @@ export const rolWijzigen = (user_id, rol) => roepAan('rol_wijzigen', { user_id, 
 export const updateGebruiker = (user_id, { naam, email, afkorting, wachtwoord, rol }) =>
   roepAan('wijzigen', { user_id, naam, email, afkorting, wachtwoord, rol })
 export const verwijderen = (user_id) => roepAan('verwijderen', { user_id })
+
+export const profielAanmaken = (naam, afkorting) =>
+  roepAan('profiel_aanmaken', { naam, afkorting })
+
+export const profielKoppelen = (profiel_id, email) =>
+  roepAan('profiel_koppelen', { profiel_id, email, redirectTo: `${window.location.origin}/?type=invite` })
+
+export const profielKoppelenAanmaken = (profiel_id, email, wachtwoord) =>
+  roepAan('profiel_koppelen_aanmaken', { profiel_id, email, wachtwoord })
+
+export const profielenZonderAccount = async () => {
+  const { data, error } = await supabase
+    .from('profielen')
+    .select('id, weergave_naam, afkorting, created_at')
+    .is('user_id', null)
+    .order('weergave_naam')
+  if (error) throw new Error(error.message)
+  return data
+}
+
+export const profielVerwijderen = async (profiel_id) => {
+  const { error } = await supabase
+    .from('profielen')
+    .delete()
+    .eq('id', profiel_id)
+  if (error) throw new Error(error.message)
+}
+
+export const profielUpdaten = async (profiel_id, { weergave_naam, afkorting }) => {
+  const { error } = await supabase
+    .from('profielen')
+    .update({ weergave_naam, afkorting })
+    .eq('id', profiel_id)
+  if (error) throw new Error(error.message)
+}
