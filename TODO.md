@@ -81,7 +81,7 @@ Kleine, veilige wijzigingen. Na elk punt lokaal testen.
 - [ ] **`getProjecten` / `getProjectenMetStats` samenvoegen**
       Twee bijna-identieke service-functies. Één functie met parameter `metStats = false`.
 
-- [ ] **`naam` normaliseren in AuthContext**
+- [x] **`naam` normaliseren in AuthContext**
       `user?.app_metadata?.naam` wordt direct in App.jsx aangesproken buiten de context om.
       AuthContext exporteert al `initialen` — `naam` toevoegen zodat metadata-structuur
       op één plek zit.

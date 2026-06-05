@@ -83,7 +83,7 @@ function WachtwoordInstellen() {
 }
 
 function AppInner() {
-  const { user, rol, uitloggen, moetWachtwoordInstellen } = useAuth()
+  const { user, rol, naam, uitloggen, moetWachtwoordInstellen } = useAuth()
   const { tenant } = useTenant()
   const [activeTab, setActiveTab] = useState('planning')
   const [hamburgerOpen, setHamburgerOpen] = useState(false)
@@ -158,10 +158,8 @@ function AppInner() {
 
             {/* Desktop: gebruiker + uitloggen */}
             <div className="hidden md:flex ml-auto items-center gap-4">
-              {(user?.app_metadata?.naam || user?.email) && (
-                <span className="text-xs text-gray-400">
-                  {user.app_metadata?.naam || user.email}
-                </span>
+              {naam && (
+                <span className="text-xs text-gray-400">{naam}</span>
               )}
               <button onClick={uitloggen} className="text-xs text-gray-400 hover:text-gray-700 transition-colors">
                 Uitloggen
@@ -193,10 +191,8 @@ function AppInner() {
               </button>
             ))}
             <div className="px-6 py-3.5 border-t border-gray-100 flex items-center justify-between">
-              {(user?.app_metadata?.naam || user?.email) && (
-                <span className="text-xs text-gray-400">
-                  {user.app_metadata?.naam || user.email}
-                </span>
+              {naam && (
+                <span className="text-xs text-gray-400">{naam}</span>
               )}
               <button onClick={uitloggen} className="text-xs text-gray-400 hover:text-gray-700 transition-colors">
                 Uitloggen

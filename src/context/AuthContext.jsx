@@ -7,6 +7,7 @@ export function AuthProvider({ children }) {
   // undefined = sessie nog aan het laden, null = niet ingelogd, object = ingelogd
   const [user, setUser] = useState(undefined)
   const [rol, setRol] = useState(null)
+  const [naam, setNaam] = useState(null)
   const [initialen, setInitialen] = useState(null)
 
   // Detecteer uitnodiging of wachtwoord-reset link — implicit flow via hash, PKCE via query string
@@ -22,6 +23,7 @@ export function AuthProvider({ children }) {
   function verwerkUser(u) {
     setUser(u ?? null)
     setRol(u?.app_metadata?.rol ?? null)
+    setNaam(u?.app_metadata?.naam ?? u?.email ?? null)
     setInitialen(u?.app_metadata?.afkorting ?? null)
   }
 
@@ -41,7 +43,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, rol, initialen, uitloggen, moetWachtwoordInstellen, setMoetWachtwoordInstellen }}>
+    <AuthContext.Provider value={{ user, rol, naam, initialen, uitloggen, moetWachtwoordInstellen, setMoetWachtwoordInstellen }}>
       {children}
     </AuthContext.Provider>
   )
