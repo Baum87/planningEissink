@@ -5,133 +5,27 @@ Bijgehouden naast CONTEXT.md — technische context staat daar.
 
 ---
 
-## Code kwaliteit — laag 1: bugs & dead code
-
-Kleine, veilige wijzigingen. Na elk punt lokaal testen.
-
-- [x] **Duplicate `naarStr` verwijderen**
-      Staat zowel in `datum.js` als in `toewijzingenService.js`. Import de versie uit datum.js.
-
-- [x] **Timezone-bug in `getMonteurs` fixen**
-      `new Date().toISOString().split('T')[0]` geeft UTC-datum → verkeerd na middernacht in NL.
-      Vervangen door `naarStr(new Date())` (lokale methoden, consistent met rest van codebase).
-
-- [x] **Dead code `skipDagen` verwijderen uit Planning.jsx**
-      `skipDagen` = hardSkipDagen ∪ softSkipDagen, maar wordt nergens gebruikt.
-      Alleen `hardSkipDagen` wordt doorgegeven aan `createToewijzing`. Verwijderen.
-
-- [x] **Date utilities verplaatsen uit Planning.jsx naar datum.js**
-      `prevWerkdag`, `nextWerkdag`, `plusWerkdagen`, `fBereikLang`, `aaneengesloten` horen in datum.js.
-      Nu onvindbaar en niet herbruikbaar vanuit andere pagina's.
-
-- [x] **TenantContext: sequentiële fetches → parallel (Promise.all)**
-      `laadTenant()` wacht eerst op tenant, dan op instellingen. Kan tegelijk.
-      Twee onafhankelijke queries, ~2× sneller bij trage verbinding.
-
-- [~] **`avatarKleur` hash: volledige naam i.p.v. eerste teken** *(bewust overgeslagen)*
-      `naam.charCodeAt(0)` → "Jan", "Johan", "Joost" krijgen allemaal dezelfde kleur.
-      Vervangen door hash over de volledige naam.
-
-- [x] **`setGroepLeden` atomair maken**
-      Delete + insert in twee losse queries: als insert faalt zijn leden weg zonder herstel.
-      Oplossing: upsert-patroon of delete-only-na-succesvolle-insert.
-
-- [x] **`getMonteurs`: vandaag-toewijzingen optioneel maken**
-      Planning.jsx roept `getMonteurs()` aan maar gebruikt `toewijzingen_vandaag` nooit.
-      Parameter toevoegen: `getMonteurs({ metVandaag = true } = {})` — Planning geeft `false`.
-
----
-
-## Code kwaliteit — laag 2: extractie & consistentie
-
-- [x] **`useAsyncData` custom hook**
-      Het laad/loading/error/useEffect-patroon staat 5× gekopieerd (Planning, Overzicht,
-      Projecten, Monteurs, Beheer). Eén generieke hook elimineert dit.
-      Toegepast op Projecten en Beheer (gebruikers + periodes). Planning/Monteurs/Overzicht
-      hebben complexere patronen en worden later aangepakt.
-
-- [x] **Modals uit Planning.jsx extraheren naar `src/components/`**
-      `InplanModal`, `ProjectZoeker`, `MonteurPopup` zijn nu gedefinieerd ín Planning.jsx
-      en daardoor niet herbruikbaar. Verplaatsen naar losse bestanden.
-
-- [x] **`alert()` vervangen door inline fout-state in modals**
-      `alert('Verwijderen mislukt: ' + err.message)` blokkeert de UI.
-      Consistent maken met het patroon in Projecten.jsx (`fout`-state in modal).
-
-- [x] **`getTenantId()` cachen**
-      Elke mutatie roept `getSession()` aan om tenant_id op te halen.
-      Tenant-id is stabiel na login — eenmalig in geheugen bewaren.
-
-- [x] **`laad()` in Planning.jsx: bewaar `uitgeklapt` bij data-refresh**
-      `setUitgeklapt(new Set(g.map(...)))` klapt bij elke refresh alle groepen open.
-      Alleen initialiseren als `uitgeklapt` nog leeg is.
-
----
-
-## Code kwaliteit — laag 3: performance (bij groei)
-
-- [ ] **Request cancellation via AbortController**
-      Snelle weeknavigatie verstuurt meerdere fetch-requests tegelijk.
-      Laatste response wint — kan stale data tonen. AbortController lost dit op.
-
-- [ ] **Debounce zoekbalken**
-      Elke toetsaanslag filtert direct over alle rijen. `useDeferredValue` of 200ms debounce
-      voorkomt geblokkeerde frames bij grote datasets.
-
-- [ ] **`getProjecten` / `getProjectenMetStats` samenvoegen**
-      Twee bijna-identieke service-functies. Één functie met parameter `metStats = false`.
-
-- [x] **`naam` normaliseren in AuthContext**
-      `user?.app_metadata?.naam` wordt direct in App.jsx aangesproken buiten de context om.
-      AuthContext exporteert al `initialen` — `naam` toevoegen zodat metadata-structuur
-      op één plek zit.
-
----
-
-## Nu — direct aanpakken
-
-- [x] **Eigen SMTP instellen (Resend of Zoho)**
-      Resend gekoppeld via smtp.resend.com, verstuurt vanaf noreply@byggr.nl.
-      Zoho ingesteld als zakelijke inbox op hello@byggr.nl.
-      DNS geconfigureerd via Cloudflare (MX, SPF, DKIM, DMARC). ✓ uitgevoerd op 18 mei 2026.
-
-- [x] **Supabase max_rows ophogen naar 5000**
-      planning_app → Project Settings → API → Max Rows ✓ uitgevoerd
-
-- [x] **Backup strategie gedocumenteerd**
-      Zie BACKUP_STRATEGIE.md. Voorlopig: handmatige CSV-export vóór elke migratie.
-
-- [x] **Foutlogging via Sentry (free tier)**
-      @sentry/react geïnstalleerd, DSN in .env.local en Vercel ingesteld.
-
-- [x] **Wachtwoord reset flow testen**
-      Getest en werkt correct.
-
----
-
-## Morgen
+## Direct — deze week
 
 - [ ] **KvK-nummer invullen in verwerkersovereenkomst**
       docs/verwerkersovereenkomst.md — regel 8. Nog geen KvK aangevraagd.
 
-- [ ] **Projectleiders aanmaken als gebruiker + data migratie**
-      8 projectleiders (MB, GB, TJ, EK, RW, JH, JB, TP) uitnodigen via Beheer tab.
+- [x] **Migratie 011 uitvoeren in Supabase (profielen zonder login)**
+      011_profielen_zonder_login.sql uitgevoerd. Validatie: 5 profielen, 5 met loginaccount, 0 zonder. ✓
+
+- [ ] **Beheer UI: projectleider aanmaken zonder loginaccount**
+      Knop toevoegen in Beheer.jsx: "Persoon toevoegen" (naam + afkorting, geen e-mail).
+      Roept Edge Function actie `profiel_aanmaken` aan.
+      Aparte knop "Loginaccount koppelen" voor als PL later wil inloggen (actie `profiel_koppelen`).
+
+- [ ] **Projectleiders aanmaken + data migratie**
+      Na UI: 8 projectleiders aanmaken via "Persoon toevoegen" (MB, GB, TJ, EK, RW, JH, JB, TP).
       Daarna migratiescript: projectleider_initialen → projectleider_id (UUID) per persoon.
-      Vereiste: volledige namen + e-mailadressen van alle 8 ophalen bij de beheerder.
+      Vereiste: volledige namen van alle 8 ophalen bij de beheerder (e-mailadressen niet verplicht).
 
 ---
 
 ## Voor eerste betalende klant
-
-- [x] **AVG — verwerkersovereenkomst**
-      Juridisch verplicht zodra je persoonsgegevens van anderen verwerkt.
-      Supabase datacenter: Londen UK (adequaatheidsbesluit EU — toegestaan).
-      Sjabloon: docs/verwerkersovereenkomst.md — per klant ondertekenen.
-      Privacyverklaring: docs/privacyverklaring.md + link op login-pagina.
-      Aanbeveling: migreer naar Frankfurt bij Supabase Pro upgrade.
-
-- [x] **Gebruikersbeheer via Edge Function + scherm**
-      Geïmplementeerd: Edge Function + Beheer.jsx pagina voor admins.
 
 - [ ] **Staging omgeving**
       Aparte Supabase project + Vercel preview branch zodat migraties
@@ -159,26 +53,34 @@ Kleine, veilige wijzigingen. Na elk punt lokaal testen.
       Gebruiker ziet automatisch eigen projecten. Monteur ziet eigen rijen.
       Bouwt voort op projectformulier dropdown.
 
-- [ ] **Audit log triggers**
-      Tabel bestaat al, wordt nog niet gevuld.
-      Triggers toevoegen op projecten, monteurs, toewijzingen.
-
-- [ ] **React Query of SWR introduceren**
-      Caching en optimistic updates — merkbaar voordeel voor planner bij snelle acties.
-
-- [ ] **Smoke test stap 2 en 3 uitvoeren**
-      Na volgende RLS-migratie: planner en gebruiker-rol testen via rls_smoke_test.sql.
-
-- [x] **UNIQUE constraint op afkorting per tenant**
-      Twee gebruikers kunnen nu dezelfde afkorting krijgen (bijv. "JJ").
-      `alter table profielen add constraint afkorting_unique_per_tenant unique(tenant_id, afkorting);`
-
 - [ ] **TenantContext: foutmelding tonen bij laad-fout**
       Bij een fout in laadTenant() wordt de fout nu geswallowed via console.error.
       Gebruiker ziet niets — fout naar UI doorgeven via een error-state.
 
-- [x] **Bestaande gebruikers: afkorting toevoegen aan app_metadata**
-      Uitgevoerd voor remco@baumeister.nl (RB) en initialen veld opgeruimd.
+- [ ] **Audit log triggers**
+      Tabel bestaat al, wordt nog niet gevuld.
+      Triggers toevoegen op projecten, monteurs, toewijzingen.
+
+- [ ] **Smoke test stap 2 en 3 uitvoeren**
+      Na volgende RLS-migratie: planner en gebruiker-rol testen via rls_smoke_test.sql.
+
+- [ ] **React Query of SWR introduceren**
+      Caching en optimistic updates — merkbaar voordeel voor planner bij snelle acties.
+
+---
+
+## Code kwaliteit — restant
+
+- [ ] **Request cancellation via AbortController**
+      Snelle weeknavigatie verstuurt meerdere fetch-requests tegelijk.
+      Laatste response wint — kan stale data tonen. AbortController lost dit op.
+
+- [ ] **Debounce zoekbalken**
+      Elke toetsaanslag filtert direct over alle rijen. `useDeferredValue` of 200ms debounce
+      voorkomt geblokkeerde frames bij grote datasets.
+
+- [ ] **`getProjecten` / `getProjectenMetStats` samenvoegen**
+      Twee bijna-identieke service-functies. Één functie met parameter `metStats = false`.
 
 ---
 
@@ -187,32 +89,12 @@ Kleine, veilige wijzigingen. Na elk punt lokaal testen.
 - [ ] **Drag-and-drop via dnd-kit**
       Grootste UX-verbetering voor Planner. CSS-structuur planning.jsx al rekening mee houden.
 
-- [ ] **Performance: tvVoorDag optimaliseren**
-      Geneste Map monteur_id → datum → [tv] i.p.v. live filter per cel.
-      Pas aanpakken als de planning merkbaar traag wordt.
-
-- [ ] **Archiveringsstrategie toewijzingen**
-      Bij 500 projecten/jaar groeit de tabel snel.
-      Overwegen: oude toewijzingen archiveren na X jaar.
-
 - [ ] **Mobile — monteur-view**
       Monteurs zijn potentiële gebruikersgroep (174 personen).
       Begin met lees-only view voor eigen toewijzingen.
 
 - [ ] **Uptime monitoring**
       Bijv. UptimeRobot (free) — melding als app down is.
-
-- [ ] **Query monitoring**
-      Supabase dashboard → Logs → Slow queries bijhouden bij groei.
-
-- [ ] **Demo-omgeving**
-      Aparte tenant met seed data voor sales-demo's aan potentiële klanten.
-
-- [ ] **Realtime samenwerking (Supabase Realtime)**
-      Meerdere planners tegelijk — nog niet nodig voor Eissink.
-
-- [ ] **ERP-koppeling via extern_id**
-      Webhook patroon via Edge Functions. extern_id staat al in datamodel.
 
 - [ ] **Custom domain: app.byggr.nl**
       Vercel custom domain instellen.
@@ -226,6 +108,26 @@ Kleine, veilige wijzigingen. Na elk punt lokaal testen.
       - pg_dump via GitHub Actions (gratis, scheduled nightly backup naar repo of S3)
       - Supabase CLI op thuispc instellen voor snelle dumps vóór migraties
 
+- [ ] **Performance: tvVoorDag optimaliseren**
+      Geneste Map monteur_id → datum → [tv] i.p.v. live filter per cel.
+      Pas aanpakken als de planning merkbaar traag wordt.
+
+- [ ] **Archiveringsstrategie toewijzingen**
+      Bij 500 projecten/jaar groeit de tabel snel.
+      Overwegen: oude toewijzingen archiveren na X jaar.
+
+- [ ] **Query monitoring**
+      Supabase dashboard → Logs → Slow queries bijhouden bij groei.
+
+- [ ] **Demo-omgeving**
+      Aparte tenant met seed data voor sales-demo's aan potentiële klanten.
+
+- [ ] **Realtime samenwerking (Supabase Realtime)**
+      Meerdere planners tegelijk — nog niet nodig voor Eissink.
+
+- [ ] **ERP-koppeling via extern_id**
+      Webhook patroon via Edge Functions. extern_id staat al in datamodel.
+
 ---
 
 ## Bewust buiten scope (v1)
@@ -236,3 +138,84 @@ Kleine, veilige wijzigingen. Na elk punt lokaal testen.
 - PWA / offline support
 - Prijsbepaling en factuurstroom (commerciële beslissing, niet code)
 - Wireframes / mockups (jij bent enige bouwer)
+
+---
+
+## Afgehandeld
+
+### Nu — uitgevoerd
+
+- [x] **Eigen SMTP instellen (Resend + Zoho)**
+      Resend gekoppeld via smtp.resend.com, verstuurt vanaf noreply@byggr.nl.
+      Zoho ingesteld als zakelijke inbox op hello@byggr.nl.
+      DNS geconfigureerd via Cloudflare (MX, SPF, DKIM, DMARC). ✓ uitgevoerd op 18 mei 2026.
+
+- [x] **Supabase max_rows ophogen naar 5000**
+      planning_app → Project Settings → API → Max Rows ✓ uitgevoerd
+
+- [x] **Backup strategie gedocumenteerd**
+      Zie BACKUP_STRATEGIE.md. Voorlopig: handmatige CSV-export vóór elke migratie.
+
+- [x] **Foutlogging via Sentry (free tier)**
+      @sentry/react geïnstalleerd, DSN in .env.local en Vercel ingesteld.
+
+- [x] **Wachtwoord reset flow testen**
+      Getest en werkt correct.
+
+### Voor eerste betalende klant — uitgevoerd
+
+- [x] **AVG — verwerkersovereenkomst**
+      Juridisch verplicht zodra je persoonsgegevens van anderen verwerkt.
+      Supabase datacenter: Londen UK (adequaatheidsbesluit EU — toegestaan).
+      Sjabloon: docs/verwerkersovereenkomst.md — per klant ondertekenen.
+      Privacyverklaring: docs/privacyverklaring.md + link op login-pagina.
+      Aanbeveling: migreer naar Frankfurt bij Supabase Pro upgrade.
+
+- [x] **Gebruikersbeheer via Edge Function + scherm**
+      Geïmplementeerd: Edge Function + Beheer.jsx pagina voor admins.
+
+### Kort daarna — uitgevoerd
+
+- [x] **UNIQUE constraint op afkorting per tenant**
+      `alter table profielen add constraint afkorting_unique_per_tenant unique(tenant_id, afkorting);`
+
+- [x] **Bestaande gebruikers: afkorting toevoegen aan app_metadata**
+      Uitgevoerd voor remco@baumeister.nl (RB) en initialen veld opgeruimd.
+
+### Code kwaliteit laag 1 — uitgevoerd
+
+- [x] **Duplicate `naarStr` verwijderen**
+      Staat zowel in `datum.js` als in `toewijzingenService.js`. Import de versie uit datum.js.
+
+- [x] **Timezone-bug in `getMonteurs` fixen**
+      `new Date().toISOString().split('T')[0]` geeft UTC-datum → verkeerd na middernacht in NL.
+      Vervangen door `naarStr(new Date())`.
+
+- [x] **Dead code `skipDagen` verwijderen uit Planning.jsx**
+
+- [x] **Date utilities verplaatsen uit Planning.jsx naar datum.js**
+      `prevWerkdag`, `nextWerkdag`, `plusWerkdagen`, `fBereikLang`, `aaneengesloten`.
+
+- [x] **TenantContext: sequentiële fetches → parallel (Promise.all)**
+
+- [x] **`setGroepLeden` atomair maken**
+
+- [x] **`getMonteurs`: vandaag-toewijzingen optioneel maken**
+
+- [~] **`avatarKleur` hash: volledige naam i.p.v. eerste teken** *(bewust overgeslagen)*
+
+### Code kwaliteit laag 2 — uitgevoerd
+
+- [x] **`useAsyncData` custom hook**
+
+- [x] **Modals uit Planning.jsx extraheren naar `src/components/`**
+
+- [x] **`alert()` vervangen door inline fout-state in modals**
+
+- [x] **`getTenantId()` cachen**
+
+- [x] **`laad()` in Planning.jsx: bewaar `uitgeklapt` bij data-refresh**
+
+### Code kwaliteit laag 3 — uitgevoerd
+
+- [x] **`naam` normaliseren in AuthContext**

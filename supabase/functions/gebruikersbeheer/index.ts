@@ -12,7 +12,7 @@ function json(data: unknown, status = 200) {
   })
 }
 
-const GELDIGE_ROLLEN = ['admin', 'planner', 'gebruiker', 'monteur']
+const GELDIGE_ROLLEN = ['admin', 'planner', 'gebruiker', 'monteur', 'projectleider']
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
@@ -95,9 +95,9 @@ Deno.serve(async (req) => {
       return json({ error: metaError.message }, 500)
     }
 
-    // Maak profiel aan
+    // Maak profiel aan — id wordt auto-gegenereerd, user_id koppelt aan loginaccount
     const { error: profielError } = await admin.from('profielen').insert({
-      id: userId,
+      user_id: userId,
       tenant_id: callerTenantId,
       weergave_naam: naam,
       afkorting: afkorting || null,
@@ -129,7 +129,7 @@ Deno.serve(async (req) => {
     const rollbackAanmaken = async () => { await admin.auth.admin.deleteUser(userId) }
 
     const { error: profielError } = await admin.from('profielen').insert({
-      id: userId,
+      user_id: userId,
       tenant_id: callerTenantId,
       weergave_naam: naam,
       afkorting: afkorting || null,
@@ -137,6 +137,67 @@ Deno.serve(async (req) => {
     if (profielError) {
       await rollbackAanmaken()
       return json({ error: profielError.message }, 500)
+    }
+
+    return json({ ok: true, user_id: userId })
+  }
+
+  // ── profiel_aanmaken (geen loginaccount — bijv. projectleider als referentie) ──
+  if (actie === 'profiel_aanmaken') {
+    const { naam, afkorting } = body
+    if (!naam) return json({ error: 'naam is verplicht' }, 400)
+
+    const { data: profiel, error: profielError } = await admin.from('profielen').insert({
+      tenant_id: callerTenantId,
+      weergave_naam: naam,
+      afkorting: afkorting || null,
+    }).select('id').single()
+    if (profielError) return json({ error: profielError.message }, 500)
+
+    return json({ ok: true, profiel_id: profiel.id })
+  }
+
+  // ── profiel_koppelen (koppel bestaand profiel aan een nieuw loginaccount) ──────
+  if (actie === 'profiel_koppelen') {
+    const { profiel_id, email, redirectTo } = body
+    if (!profiel_id || !email) return json({ error: 'profiel_id en email zijn verplicht' }, 400)
+
+    const { data: profiel, error: profielError } = await admin
+      .from('profielen')
+      .select('id, weergave_naam, afkorting, user_id')
+      .eq('id', profiel_id)
+      .eq('tenant_id', callerTenantId)
+      .single()
+    if (profielError || !profiel) return json({ error: 'Profiel niet gevonden' }, 404)
+    if (profiel.user_id) return json({ error: 'Dit profiel heeft al een loginaccount' }, 400)
+
+    const { data: invite, error: inviteError } = await admin.auth.admin.inviteUserByEmail(email, {
+      redirectTo: redirectTo || undefined,
+    })
+    if (inviteError) return json({ error: inviteError.message }, 400)
+
+    const userId = invite.user.id
+
+    const { error: metaError } = await admin.auth.admin.updateUserById(userId, {
+      app_metadata: {
+        rol: 'gebruiker',
+        naam: profiel.weergave_naam,
+        tenant_id: callerTenantId,
+        afkorting: profiel.afkorting || null,
+      },
+    })
+    if (metaError) {
+      await admin.auth.admin.deleteUser(userId)
+      return json({ error: metaError.message }, 500)
+    }
+
+    const { error: updateError } = await admin
+      .from('profielen')
+      .update({ user_id: userId })
+      .eq('id', profiel_id)
+    if (updateError) {
+      await admin.auth.admin.deleteUser(userId)
+      return json({ error: updateError.message }, 500)
     }
 
     return json({ ok: true, user_id: userId })
@@ -199,7 +260,7 @@ Deno.serve(async (req) => {
       const { error: profielError } = await admin
         .from('profielen')
         .update(profielUpdates)
-        .eq('id', user_id)
+        .eq('user_id', user_id)
       if (profielError) return json({ error: profielError.message }, 500)
     }
 
