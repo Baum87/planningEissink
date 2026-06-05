@@ -120,9 +120,12 @@ Kleine, veilige wijzigingen. Na elk punt lokaal testen.
 
 ## Voor eerste betalende klant
 
-- [ ] **AVG — verwerkersovereenkomst**
+- [x] **AVG — verwerkersovereenkomst**
       Juridisch verplicht zodra je persoonsgegevens van anderen verwerkt.
-      Supabase datacenter-locatie controleren voor AVG-compliance (EU vereist).
+      Supabase datacenter: Londen UK (adequaatheidsbesluit EU — toegestaan).
+      Sjabloon: docs/verwerkersovereenkomst.md — per klant ondertekenen.
+      Privacyverklaring: docs/privacyverklaring.md + link op login-pagina.
+      Aanbeveling: migreer naar Frankfurt bij Supabase Pro upgrade.
 
 - [x] **Gebruikersbeheer via Edge Function + scherm**
       Geïmplementeerd: Edge Function + Beheer.jsx pagina voor admins.

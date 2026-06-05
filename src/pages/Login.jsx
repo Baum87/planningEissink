@@ -106,8 +106,21 @@ export default function Login() {
 
       </div>
 
+      {/* Privacy & disclaimer */}
+      <div className="mt-12 flex items-center justify-center gap-4">
+        <a
+          href="https://byggr.nl/privacy"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs text-gray-300 hover:text-gray-500 transition-colors"
+        >
+          Privacyverklaring
+        </a>
+        <span className="text-gray-200 text-xs">·</span>
+      </div>
+
       {/* Technische disclaimer */}
-      <div className="mt-12 relative group">
+      <div className="mt-2 relative group">
         <span className="text-xs text-gray-300 cursor-default">Disclaimer</span>
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 w-80 hidden group-hover:block z-10">
           <div className="border border-amber-200 bg-amber-50 rounded-xl p-4 shadow-md">
