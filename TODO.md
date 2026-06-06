@@ -18,10 +18,6 @@ Bijgehouden naast CONTEXT.md — technische context staat daar.
       "Koppel account" knop: via uitnodiging of direct aanmaken met wachtwoord.
       Personen zonder account zijn klikbaar en bewerkbaar.
 
-- [ ] **Projectleiders aanmaken + data migratie**
-      Volledige namen van 8 PLs ophalen bij beheerder Eissink (MB, GB, TJ, EK, RW, JH, JB, TP).
-      Aanmaken via "Persoon toevoegen" in Beheer tab.
-      Daarna koppelscript draaien: projectleider_initialen → projectleider_id (UUID).
 
 ---
 
@@ -46,12 +42,6 @@ Bijgehouden naast CONTEXT.md — technische context staat daar.
 
 ## Kort daarna
 
-- [ ] **Projectformulier: projectleider als dropdown op profielen**
-      Vervangt tekstveld initialen. Vereist eerst gebruikersbeheer (profielen aangemaakt).
-
-- [ ] **Planning filter: UUID-gebaseerd + auto-filter per rol bij login**
-      Gebruiker ziet automatisch eigen projecten. Monteur ziet eigen rijen.
-      Bouwt voort op projectformulier dropdown.
 
 - [ ] **TenantContext: foutmelding tonen bij laad-fout**
       Bij een fout in laadTenant() wordt de fout nu geswallowed via console.error.
@@ -219,3 +209,15 @@ Bijgehouden naast CONTEXT.md — technische context staat daar.
 ### Code kwaliteit laag 3 — uitgevoerd
 
 - [x] **`naam` normaliseren in AuthContext**
+
+### Projectleiders — uitgevoerd
+
+- [x] **Projectleiders aanmaken + data migratie**
+      Volledige namen van 8 PLs aangemaakt via Beheer UI.
+      Migratie 012 uitgevoerd: projectleider_initialen → projectleider_id (UUID). 168 projecten gekoppeld. ✓
+
+- [x] **Projectformulier: projectleider als dropdown op profielen**
+      Tekstveld vervangen door dropdown op profielen. Schrijft projectleider_id (UUID) + projectleider_initialen (legacy). ✓
+
+- [x] **Planning filter: UUID-gebaseerd + auto-filter per rol bij login**
+      Filters in Planning, Overzicht en Projecten werken op UUID. Gebruiker krijgt auto-filter op eigen profiel na login. ✓

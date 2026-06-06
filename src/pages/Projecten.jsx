@@ -7,7 +7,9 @@ import {
   updateProject,
   deleteProject,
 } from '../services/projectenService'
+import { getProfielen } from '../services/gebruikersbeheerService'
 import { KLEURENPALET, projKleur, minstGebruikteKleur } from '../lib/kleurenpalet'
+import { profielenUitProjecten } from '../lib/profielen'
 import { useAsyncData } from '../hooks/useAsyncData'
 import { naarStr } from '../lib/datum'
 
@@ -27,7 +29,7 @@ const LEEG = {
   omschrijving: '',
   opdrachtgever: '',
   opmerkingen: '',
-  projectleider_initialen: '',
+  projectleider_id: '',
   kleur: '',
   plaats: '',
   adres: '',
@@ -63,6 +65,8 @@ export default function Projecten() {
 
   const { data: _projecten, loading, error, herlaad: laadProjecten } = useAsyncData(() => getProjecten({ metStats: true }))
   const projecten = _projecten ?? []
+  const { data: _profielen } = useAsyncData(getProfielen)
+  const profielen = _profielen ?? []
   const [zoek, setZoek] = useState('')
   const [filterPL, setFilterPL] = useState('')
   const [sort, setSort] = useState({ veld: 'created_at', dir: 'desc' })
@@ -116,16 +120,13 @@ export default function Projecten() {
     [projecten]
   )
 
-  const alleInitialen = useMemo(
-    () => [...new Set(projecten.map((p) => p.projectleider_initialen).filter(Boolean))].sort(),
-    [projecten]
-  )
+  const alleProjectleiders = useMemo(() => profielenUitProjecten(projecten), [projecten])
 
   const gefilterd = useMemo(() => {
     const q = zoek.trim().toLowerCase()
     return verrijkt.filter(
       (p) =>
-        (!filterPL || p.projectleider_initialen === filterPL) &&
+        (!filterPL || p.projectleider_id === filterPL) &&
         (!q ||
           p.werknummer?.toLowerCase().includes(q) ||
           p.omschrijving?.toLowerCase().includes(q) ||
@@ -177,7 +178,7 @@ export default function Projecten() {
       omschrijving: project.omschrijving ?? '',
       opdrachtgever: project.opdrachtgever ?? '',
       opmerkingen: project.opmerkingen ?? '',
-      projectleider_initialen: project.projectleider_initialen ?? '',
+      projectleider_id: project.projectleider_id ?? '',
       kleur: project.kleur ?? '',
       plaats: project.plaats ?? '',
       adres: project.adres ?? '',
@@ -189,11 +190,12 @@ export default function Projecten() {
     e.preventDefault()
     setBezig(true)
     try {
+      const geselecteerdProfiel = profielen.find((p) => p.id === formulier.projectleider_id)
       const payload = {
         ...formulier,
         opmerkingen: formulier.opmerkingen || null,
-        projectleider_initialen:
-          formulier.projectleider_initialen.trim().toUpperCase() || null,
+        projectleider_id: formulier.projectleider_id || null,
+        projectleider_initialen: geselecteerdProfiel?.afkorting ?? null,
       }
       if (modal.mode === 'nieuw') {
         await createProject(payload)
@@ -229,8 +231,8 @@ export default function Projecten() {
           className="px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors bg-white text-gray-600"
         >
           <option value="">Alle PL</option>
-          {alleInitialen.map((ini) => (
-            <option key={ini} value={ini}>{ini}</option>
+          {alleProjectleiders.map((pl) => (
+            <option key={pl.id} value={pl.id}>{pl.afkorting}</option>
           ))}
         </select>
         <div className="ml-auto">
@@ -324,9 +326,9 @@ export default function Projecten() {
                     {kolomZichtbaar('projecten', 'werknummer') && (
                       <td className="px-4 py-3 font-mono text-xs text-gray-700 whitespace-nowrap">
                         {p.werknummer}
-                        {p.projectleider_initialen && (
+                        {(p.projectleider?.afkorting ?? p.projectleider_initialen) && (
                           <span className="ml-1.5 px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded text-[10px] font-sans font-medium non-italic">
-                            {p.projectleider_initialen}
+                            {p.projectleider?.afkorting ?? p.projectleider_initialen}
                           </span>
                         )}
                       </td>
@@ -463,24 +465,18 @@ export default function Projecten() {
                   />
                 </Veld>
                 <Veld label="Projectleider">
-                  <input
-                    list="pl-initialen"
-                    value={formulier.projectleider_initialen}
+                  <select
+                    value={formulier.projectleider_id}
                     onChange={(e) =>
-                      setFormulier((f) => ({
-                        ...f,
-                        projectleider_initialen: e.target.value.toUpperCase(),
-                      }))
+                      setFormulier((f) => ({ ...f, projectleider_id: e.target.value }))
                     }
-                    className={INVOER}
-                    placeholder="bijv. RB"
-                    maxLength={5}
-                  />
-                  <datalist id="pl-initialen">
-                    {alleInitialen.map((ini) => (
-                      <option key={ini} value={ini} />
+                    className={INVOER + ' bg-white'}
+                  >
+                    <option value="">— geen —</option>
+                    {profielen.filter((pl) => pl.afkorting).map((pl) => (
+                      <option key={pl.id} value={pl.id}>{pl.afkorting} — {pl.weergave_naam}</option>
                     ))}
-                  </datalist>
+                  </select>
                 </Veld>
               </div>
 

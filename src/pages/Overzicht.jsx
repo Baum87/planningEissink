@@ -4,7 +4,9 @@ import { getMonteurs } from '../services/monteursService'
 import { getToewijzingen } from '../services/toewijzingenService'
 import { getProjecten } from '../services/projectenService'
 import { getPeriodes } from '../services/periodesService'
+import { getProfielen } from '../services/gebruikersbeheerService'
 import { projKleur } from '../lib/kleurenpalet'
+import { profielenUitProjecten } from '../lib/profielen'
 import { getMaandag, plusDagen, naarStr, isoWeek, fDag, fDagNaam, fDatumLang } from '../lib/datum'
 
 // ─── Constanten ───────────────────────────────────────────────────────────────
@@ -21,7 +23,7 @@ const ROW_H  = 48
 // ─── Overzicht ────────────────────────────────────────────────────────────────
 
 export default function Overzicht() {
-  const { rol, initialen } = useAuth()
+  const { rol, user } = useAuth()
   const vandaag = naarStr(new Date())
   const [startDatum, setStartDatum] = useState(() => getMaandag(new Date()))
   const [toonWeekend, setToonWeekend] = useState(false)
@@ -29,12 +31,11 @@ export default function Overzicht() {
   const [toewijzingen, setToewijzingen] = useState([])
   const [projecten, setProjecten] = useState([])
   const [periodes, setPeriodes] = useState([])
+  const [profielen, setProfielen] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [popup, setPopup] = useState(null)
-  const [filterProjectleider, setFilterProjectleider] = useState(
-    () => isGebruiker(rol) ? (initialen ?? '') : ''
-  )
+  const [filterProjectleider, setFilterProjectleider] = useState('')
   const [toonUitgebreid, setToonUitgebreid] = useState(false)
 
   // ── Datum berekeningen ──────────────────────────────────────────────────────
@@ -76,16 +77,22 @@ export default function Overzicht() {
     try {
       const van = naarStr(startDatum)
       const tot = naarStr(plusDagen(startDatum, aantalDagen - 1))
-      const [m, tv, p, per] = await Promise.all([
+      const [m, tv, p, per, prof] = await Promise.all([
         getMonteurs({ metVandaag: false }),
         getToewijzingen(van, tot),
         getProjecten(),
         getPeriodes(),
+        getProfielen(),
       ])
       setMonteurs(m)
       setToewijzingen(tv)
       setProjecten(p)
       setPeriodes(per)
+      setProfielen(prof)
+      if (isGebruiker(rol) && user) {
+        const mijnProfiel = prof.find((pr) => pr.user_id === user.id)
+        if (mijnProfiel) setFilterProjectleider(mijnProfiel.id)
+      }
     } catch {
       setError('Kon overzicht niet ophalen. Controleer de verbinding.')
     } finally {
@@ -127,10 +134,7 @@ export default function Overzicht() {
     return map
   }, [toewijzingen, startDatum, aantalDagen])
 
-  const alleInitialen = useMemo(
-    () => [...new Set(projecten.map((p) => p.projectleider_initialen).filter(Boolean))].sort(),
-    [projecten]
-  )
+  const alleProjectleiders = useMemo(() => profielenUitProjecten(projecten), [projecten])
 
   const periodeMap = useMemo(() => {
     const map = new Map()
@@ -155,7 +159,7 @@ export default function Overzicht() {
       .filter(([, dagMap]) => [...dagMap.keys()].some((d) => dagStrs.has(d)))
       .map(([id]) => projMap[id])
       .filter(Boolean)
-      .filter((p) => !filterProjectleider || p.projectleider_initialen === filterProjectleider)
+      .filter((p) => !filterProjectleider || p.projectleider_id === filterProjectleider)
       .sort((a, b) =>
         String(a.werknummer ?? '').localeCompare(String(b.werknummer ?? ''), 'nl')
       )
@@ -206,8 +210,8 @@ export default function Overzicht() {
           className="px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors bg-white text-gray-600"
         >
           <option value="">Alle PL</option>
-          {alleInitialen.map((ini) => (
-            <option key={ini} value={ini}>{ini}</option>
+          {alleProjectleiders.map((pl) => (
+            <option key={pl.id} value={pl.id}>{pl.afkorting}</option>
           ))}
         </select>
 
@@ -350,9 +354,9 @@ export default function Overzicht() {
                 >
                   <div className="text-xs font-semibold text-gray-900 font-mono truncate leading-tight">
                     {project.werknummer}
-                    {project.projectleider_initialen && (
+                    {(project.projectleider?.afkorting ?? project.projectleider_initialen) && (
                       <span className="font-sans font-medium text-gray-500">
-                        {' · '}{project.projectleider_initialen}
+                        {' · '}{project.projectleider?.afkorting ?? project.projectleider_initialen}
                       </span>
                     )}
                   </div>

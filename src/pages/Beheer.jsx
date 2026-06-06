@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useAsyncData } from '../hooks/useAsyncData'
 import { useAuth } from '../context/AuthContext'
 import { fDatumKort } from '../lib/datum'
@@ -102,6 +102,28 @@ function GebruikersTab() {
     return [...metAccount, ...zonderAccount]
   })
   const gebruikers = data ?? []
+  const [sort, setSort] = useState({ veld: 'achternaam', dir: 'asc' })
+
+  function toggleSortG(veld) {
+    setSort((prev) => prev.veld === veld
+      ? { veld, dir: prev.dir === 'asc' ? 'desc' : 'asc' }
+      : { veld, dir: 'asc' }
+    )
+  }
+
+  const gesorteerd = useMemo(() => {
+    const { veld, dir } = sort
+    function sortVal(g) {
+      if (veld === 'achternaam') return g.naam?.split(' ').slice(1).join(' ') ?? ''
+      if (veld === 'voornaam')   return g.naam?.split(' ')[0] ?? ''
+      return String(g[veld] ?? '')
+    }
+    return [...gebruikers].sort((a, b) => {
+      const cmp = sortVal(a).localeCompare(sortVal(b), 'nl')
+      return dir === 'asc' ? cmp : -cmp
+    })
+  }, [gebruikers, sort])
+
   const [toonModal, setToonModal] = useState(null) // null | 'uitnodigen' | 'aanmaken' | 'persoon' | { koppelen: id }
   const [verwijderBevestig, setVerwijderBevestig] = useState(null)
   const [bewerkenGebruiker, setBewerkenGebruiker] = useState(null)
@@ -173,23 +195,36 @@ function GebruikersTab() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-gray-200 bg-gray-50">
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Voornaam</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Achternaam</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600"></th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">E-mail</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Rol</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Toegevoegd</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Laatste login</th>
+              {[
+                { label: 'Voornaam',      veld: 'voornaam' },
+                { label: 'Achternaam',    veld: 'achternaam' },
+                { label: '',              veld: 'afkorting' },
+                { label: 'E-mail',        veld: 'email' },
+                { label: 'Rol',           veld: 'rol' },
+                { label: 'Toegevoegd',    veld: 'created_at' },
+                { label: 'Laatste login', veld: 'last_sign_in_at' },
+              ].map(({ label, veld }) => (
+                <th
+                  key={veld}
+                  onClick={() => toggleSortG(veld)}
+                  className="text-left px-4 py-3 font-medium text-gray-600 cursor-pointer select-none hover:text-gray-900 transition-colors whitespace-nowrap"
+                >
+                  {label}
+                  {sort.veld === veld && (
+                    <span className="ml-1 text-xs text-gray-800">{sort.dir === 'asc' ? '↑' : '↓'}</span>
+                  )}
+                </th>
+              ))}
               <th className="px-4 py-3" />
             </tr>
           </thead>
           <tbody>
             {laden ? (
               <tr><td colSpan={8} className="px-4 py-10 text-center text-gray-400">Laden…</td></tr>
-            ) : gebruikers.length === 0 ? (
+            ) : gesorteerd.length === 0 ? (
               <tr><td colSpan={8} className="px-4 py-10 text-center text-gray-400">Geen gebruikers gevonden</td></tr>
             ) : (
-              gebruikers.map((g) => {
+              gesorteerd.map((g) => {
                 const isZijzelf = g.id === user?.id
                 return (
                   <tr
@@ -307,9 +342,27 @@ function GebruikersTab() {
 function PeriodesTab() {
   const { data, setData: setPeriodes, loading: laden, error: fout, herlaad: laad } = useAsyncData(getPeriodes)
   const periodes = data ?? []
+  const [sort, setSort] = useState({ veld: 'datum_van', dir: 'asc' })
   const [modal, setModal] = useState(null) // null | periode-object (bewerk) | 'nieuw'
   const [verwijderBevestig, setVerwijderBevestig] = useState(null)
   const [actiFout, setActiFout] = useState(null)
+
+  function toggleSortP(veld) {
+    setSort((prev) => prev.veld === veld
+      ? { veld, dir: prev.dir === 'asc' ? 'desc' : 'asc' }
+      : { veld, dir: 'asc' }
+    )
+  }
+
+  const gesorteerd = useMemo(() => {
+    const { veld, dir } = sort
+    return [...periodes].sort((a, b) => {
+      const av = a[veld] ?? ''
+      const bv = b[veld] ?? ''
+      const cmp = String(av).localeCompare(String(bv), 'nl')
+      return dir === 'asc' ? cmp : -cmp
+    })
+  }, [periodes, sort])
 
   async function handleVerwijder(p) {
     try {
@@ -347,20 +400,33 @@ function PeriodesTab() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-gray-200 bg-gray-50">
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Naam</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Van</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Tot</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Type</th>
+              {[
+                { label: 'Naam',  veld: 'naam' },
+                { label: 'Van',   veld: 'datum_van' },
+                { label: 'Tot',   veld: 'datum_tot' },
+                { label: 'Type',  veld: 'blokkeer' },
+              ].map(({ label, veld }) => (
+                <th
+                  key={veld}
+                  onClick={() => toggleSortP(veld)}
+                  className="text-left px-4 py-3 font-medium text-gray-600 cursor-pointer select-none hover:text-gray-900 transition-colors whitespace-nowrap"
+                >
+                  {label}
+                  {sort.veld === veld && (
+                    <span className="ml-1 text-xs text-gray-800">{sort.dir === 'asc' ? '↑' : '↓'}</span>
+                  )}
+                </th>
+              ))}
               <th className="px-4 py-3" />
             </tr>
           </thead>
           <tbody>
             {laden ? (
               <tr><td colSpan={5} className="px-4 py-10 text-center text-gray-400">Laden…</td></tr>
-            ) : periodes.length === 0 ? (
+            ) : gesorteerd.length === 0 ? (
               <tr><td colSpan={5} className="px-4 py-10 text-center text-gray-400">Geen periodes gevonden</td></tr>
             ) : (
-              periodes.map((p) => (
+              gesorteerd.map((p) => (
                 <tr
                   key={p.id}
                   onClick={() => verwijderBevestig !== p.id && setModal(p)}

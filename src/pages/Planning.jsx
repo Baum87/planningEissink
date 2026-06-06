@@ -8,7 +8,9 @@ import {
 } from '../services/toewijzingenService'
 import { getProjecten } from '../services/projectenService'
 import { getPeriodes } from '../services/periodesService'
+import { getProfielen } from '../services/gebruikersbeheerService'
 import { projKleur } from '../lib/kleurenpalet'
+import { profielenUitProjecten } from '../lib/profielen'
 import { avatarKleur, initialen, monteurNaam } from '../lib/avatar'
 import { getMaandag, plusDagen, naarStr, isoWeek, fDag, fDagNaam, prevWerkdag, nextWerkdag, plusWerkdagen, aaneengesloten } from '../lib/datum'
 import { useIsMobile } from '../hooks/useIsMobile'
@@ -26,7 +28,7 @@ const DAG_H  = 40
 // ─── Planning ─────────────────────────────────────────────────────────────────
 
 export default function Planning({ onNavigate }) {
-  const { rol, initialen: mijnInitialen } = useAuth()
+  const { rol, user } = useAuth()
   const vandaag = naarStr(new Date())
   const kanInplannen = heeftVolledigeToegang(rol)
 
@@ -37,14 +39,13 @@ export default function Planning({ onNavigate }) {
   const [toewijzingen, setToewijzingen] = useState([])
   const [projecten, setProjecten] = useState([])
   const [periodes, setPeriodes] = useState([])
+  const [profielen, setProfielen] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [uitgeklapt, setUitgeklapt] = useState(new Set())
   const [zoek, setZoek] = useState('')
   const [filterExpertise, setFilterExpertise] = useState('')
-  const [filterProjectleider, setFilterProjectleider] = useState(
-    () => isGebruiker(rol) ? (mijnInitialen ?? '') : ''
-  )
+  const [filterProjectleider, setFilterProjectleider] = useState('')
   const [filterProject, setFilterProject] = useState('')
   const [alleenIngepland, setAlleenIngepland] = useState(false)
   const [modal, setModal] = useState(null)
@@ -102,12 +103,13 @@ export default function Planning({ onNavigate }) {
     try {
       const van = naarStr(startDatum)
       const tot = naarStr(plusDagen(startDatum, aantalDagen - 1))
-      const [m, g, tv, p, per] = await Promise.all([
+      const [m, g, tv, p, per, prof] = await Promise.all([
         getMonteurs({ metVandaag: true }),
         getGroepen(),
         getToewijzingen(van, tot),
         getProjecten(),
         getPeriodes(),
+        getProfielen(),
       ])
       setMonteurs(m)
       setGroepen(g)
@@ -115,6 +117,11 @@ export default function Planning({ onNavigate }) {
       setToewijzingen(tv)
       setProjecten(p)
       setPeriodes(per)
+      setProfielen(prof)
+      if (isGebruiker(rol) && user) {
+        const mijnProfiel = prof.find((pr) => pr.user_id === user.id)
+        if (mijnProfiel) setFilterProjectleider(mijnProfiel.id)
+      }
     } catch {
       setError('Kon planning niet ophalen. Controleer de verbinding.')
     } finally {
@@ -163,10 +170,7 @@ export default function Planning({ onNavigate }) {
     [monteurs]
   )
 
-  const alleInitialen = useMemo(
-    () => [...new Set(projecten.map((p) => p.projectleider_initialen).filter(Boolean))].sort(),
-    [projecten]
-  )
+  const alleProjectleiders = useMemo(() => profielenUitProjecten(projecten), [projecten])
 
   const periodeMap = useMemo(() => {
     const map = new Map()
@@ -207,7 +211,7 @@ export default function Planning({ onNavigate }) {
   // Project-IDs die bij de actieve projectleider filter horen
   const filterProjectIds = useMemo(() => {
     if (!filterProjectleider) return null
-    return new Set(projecten.filter((p) => p.projectleider_initialen === filterProjectleider).map((p) => p.id))
+    return new Set(projecten.filter((p) => p.projectleider_id === filterProjectleider).map((p) => p.id))
   }, [projecten, filterProjectleider])
 
   // Monteur-IDs die in de zichtbare periode op een gefilterd project staan
@@ -352,8 +356,8 @@ export default function Planning({ onNavigate }) {
           className="hidden md:block px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors bg-white text-gray-600"
         >
           <option value="">Alle PL</option>
-          {alleInitialen.map((ini) => (
-            <option key={ini} value={ini}>{ini}</option>
+          {alleProjectleiders.map((pl) => (
+            <option key={pl.id} value={pl.id}>{pl.afkorting}</option>
           ))}
         </select>
 
@@ -367,7 +371,7 @@ export default function Planning({ onNavigate }) {
             .sort((a, b) => (a.werknummer ?? '').localeCompare(b.werknummer ?? '', 'nl'))
             .map((p) => (
               <option key={p.id} value={p.id}>
-                {p.werknummer}{p.projectleider_initialen ? ` · ${p.projectleider_initialen}` : ''} — {p.omschrijving}
+                {p.werknummer}{(p.projectleider?.afkorting ?? p.projectleider_initialen) ? ` · ${p.projectleider?.afkorting ?? p.projectleider_initialen}` : ''} — {p.omschrijving}
               </option>
             ))}
         </select>

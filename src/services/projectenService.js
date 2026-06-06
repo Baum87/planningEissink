@@ -2,8 +2,8 @@ import { supabase, getTenantId } from '../lib/supabase'
 
 export async function getProjecten({ metStats = false } = {}) {
   const select = metStats
-    ? '*, toewijzingen(id, monteur_id, datum_van, datum_tot)'
-    : '*'
+    ? '*, toewijzingen(id, monteur_id, datum_van, datum_tot), projectleider:profielen!projectleider_id(id, afkorting, weergave_naam)'
+    : '*, projectleider:profielen!projectleider_id(id, afkorting, weergave_naam)'
   const { data, error } = await supabase
     .from('projecten')
     .select(select)

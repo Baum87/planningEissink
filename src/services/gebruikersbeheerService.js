@@ -36,6 +36,15 @@ export const profielKoppelen = (profiel_id, email) =>
 export const profielKoppelenAanmaken = (profiel_id, email, wachtwoord) =>
   roepAan('profiel_koppelen_aanmaken', { profiel_id, email, wachtwoord })
 
+export async function getProfielen() {
+  const { data, error } = await supabase
+    .from('profielen')
+    .select('id, user_id, afkorting, weergave_naam')
+    .order('weergave_naam')
+  if (error) throw new Error(error.message)
+  return data ?? []
+}
+
 export const profielenZonderAccount = async () => {
   const { data, error } = await supabase
     .from('profielen')
