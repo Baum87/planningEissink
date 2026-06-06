@@ -10,23 +10,9 @@ Bijgehouden naast CONTEXT.md — technische context staat daar.
 - [ ] **KvK-nummer invullen in verwerkersovereenkomst**
       docs/verwerkersovereenkomst.md — regel 8. Nog geen KvK aangevraagd.
 
-- [x] **Migratie 011 uitvoeren in Supabase (profielen zonder login)**
-      011_profielen_zonder_login.sql uitgevoerd. Validatie: 5 profielen, 5 met loginaccount, 0 zonder. ✓
-
-- [x] **Beheer UI: projectleider aanmaken zonder loginaccount**
-      "Persoon toevoegen" knop live. Tabel toont voornaam/achternaam/afkorting apart.
-      "Koppel account" knop: via uitnodiging of direct aanmaken met wachtwoord.
-      Personen zonder account zijn klikbaar en bewerkbaar.
-
-
 ---
 
 ## Voor eerste betalende klant
-
-- [ ] **Staging omgeving**
-      Aparte Supabase project + Vercel preview branch zodat migraties
-      en nieuwe features getest worden vóór productie.
-      Nu gaan deploys direct naar de live app van de planner.
 
 - [ ] **Validatie server-side controleren**
       Nagaan welke constraints er in het DB-schema zitten (NOT NULL, CHECK).
@@ -41,7 +27,6 @@ Bijgehouden naast CONTEXT.md — technische context staat daar.
 ---
 
 ## Kort daarna
-
 
 - [ ] **TenantContext: foutmelding tonen bij laad-fout**
       Bij een fout in laadTenant() wordt de fout nu geswallowed via console.error.
@@ -75,6 +60,11 @@ Bijgehouden naast CONTEXT.md — technische context staat daar.
 ---
 
 ## Later
+
+- [ ] **Staging omgeving**
+      Lokaal testen dekt de meeste risico's. Staging wordt relevant als Eissink dagelijks
+      actief is én er grote migraties of een tweede developer bij komen.
+      Opzet: apart Supabase project + Vercel preview branch.
 
 - [ ] **Drag-and-drop via dnd-kit**
       Grootste UX-verbetering voor Planner. CSS-structuur planning.jsx al rekening mee houden.
@@ -151,6 +141,14 @@ Bijgehouden naast CONTEXT.md — technische context staat daar.
 
 - [x] **Wachtwoord reset flow testen**
       Getest en werkt correct.
+
+- [x] **Migratie 011 uitvoeren in Supabase (profielen zonder login)**
+      011_profielen_zonder_login.sql uitgevoerd. Validatie: 5 profielen, 5 met loginaccount, 0 zonder. ✓
+
+- [x] **Beheer UI: projectleider aanmaken zonder loginaccount**
+      "Persoon toevoegen" knop live. Tabel toont voornaam/achternaam/afkorting apart.
+      "Koppel account" knop: via uitnodiging of direct aanmaken met wachtwoord.
+      Personen zonder account zijn klikbaar en bewerkbaar.
 
 ### Voor eerste betalende klant — uitgevoerd
 
