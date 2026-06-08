@@ -17,6 +17,8 @@ dist-ssr
 
 exportsPlanning/
 supabase/.temp/
+dataRB/
+*.zip
 
 # Editor directories and files
 .vscode/*
