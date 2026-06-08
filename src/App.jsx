@@ -84,30 +84,32 @@ function HandleidingModal({ onClose }) {
           {
             titel: 'Planning',
             inhoud: [
-              { kop: 'Navigeren', items: ['Gebruik de pijltjes bovenaan om een week voor of achteruit te bladeren.', 'Klik op "Vandaag" om terug te springen naar de huidige week.'] },
-              { kop: 'Filters', items: ['Monteur — filter op één specifieke persoon. Als Gebruiker staat dit bij inloggen automatisch op je eigen naam.', 'Projectleider — toon alleen projecten van een specifieke projectleider.'] },
-              { kop: 'Weergave-opties (toggles rechtsboven)', items: ['Weekend tonen — voeg zaterdag en zondag toe aan de weekweergave.', 'Vrije periodes — markeer bouwvak, feestdagen en andere geblokkeerde periodes.', 'Groepen — toon monteurs gegroepeerd in plaats van individueel.'] },
-              { kop: 'Inplannen (alleen Planner)', items: ['Klik op een cel in de planning om een toewijzing aan te maken.', 'Kies het project, de start- en einddatum en sla op.', 'Klik op een bestaande toewijzing om deze te bewerken of te verwijderen.'] },
+              { kop: 'Navigeren', items: ['Gebruik de pijltjes links en rechts om een week voor of achteruit te bladeren.', 'Klik op "Vandaag" om direct terug te springen naar de huidige week.'] },
+              { kop: 'Zoeken en filteren', items: ['Zoekbalk (linksboven) — typ een naam om direct te filteren op monteur.', 'Expertise — filter op vakgebied, bijv. "Plafonds" of "Wanden".', 'Projectleider — toon alleen projecten van een bepaalde projectleider.', 'Project — filter de planning op één specifiek project.', 'Als Gebruiker staat de zoekbalk bij inloggen automatisch op jouw naam.'] },
+              { kop: 'Weergave-opties (toggles rechtsboven)', items: ['Ingepland — verberg monteurs zonder inplanning in de getoonde week.', '8 weken — vergroot de weergave van één week naar acht weken.', 'Weekend — voeg zaterdag en zondag toe aan de weergave.'] },
+              { kop: 'Inplannen — individueel (alleen Planner)', items: ['Klik op een lege cel achter de naam van een monteur op de gewenste dag.', 'Zoek het project op in het venster dat opent.', 'Stel de start- en einddatum in en klik op "Inplannen".'] },
+              { kop: 'Inplannen — hele groep (alleen Planner)', items: ['Groepen staan onderaan de lijst. Klik op een cel in de groepsrij om alle leden tegelijk in te plannen op hetzelfde project en dezelfde periode.'] },
+              { kop: 'Bestaande inplanning (alleen Planner)', items: ['Klik op een gekleurd blok om het project en de periode te zien.', 'Verwijder de inplanning voor één dag of voor de hele periode.'] },
             ],
           },
           {
             titel: 'Overzicht',
             inhoud: [
-              { kop: null, items: ['Toont toewijzingen in een andere weergave — handig voor een snel overzicht per periode.', 'Filter op projectleider via de dropdown bovenaan.', 'Als Gebruiker zie je automatisch je eigen toewijzingen.'] },
+              { kop: null, items: ['Het overzicht toont de planning vanuit de projecten. Elke rij is een project; de kolommen zijn dagen.', 'Het getal in een cel geeft aan hoeveel mensen er die dag op dat project werken.', 'Klik op een cel om te zien welke mensen er staan.', 'Filter op projectleider via de dropdown bovenaan.', 'Toggles: 8 weken voor een breder beeld, Weekend om zaterdag en zondag mee te nemen.'] },
             ],
           },
           {
             titel: 'Projecten',
             inhoud: [
-              { kop: null, items: ['Lijst van alle projecten met werknummer, omschrijving, opdrachtgever, plaats en projectleider.', 'Gebruik de zoekbalk om snel een project te vinden.', 'Klik op een kolom om te sorteren.'] },
-              { kop: 'Aanmaken / bewerken (alleen Planner)', items: ['Klik op "Nieuw project" om een project toe te voegen.', 'Klik op een project in de lijst om het te bewerken.', 'Verplichte velden: werknummer en omschrijving.'] },
+              { kop: null, items: ['Lijst van alle projecten met werknummer, omschrijving, opdrachtgever, plaats en projectleider.', 'Gebruik de zoekbalk om snel een project te vinden op naam of werknummer.', 'Klik op een kolomkop om de lijst te sorteren.'] },
+              { kop: 'Aanmaken / bewerken (alleen Planner)', items: ['Klik op "Nieuw project" om een project toe te voegen.', 'Klik op een bestaand project om de gegevens te wijzigen.', 'Verplichte velden: werknummer en omschrijving.'] },
             ],
           },
           {
             titel: 'Monteurs',
             inhoud: [
-              { kop: null, items: ['Filter op Intern / Onderaannemer via de knoppen bovenaan.', 'Gebruik de zoekbalk om te zoeken op naam of bedrijfsnaam.'] },
-              { kop: 'Aanmaken / bewerken (alleen Planner)', items: ['Klik op "Nieuwe monteur" om een monteur toe te voegen.', 'Verplicht veld: achternaam en type (Intern of Onderaannemer).', 'Groepen aanmaken: klik op "Nieuwe groep" en voeg monteurs toe.'] },
+              { kop: null, items: ['Lijst van alle monteurs en groepen.', 'Filter op Intern of Onderaannemer via de knoppen bovenaan.', 'Gebruik de zoekbalk om te zoeken op naam of bedrijfsnaam.'] },
+              { kop: 'Aanmaken / bewerken (alleen Planner)', items: ['Klik op "Nieuwe monteur" om iemand toe te voegen. Verplicht: achternaam en type.', 'Klik op een monteur om gegevens te wijzigen, zoals expertises of telefoonnummer.', 'Groepen aanmaken: klik op "Nieuwe groep", geef een naam en voeg monteurs toe. Een groep plan je in één keer in via de planning.'] },
             ],
           },
         ].map(({ titel, inhoud }) => (
@@ -127,9 +129,10 @@ function HandleidingModal({ onClose }) {
         <section>
           <h2 className="text-sm font-semibold text-gray-700 mb-2">Veelgestelde vragen</h2>
           {[
-            { v: 'Ik zie niet de juiste persoon in het filter.', a: 'Controleer of er een profiel voor deze persoon aangemaakt is. Dit doet de Admin via Beheer.' },
-            { v: 'Ik kan niets bewerken.', a: 'Je hebt waarschijnlijk de rol Gebruiker. Neem contact op met de Admin als je bewerkrechten nodig hebt.' },
-            { v: 'De planning laadt niet.', a: 'Controleer de internetverbinding. Als het probleem aanhoudt, neem contact op met de beheerder van de app.' },
+            { v: 'Ik zie mezelf niet in de zoekbalk of het filter.', a: 'Controleer bij de Admin of er een profiel voor jou aangemaakt is in Beheer.' },
+            { v: 'Ik kan niets bewerken of inplannen.', a: 'Je hebt de rol Gebruiker — je kunt de planning alleen bekijken. Neem contact op met de Admin als je bewerkrechten nodig hebt.' },
+            { v: 'De planning laadt niet of ik zie een foutmelding.', a: 'Controleer de internetverbinding en ververs de pagina. Blijft het probleem, neem contact op met de beheerder.' },
+            { v: 'Ik zie een project niet in de planning.', a: 'Het project heeft mogelijk nog niemand ingepland in de getoonde week, of er staat een filter actief. Controleer de filters bovenaan.' },
           ].map(({ v, a }) => (
             <div key={v} className="mb-3">
               <p className="text-sm font-medium text-gray-800">{v}</p>
