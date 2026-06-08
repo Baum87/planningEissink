@@ -51,6 +51,8 @@ export default function Login() {
               E-mailadres
             </label>
             <input
+              id="email"
+              name="email"
               type="email"
               required
               autoComplete="email"
@@ -66,6 +68,8 @@ export default function Login() {
               Wachtwoord
             </label>
             <input
+              id="password"
+              name="password"
               type="password"
               required
               autoComplete="current-password"

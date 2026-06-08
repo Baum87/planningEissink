@@ -14,9 +14,10 @@ Bijgehouden naast CONTEXT.md — technische context staat daar.
 
 ## Voor eerste betalende klant
 
-- [ ] **Validatie server-side controleren**
+- [x] **Validatie server-side controleren**
       Nagaan welke constraints er in het DB-schema zitten (NOT NULL, CHECK).
       Client-side validatie aanvullen waar server-side ontbreekt.
+      Migratie 013: CHECK constraints toegevoegd op datum_volgorde in toewijzingen en periodes. ✓
 
 - [ ] **Gebruikersdocumentatie voor Planner en Gebruiker**
       Korte handleiding: inplannen, periodes, filters, wat ze kunnen en niet kunnen.

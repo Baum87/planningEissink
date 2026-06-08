@@ -510,7 +510,7 @@ function UitnodigModal({ onClose, onSuccess }) {
     <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-5">Gebruiker uitnodigen</h2>
-        <form onSubmit={submit} className="space-y-4">
+        <form onSubmit={submit} autoComplete="off" className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
             <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
@@ -592,7 +592,7 @@ function AanmakenModal({ onClose, onSuccess }) {
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-1">Gebruiker aanmaken</h2>
         <p className="text-sm text-gray-400 mb-5">Geen e-mail verstuurd — deel de inloggegevens zelf.</p>
-        <form onSubmit={submit} className="space-y-4">
+        <form onSubmit={submit} autoComplete="off" className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
             <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
@@ -687,7 +687,7 @@ function GebruikerModal({ gebruiker, isZijzelf, onOpgeslagen, onClose }) {
     <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50" onClick={onClose}>
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6" onClick={(e) => e.stopPropagation()}>
         <h2 className="text-base font-semibold text-gray-900 mb-5">Gebruiker bewerken</h2>
-        <form onSubmit={submit} className="space-y-4">
+        <form onSubmit={submit} autoComplete="off" className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Voornaam</label>
@@ -776,7 +776,7 @@ function ProfielBewerkenModal({ profiel, onOpgeslagen, onClose }) {
     <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50" onClick={onClose}>
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6" onClick={(e) => e.stopPropagation()}>
         <h2 className="text-base font-semibold text-gray-900 mb-5">Persoon bewerken</h2>
-        <form onSubmit={submit} className="space-y-4">
+        <form onSubmit={submit} autoComplete="off" className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Voornaam</label>
@@ -842,7 +842,7 @@ function ProfielAanmakenModal({ onClose, onSuccess }) {
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-1">Persoon toevoegen</h2>
         <p className="text-sm text-gray-400 mb-5">Geen loginaccount — alleen naam en afkorting. Geschikt voor projectleiders als referentie.</p>
-        <form onSubmit={submit} className="space-y-4">
+        <form onSubmit={submit} autoComplete="off" className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Voornaam</label>
@@ -932,7 +932,7 @@ function ProfielKoppelenModal({ profielId, onClose, onSuccess }) {
             : 'Geen e-mail verstuurd — deel de inloggegevens zelf.'}
         </p>
 
-        <form onSubmit={submit} className="space-y-4">
+        <form onSubmit={submit} autoComplete="off" className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">E-mailadres</label>
             <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
@@ -996,7 +996,7 @@ function PeriodeModal({ periode, onClose, onSuccess }) {
         <h2 className="text-lg font-semibold text-gray-900 mb-5">
           {isBewerk ? 'Periode bewerken' : 'Periode toevoegen'}
         </h2>
-        <form onSubmit={submit} className="space-y-4">
+        <form onSubmit={submit} autoComplete="off" className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Naam</label>
             <input type="text" required value={naam} onChange={(e) => setNaam(e.target.value)}
