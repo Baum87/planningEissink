@@ -204,7 +204,7 @@ function WachtwoordInstellen() {
 
 function AppInner() {
   const { user, rol, naam, uitloggen, moetWachtwoordInstellen } = useAuth()
-  const { tenant } = useTenant()
+  const { tenant, error: tenantError } = useTenant()
   const [activeTab, setActiveTab] = useState('planning')
   const [hamburgerOpen, setHamburgerOpen] = useState(false)
   const [handleidingOpen, setHandleidingOpen] = useState(false)
@@ -230,6 +230,23 @@ function AppInner() {
 
   // Niet ingelogd
   if (user === null) return <Login />
+
+  // Tenant kon niet geladen worden
+  if (tenantError) return (
+    <div className="min-h-screen bg-white flex items-center justify-center px-4">
+      <div className="max-w-sm w-full text-center">
+        <p className="text-sm font-medium text-gray-900 mb-2">De app kon niet worden geladen.</p>
+        <p className="text-sm text-gray-500 mb-4">Controleer je internetverbinding en ververs de pagina.</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="px-4 py-2 text-sm font-medium bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition-colors"
+        >
+          Pagina verversen
+        </button>
+        <p className="text-xs text-gray-400 mt-6">Blijft dit probleem? Neem contact op via hello@byggr.nl</p>
+      </div>
+    </div>
+  )
 
 
 

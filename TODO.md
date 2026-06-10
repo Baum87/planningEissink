@@ -19,19 +19,21 @@ Bijgehouden naast CONTEXT.md — technische context staat daar.
       Client-side validatie aanvullen waar server-side ontbreekt.
       Migratie 013: CHECK constraints toegevoegd op datum_volgorde in toewijzingen en periodes. ✓
 
-- [ ] **Gebruikersdocumentatie voor Planner en Gebruiker**
+- [x] **Gebruikersdocumentatie voor Planner en Gebruiker**
       Korte handleiding: inplannen, periodes, filters, wat ze kunnen en niet kunnen.
+      docs/handleiding-gebruikers.md + info-icoon modal in de app. ✓
 
-- [ ] **Onboarding documentatie voor nieuwe tenants**
+- [x] **Onboarding documentatie voor nieuwe tenants**
       Stappenplan: Supabase setup, CSV-import, gebruikers aanmaken, expertises instellen.
+      docs/onboarding-nieuwe-tenant.md — 9 stappen incl. opleverchecklist. ✓
 
 ---
 
 ## Kort daarna
 
-- [ ] **TenantContext: foutmelding tonen bij laad-fout**
+- [x] **TenantContext: foutmelding tonen bij laad-fout**
       Bij een fout in laadTenant() wordt de fout nu geswallowed via console.error.
-      Gebruiker ziet niets — fout naar UI doorgeven via een error-state.
+      Gebruiker ziet niets — fout naar UI doorgeven via een error-state. ✓
 
 - [ ] **Audit log triggers**
       Tabel bestaat al, wordt nog niet gevuld.

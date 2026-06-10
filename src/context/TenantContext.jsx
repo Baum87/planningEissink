@@ -9,6 +9,7 @@ export function TenantProvider({ children }) {
   const [tenant, setTenant] = useState(null)
   const [instellingen, setInstellingen] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     if (user === undefined) return
@@ -33,8 +34,8 @@ export function TenantProvider({ children }) {
         if (instellingenError) throw instellingenError
         setTenant(tenantData)
         setInstellingen(instellingenData)
-      } catch (error) {
-        console.error('Fout bij laden tenant:', error)
+      } catch (err) {
+        setError(err)
       } finally {
         setLoading(false)
       }
@@ -62,6 +63,7 @@ export function TenantProvider({ children }) {
       tenant,
       instellingen,
       loading,
+      error,
       kolomZichtbaar,
       moduleZichtbaar,
       veldLabel,
