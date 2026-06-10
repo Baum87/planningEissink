@@ -12,40 +12,20 @@ Bijgehouden naast CONTEXT.md — technische context staat daar.
 
 ---
 
-## Voor eerste betalende klant
-
-- [x] **Validatie server-side controleren**
-      Nagaan welke constraints er in het DB-schema zitten (NOT NULL, CHECK).
-      Client-side validatie aanvullen waar server-side ontbreekt.
-      Migratie 013: CHECK constraints toegevoegd op datum_volgorde in toewijzingen en periodes. ✓
-
-- [x] **Gebruikersdocumentatie voor Planner en Gebruiker**
-      Korte handleiding: inplannen, periodes, filters, wat ze kunnen en niet kunnen.
-      docs/handleiding-gebruikers.md + info-icoon modal in de app. ✓
-
-- [x] **Onboarding documentatie voor nieuwe tenants**
-      Stappenplan: Supabase setup, CSV-import, gebruikers aanmaken, expertises instellen.
-      docs/onboarding-nieuwe-tenant.md — 9 stappen incl. opleverchecklist. ✓
-
----
-
 ## Kort daarna
 
-- [x] **TenantContext: foutmelding tonen bij laad-fout**
-      Bij een fout in laadTenant() wordt de fout nu geswallowed via console.error.
-      Gebruiker ziet niets — fout naar UI doorgeven via een error-state. ✓
+- [ ] **Mobiele weergave Overzicht — gelijktrekken met Planning**
+      Overzicht heeft geen mobiele aanpassing. Planning toont 3 werkdagen compact.
+      Overzicht moet hetzelfde gedrag krijgen.
 
-- [x] **Audit log triggers**
-      Tabel bestaat al, wordt nog niet gevuld.
-      Triggers toevoegen op projecten, monteurs, toewijzingen.
-      Migratie 016: AFTER triggers op projecten, monteurs en toewijzingen. ✓
+- [ ] **Mobiele weergave Beheer — knoppen analyseren**
+      Knoppen steken buiten de pagina op mobiel. Analyseren welke knoppen/secties
+      het probleem veroorzaken en oplossen.
 
-- [x] **Smoke test stap 2 en 3 uitvoeren**
-      Na volgende RLS-migratie: planner en gebruiker-rol testen via rls_smoke_test.sql.
-      Alle 4 stappen doorlopen: anon geblokkeerd, planner/gebruiker correct in app, cross-tenant isolatie OK. ✓
-
-- [ ] **React Query of SWR introduceren**
-      Caching en optimistic updates — merkbaar voordeel voor planner bij snelle acties.
+- [ ] **Favicon per tenant instellen**
+      Uitzoeken waar het favicon-bestand per tenant neergezet wordt (public/ of Supabase Storage),
+      hoe het dynamisch geladen wordt op basis van de actieve tenant, en hoe het getoond
+      wordt in de browsertab en op de pagina.
 
 ---
 
@@ -168,7 +148,30 @@ Bijgehouden naast CONTEXT.md — technische context staat daar.
 - [x] **Gebruikersbeheer via Edge Function + scherm**
       Geïmplementeerd: Edge Function + Beheer.jsx pagina voor admins.
 
+- [x] **Validatie server-side controleren**
+      Migratie 013: CHECK constraints toegevoegd op datum_volgorde in toewijzingen en periodes. ✓
+
+- [x] **Gebruikersdocumentatie voor Planner en Gebruiker**
+      docs/handleiding-gebruikers.md + info-icoon modal in de app. ✓
+
+- [x] **Onboarding documentatie voor nieuwe tenants**
+      docs/onboarding-nieuwe-tenant.md — 9 stappen incl. opleverchecklist. ✓
+
 ### Kort daarna — uitgevoerd
+
+- [x] **TenantContext: foutmelding tonen bij laad-fout**
+      Fout naar UI doorgeven via error-state. ✓
+
+- [x] **Audit log triggers**
+      Migratie 016: AFTER triggers op projecten, monteurs en toewijzingen. ✓
+
+- [x] **Smoke test stap 2 en 3 uitvoeren**
+      Alle 4 stappen doorlopen: anon geblokkeerd, planner/gebruiker correct, cross-tenant isolatie OK. ✓
+
+- [x] **React Query introduceren**
+      @tanstack/react-query geïnstalleerd. Gedeelde hooks in src/hooks/queries.js.
+      Alle pagina's gemigreerd: Projecten, Monteurs, Overzicht, Planning, Beheer.
+      useToewijzingen heeft refetchInterval 60s voor passieve gebruikers. ✓
 
 - [x] **UNIQUE constraint op afkorting per tenant**
       `alter table profielen add constraint afkorting_unique_per_tenant unique(tenant_id, afkorting);`
@@ -179,35 +182,20 @@ Bijgehouden naast CONTEXT.md — technische context staat daar.
 ### Code kwaliteit laag 1 — uitgevoerd
 
 - [x] **Duplicate `naarStr` verwijderen**
-      Staat zowel in `datum.js` als in `toewijzingenService.js`. Import de versie uit datum.js.
-
 - [x] **Timezone-bug in `getMonteurs` fixen**
-      `new Date().toISOString().split('T')[0]` geeft UTC-datum → verkeerd na middernacht in NL.
-      Vervangen door `naarStr(new Date())`.
-
 - [x] **Dead code `skipDagen` verwijderen uit Planning.jsx**
-
 - [x] **Date utilities verplaatsen uit Planning.jsx naar datum.js**
-      `prevWerkdag`, `nextWerkdag`, `plusWerkdagen`, `fBereikLang`, `aaneengesloten`.
-
 - [x] **TenantContext: sequentiële fetches → parallel (Promise.all)**
-
 - [x] **`setGroepLeden` atomair maken**
-
 - [x] **`getMonteurs`: vandaag-toewijzingen optioneel maken**
-
 - [~] **`avatarKleur` hash: volledige naam i.p.v. eerste teken** *(bewust overgeslagen)*
 
 ### Code kwaliteit laag 2 — uitgevoerd
 
 - [x] **`useAsyncData` custom hook**
-
 - [x] **Modals uit Planning.jsx extraheren naar `src/components/`**
-
 - [x] **`alert()` vervangen door inline fout-state in modals**
-
 - [x] **`getTenantId()` cachen**
-
 - [x] **`laad()` in Planning.jsx: bewaar `uitgeklapt` bij data-refresh**
 
 ### Code kwaliteit laag 3 — uitgevoerd
@@ -217,11 +205,10 @@ Bijgehouden naast CONTEXT.md — technische context staat daar.
 ### Projectleiders — uitgevoerd
 
 - [x] **Projectleiders aanmaken + data migratie**
-      Volledige namen van 8 PLs aangemaakt via Beheer UI.
-      Migratie 012 uitgevoerd: projectleider_initialen → projectleider_id (UUID). 168 projecten gekoppeld. ✓
+      Migratie 012: projectleider_initialen → projectleider_id (UUID). 168 projecten gekoppeld. ✓
 
 - [x] **Projectformulier: projectleider als dropdown op profielen**
-      Tekstveld vervangen door dropdown op profielen. Schrijft projectleider_id (UUID) + projectleider_initialen (legacy). ✓
+      Tekstveld vervangen door dropdown op profielen. ✓
 
 - [x] **Planning filter: UUID-gebaseerd + auto-filter per rol bij login**
-      Filters in Planning, Overzicht en Projecten werken op UUID. Gebruiker krijgt auto-filter op eigen profiel na login. ✓
+      Filters in Planning, Overzicht en Projecten werken op UUID. ✓
