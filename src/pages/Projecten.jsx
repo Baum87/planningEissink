@@ -1,14 +1,13 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQueryClient } from '@tanstack/react-query'
 import { useAuth, heeftVolledigeToegang } from '../context/AuthContext'
 import { useTenant } from '../context/TenantContext'
 import {
-  getProjecten,
   createProject,
   updateProject,
   deleteProject,
 } from '../services/projectenService'
-import { getProfielen } from '../services/gebruikersbeheerService'
+import { useProjecten, useProfielen } from '../hooks/queries'
 import { KLEURENPALET, projKleur, minstGebruikteKleur } from '../lib/kleurenpalet'
 import { profielenUitProjecten } from '../lib/profielen'
 import { naarStr } from '../lib/datum'
@@ -64,14 +63,8 @@ export default function Projecten() {
   const kanBewerken = heeftVolledigeToegang(rol)
 
   const queryClient = useQueryClient()
-  const { data: projecten = [], isLoading: loading, error } = useQuery({
-    queryKey: ['projecten'],
-    queryFn: () => getProjecten({ metStats: true }),
-  })
-  const { data: profielen = [] } = useQuery({
-    queryKey: ['profielen'],
-    queryFn: getProfielen,
-  })
+  const { data: projecten = [], isLoading: loading, error } = useProjecten({ metStats: true })
+  const { data: profielen = [] } = useProfielen()
   const [zoek, setZoek] = useState('')
   const [filterPL, setFilterPL] = useState('')
   const [sort, setSort] = useState({ veld: 'created_at', dir: 'desc' })

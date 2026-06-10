@@ -1,10 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useAuth, isGebruiker } from '../context/AuthContext'
-import { getMonteurs } from '../services/monteursService'
-import { getToewijzingen } from '../services/toewijzingenService'
-import { getProjecten } from '../services/projectenService'
-import { getPeriodes } from '../services/periodesService'
-import { getProfielen } from '../services/gebruikersbeheerService'
+import { useMonteurs, useToewijzingen, useProjecten, usePeriodes, useProfielen } from '../hooks/queries'
 import { projKleur } from '../lib/kleurenpalet'
 import { profielenUitProjecten } from '../lib/profielen'
 import { getMaandag, plusDagen, naarStr, isoWeek, fDag, fDagNaam, fDatumLang } from '../lib/datum'
@@ -27,21 +23,26 @@ export default function Overzicht() {
   const vandaag = naarStr(new Date())
   const [startDatum, setStartDatum] = useState(() => getMaandag(new Date()))
   const [toonWeekend, setToonWeekend] = useState(false)
-  const [monteurs, setMonteurs] = useState([])
-  const [toewijzingen, setToewijzingen] = useState([])
-  const [projecten, setProjecten] = useState([])
-  const [periodes, setPeriodes] = useState([])
-  const [profielen, setProfielen] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [toonUitgebreid, setToonUitgebreid] = useState(false)
   const [popup, setPopup] = useState(null)
   const [filterProjectleider, setFilterProjectleider] = useState('')
-  const [toonUitgebreid, setToonUitgebreid] = useState(false)
 
   // ── Datum berekeningen ──────────────────────────────────────────────────────
 
   const aantalDagen = toonUitgebreid ? 56 : 21
   const dagBreedte = toonUitgebreid ? 40 : DAG_B
+  const van = naarStr(startDatum)
+  const tot = naarStr(plusDagen(startDatum, aantalDagen - 1))
+
+  // ── Data queries ───────────────────────────────────────────────────────────
+
+  const { data: monteurs = [], isLoading: loadingMonteurs, error: errorMonteurs } = useMonteurs({ metVandaag: false })
+  const { data: toewijzingen = [], isLoading: loadingTv, error: errorTv } = useToewijzingen(van, tot)
+  const { data: projecten = [] } = useProjecten()
+  const { data: periodes = [] } = usePeriodes()
+  const { data: profielen = [], isLoading: loadingProf } = useProfielen()
+  const loading = loadingMonteurs || loadingTv || loadingProf
+  const error = errorMonteurs || errorTv
 
   const alleDagen = useMemo(
     () => Array.from({ length: aantalDagen }, (_, i) => plusDagen(startDatum, i)),
@@ -69,40 +70,14 @@ export default function Overzicht() {
     return wks.length === 1 ? `Wk ${wks[0]}` : `Wk ${wks[0]} – ${wks[wks.length - 1]}`
   }, [alleDagen])
 
-  // ── Data laden ─────────────────────────────────────────────────────────────
-
-  async function laad() {
-    setLoading(true)
-    setError(null)
-    try {
-      const van = naarStr(startDatum)
-      const tot = naarStr(plusDagen(startDatum, aantalDagen - 1))
-      const [m, tv, p, per, prof] = await Promise.all([
-        getMonteurs({ metVandaag: false }),
-        getToewijzingen(van, tot),
-        getProjecten(),
-        getPeriodes(),
-        getProfielen(),
-      ])
-      setMonteurs(m)
-      setToewijzingen(tv)
-      setProjecten(p)
-      setPeriodes(per)
-      setProfielen(prof)
-      if (isGebruiker(rol) && user) {
-        const mijnProfiel = prof.find((pr) => pr.user_id === user.id)
-        if (mijnProfiel) setFilterProjectleider(mijnProfiel.id)
-      }
-    } catch {
-      setError('Kon overzicht niet ophalen. Controleer de verbinding.')
-    } finally {
-      setLoading(false)
-    }
-  }
+  // ── Auto-filter voor Gebruiker-rol ─────────────────────────────────────────
 
   useEffect(() => {
-    laad()
-  }, [startDatum, toonUitgebreid])
+    if (isGebruiker(rol) && user && profielen.length > 0) {
+      const mijnProfiel = profielen.find((pr) => pr.user_id === user.id)
+      if (mijnProfiel) setFilterProjectleider(mijnProfiel.id)
+    }
+  }, [profielen, rol, user])
 
   // ── Data verwerking ────────────────────────────────────────────────────────
 
@@ -257,7 +232,7 @@ export default function Overzicht() {
 
       {error && (
         <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-          {error}
+          {error?.message || error}
         </div>
       )}
 

@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { useAsyncData } from '../hooks/useAsyncData'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../context/AuthContext'
 import { fDatumKort } from '../lib/datum'
 import {
@@ -16,7 +16,8 @@ import {
   profielVerwijderen,
   profielUpdaten,
 } from '../services/gebruikersbeheerService'
-import { getPeriodes, createPeriode, updatePeriode, deletePeriode } from '../services/periodesService'
+import { createPeriode, updatePeriode, deletePeriode } from '../services/periodesService'
+import { usePeriodes } from '../hooks/queries'
 
 const ROLLEN = ['admin', 'planner', 'gebruiker', 'monteur']
 const ROL_LABELS = { admin: 'Admin', planner: 'Planner', gebruiker: 'Gebruiker', monteur: 'Monteur' }
@@ -77,31 +78,32 @@ export default function Beheer() {
 
 function GebruikersTab() {
   const { user } = useAuth()
-  const {
-    data,
-    setData: setGebruikers,
-    loading: laden,
-    error: fout,
-    herlaad: laad,
-  } = useAsyncData(async () => {
-    const [{ gebruikers: lijst }, profielen] = await Promise.all([
-      lijstGebruikers(),
-      profielenZonderAccount(),
-    ])
-    const metAccount = lijst.map((g) => ({ ...g, heeftAccount: true }))
-    const zonderAccount = profielen.map((p) => ({
-      id: p.id,
-      naam: p.weergave_naam,
-      afkorting: p.afkorting,
-      email: null,
-      rol: null,
-      created_at: p.created_at,
-      last_sign_in_at: null,
-      heeftAccount: false,
-    }))
-    return [...metAccount, ...zonderAccount]
+  const queryClient = useQueryClient()
+  const { data: gebruikers = [], isLoading: laden, error: fout } = useQuery({
+    queryKey: ['beheer-gebruikers'],
+    queryFn: async () => {
+      const [{ gebruikers: lijst }, profielen] = await Promise.all([
+        lijstGebruikers(),
+        profielenZonderAccount(),
+      ])
+      const metAccount = lijst.map((g) => ({ ...g, heeftAccount: true }))
+      const zonderAccount = profielen.map((p) => ({
+        id: p.id,
+        naam: p.weergave_naam,
+        afkorting: p.afkorting,
+        email: null,
+        rol: null,
+        created_at: p.created_at,
+        last_sign_in_at: null,
+        heeftAccount: false,
+      }))
+      return [...metAccount, ...zonderAccount]
+    },
   })
-  const gebruikers = data ?? []
+
+  async function herlaad() {
+    await queryClient.invalidateQueries({ queryKey: ['beheer-gebruikers'] })
+  }
   const [sort, setSort] = useState({ veld: 'achternaam', dir: 'asc' })
 
   function toggleSortG(veld) {
@@ -131,7 +133,7 @@ function GebruikersTab() {
 
   async function handleRolWijzig(user_id, rol) {
     await rolWijzigen(user_id, rol)
-    setGebruikers((prev) => prev.map((g) => g.id === user_id ? { ...g, rol } : g))
+    await herlaad()
   }
 
   const [actiFout, setActiFout] = useState(null)
@@ -143,7 +145,7 @@ function GebruikersTab() {
       } else {
         await profielVerwijderen(g.id)
       }
-      setGebruikers((prev) => prev.filter((x) => x.id !== g.id))
+      await herlaad()
       setVerwijderBevestig(null)
     } catch (e) {
       setActiFout(e.message)
@@ -188,7 +190,7 @@ function GebruikersTab() {
       </div>
 
       {fout && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{fout}</div>
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">{fout?.message || fout}</div>
       )}
 
       <div className="border border-gray-200 rounded-xl overflow-auto flex-1 min-h-0">
@@ -321,7 +323,7 @@ function GebruikersTab() {
       {bewerkenProfiel && (
         <ProfielBewerkenModal
           profiel={bewerkenProfiel}
-          onOpgeslagen={(bijgewerkt) => setGebruikers((prev) => prev.map((g) => g.id === bijgewerkt.id ? bijgewerkt : g))}
+          onOpgeslagen={herlaad}
           onClose={() => setBewerkenProfiel(null)}
         />
       )}
@@ -329,7 +331,7 @@ function GebruikersTab() {
         <GebruikerModal
           gebruiker={bewerkenGebruiker}
           isZijzelf={bewerkenGebruiker.id === user?.id}
-          onOpgeslagen={(bijgewerkt) => setGebruikers((prev) => prev.map((g) => g.id === bijgewerkt.id ? bijgewerkt : g))}
+          onOpgeslagen={herlaad}
           onClose={() => setBewerkenGebruiker(null)}
         />
       )}
@@ -340,8 +342,9 @@ function GebruikersTab() {
 // ─── Periodes tab ─────────────────────────────────────────────────────────────
 
 function PeriodesTab() {
-  const { data, setData: setPeriodes, loading: laden, error: fout, herlaad: laad } = useAsyncData(getPeriodes)
-  const periodes = data ?? []
+  const queryClient = useQueryClient()
+  const { data: periodes = [], isLoading: laden, error: foutObj } = usePeriodes()
+  const fout = foutObj?.message || null
   const [sort, setSort] = useState({ veld: 'datum_van', dir: 'asc' })
   const [modal, setModal] = useState(null) // null | periode-object (bewerk) | 'nieuw'
   const [verwijderBevestig, setVerwijderBevestig] = useState(null)
@@ -367,7 +370,7 @@ function PeriodesTab() {
   async function handleVerwijder(p) {
     try {
       await deletePeriode(p.id)
-      setPeriodes((prev) => prev.filter((x) => x.id !== p.id))
+      await queryClient.invalidateQueries({ queryKey: ['periodes'] })
       setVerwijderBevestig(null)
     } catch (e) {
       setActiFout(e.message)
@@ -474,7 +477,7 @@ function PeriodesTab() {
         <PeriodeModal
           periode={modal === 'nieuw' ? null : modal}
           onClose={() => setModal(null)}
-          onSuccess={() => { setModal(null); laad() }}
+          onSuccess={() => { setModal(null); queryClient.invalidateQueries({ queryKey: ['periodes'] }) }}
         />
       )}
     </>

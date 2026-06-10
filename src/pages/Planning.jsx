@@ -1,14 +1,11 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useAuth, heeftVolledigeToegang, isGebruiker } from '../context/AuthContext'
-import { getMonteurs, getGroepen } from '../services/monteursService'
 import {
-  getToewijzingen,
   createToewijzing,
   deleteToewijzing,
 } from '../services/toewijzingenService'
-import { getProjecten } from '../services/projectenService'
-import { getPeriodes } from '../services/periodesService'
-import { getProfielen } from '../services/gebruikersbeheerService'
+import { useMonteurs, useGroepen, useToewijzingen, useProjecten, usePeriodes, useProfielen } from '../hooks/queries'
 import { projKleur } from '../lib/kleurenpalet'
 import { profielenUitProjecten } from '../lib/profielen'
 import { avatarKleur, initialen, monteurNaam } from '../lib/avatar'
@@ -34,14 +31,7 @@ export default function Planning({ onNavigate }) {
 
   const [startDatum, setStartDatum] = useState(() => getMaandag(new Date()))
   const [toonWeekend, setToonWeekend] = useState(false)
-  const [monteurs, setMonteurs] = useState([])
-  const [groepen, setGroepen] = useState([])
-  const [toewijzingen, setToewijzingen] = useState([])
-  const [projecten, setProjecten] = useState([])
-  const [periodes, setPeriodes] = useState([])
-  const [profielen, setProfielen] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [toonUitgebreid, setToonUitgebreid] = useState(false)
   const [uitgeklapt, setUitgeklapt] = useState(new Set())
   const [zoek, setZoek] = useState('')
   const [filterExpertise, setFilterExpertise] = useState('')
@@ -50,7 +40,6 @@ export default function Planning({ onNavigate }) {
   const [alleenIngepland, setAlleenIngepland] = useState(false)
   const [modal, setModal] = useState(null)
   const [monteurPopup, setMonteurPopup] = useState(null)
-  const [toonUitgebreid, setToonUitgebreid] = useState(false)
 
   const isMobile = useIsMobile()
 
@@ -59,6 +48,20 @@ export default function Planning({ onNavigate }) {
   const aantalDagen = toonUitgebreid ? 56 : 21
   const dagBreedte  = isMobile ? 0 : toonUitgebreid ? 40 : DAG_B
   const naamBreedte = isMobile ? 70 : NAAM_B
+  const van = naarStr(startDatum)
+  const tot = naarStr(plusDagen(startDatum, aantalDagen - 1))
+
+  // ── Data queries ───────────────────────────────────────────────────────────
+
+  const queryClient = useQueryClient()
+  const { data: monteurs = [], isLoading: loadingMonteurs, error: errorMonteurs } = useMonteurs({ metVandaag: true })
+  const { data: groepen = [], isLoading: loadingGroepen } = useGroepen()
+  const { data: toewijzingen = [], isLoading: loadingTv, error: errorTv } = useToewijzingen(van, tot)
+  const { data: projecten = [] } = useProjecten()
+  const { data: periodes = [] } = usePeriodes()
+  const { data: profielen = [], isLoading: loadingProf } = useProfielen()
+  const loading = loadingMonteurs || loadingGroepen || loadingTv || loadingProf
+  const error = errorMonteurs || errorTv
 
   const alleDagen = useMemo(
     () => Array.from({ length: aantalDagen }, (_, i) => plusDagen(startDatum, i)),
@@ -95,51 +98,22 @@ export default function Planning({ onNavigate }) {
     return wks.length === 1 ? `Wk ${wks[0]}` : `Wk ${wks[0]} – ${wks[wks.length - 1]}`
   }, [alleDagen, zDagen, isMobile])
 
-  // ── Data laden ─────────────────────────────────────────────────────────────
-
-  async function laad() {
-    setLoading(true)
-    setError(null)
-    try {
-      const van = naarStr(startDatum)
-      const tot = naarStr(plusDagen(startDatum, aantalDagen - 1))
-      const [m, g, tv, p, per, prof] = await Promise.all([
-        getMonteurs({ metVandaag: true }),
-        getGroepen(),
-        getToewijzingen(van, tot),
-        getProjecten(),
-        getPeriodes(),
-        getProfielen(),
-      ])
-      setMonteurs(m)
-      setGroepen(g)
-      setUitgeklapt((prev) => prev.size > 0 ? prev : new Set(g.map((gr) => gr.id)))
-      setToewijzingen(tv)
-      setProjecten(p)
-      setPeriodes(per)
-      setProfielen(prof)
-      if (isGebruiker(rol) && user) {
-        const mijnProfiel = prof.find((pr) => pr.user_id === user.id)
-        if (mijnProfiel) setFilterProjectleider(mijnProfiel.id)
-      }
-    } catch {
-      setError('Kon planning niet ophalen. Controleer de verbinding.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // Ververst alleen toewijzingen — geen loading state, geen scroll reset
-  async function laadToewijzingen() {
-    const van = naarStr(startDatum)
-    const tot = naarStr(plusDagen(startDatum, aantalDagen - 1))
-    const tv = await getToewijzingen(van, tot)
-    setToewijzingen(tv)
-  }
+  // ── Auto-initialisatie uitgeklapt op basis van groepen ─────────────────────
 
   useEffect(() => {
-    laad()
-  }, [startDatum, toonUitgebreid])
+    if (groepen.length > 0) {
+      setUitgeklapt((prev) => prev.size > 0 ? prev : new Set(groepen.map((g) => g.id)))
+    }
+  }, [groepen])
+
+  // ── Auto-filter voor Gebruiker-rol ─────────────────────────────────────────
+
+  useEffect(() => {
+    if (isGebruiker(rol) && user && profielen.length > 0) {
+      const mijnProfiel = profielen.find((pr) => pr.user_id === user.id)
+      if (mijnProfiel) setFilterProjectleider(mijnProfiel.id)
+    }
+  }, [profielen, rol, user])
 
   // ── Toewijzingen map per monteur ───────────────────────────────────────────
 
@@ -310,19 +284,19 @@ export default function Planning({ onNavigate }) {
       }, hardSkipDagen)
     }
     setModal(null)
-    await laadToewijzingen()
+    await queryClient.invalidateQueries({ queryKey: ['toewijzingen'] })
   }
 
   async function handleVerwijder(id) {
     await deleteToewijzing(id)
     setModal(null)
-    await laadToewijzingen()
+    await queryClient.invalidateQueries({ queryKey: ['toewijzingen'] })
   }
 
   async function handleVerwijderPeriode(ids) {
     await Promise.all(ids.map((id) => deleteToewijzing(id)))
     setModal(null)
-    await laadToewijzingen()
+    await queryClient.invalidateQueries({ queryKey: ['toewijzingen'] })
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -459,7 +433,7 @@ export default function Planning({ onNavigate }) {
 
       {error && (
         <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-          {error}
+          {error?.message || error}
         </div>
       )}
 

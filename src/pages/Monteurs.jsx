@@ -1,18 +1,17 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useMemo } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useAuth, heeftVolledigeToegang } from '../context/AuthContext'
 import { useTenant } from '../context/TenantContext'
 import {
-  getMonteurs,
   createMonteur,
   updateMonteur,
   deleteMonteur,
-  getGroepen,
   createGroep,
   updateGroepNaam,
   deleteGroep,
   setGroepLeden,
 } from '../services/monteursService'
-import { getExpertises } from '../services/expertisesService'
+import { useMonteurs, useGroepen, useExpertises } from '../hooks/queries'
 import { avatarKleur, initialen, monteurNaam } from '../lib/avatar'
 
 const LEEG_MONTEUR = {
@@ -44,11 +43,12 @@ export default function Monteurs() {
   const { kolomZichtbaar, veldLabel } = useTenant()
   const kanBewerken = heeftVolledigeToegang(rol)
 
-  const [monteurs, setMonteurs] = useState([])
-  const [groepen, setGroepen] = useState([])
-  const [expertiseOpties, setExpertiseOpties] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const queryClient = useQueryClient()
+  const { data: monteurs = [], isLoading: loading, error } = useMonteurs({ metVandaag: false })
+  const { data: groepen = [] } = useGroepen()
+  const { data: expertisesData = [] } = useExpertises()
+  const expertiseOpties = useMemo(() => expertisesData.map((e) => e.naam), [expertisesData])
+
   const [zoek, setZoek] = useState('')
   const [filter, setFilter] = useState('Allemaal')
   const [sort, setSort] = useState({ veld: 'achternaam', dir: 'asc' })
@@ -56,25 +56,6 @@ export default function Monteurs() {
   const [groepModal, setGroepModal] = useState(null)
   const [verwijderBevestig, setVerwijderBevestig] = useState(null)
   const [actiFout, setActiFout] = useState(null)
-
-  async function laad() {
-    setLoading(true)
-    setError(null)
-    try {
-      const [m, g, e] = await Promise.all([getMonteurs({ metVandaag: false }), getGroepen(), getExpertises()])
-      setMonteurs(m)
-      setGroepen(g)
-      setExpertiseOpties(e.map((ex) => ex.naam))
-    } catch {
-      setError('Kon data niet ophalen. Controleer de verbinding met Supabase.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    laad()
-  }, [])
 
   const gefilterd = useMemo(() => {
     const q = zoek.trim().toLowerCase()
@@ -114,10 +95,18 @@ export default function Monteurs() {
     try {
       await deleteMonteur(id)
       setVerwijderBevestig(null)
-      await laad()
+      await queryClient.invalidateQueries({ queryKey: ['monteurs'] })
     } catch (err) {
       setActiFout('Verwijderen mislukt: ' + err.message)
     }
+  }
+
+  async function invalideerMonteurs() {
+    await queryClient.invalidateQueries({ queryKey: ['monteurs'] })
+  }
+
+  async function invalideerGroepen() {
+    await queryClient.invalidateQueries({ queryKey: ['groepen'] })
   }
 
   return (
@@ -198,7 +187,7 @@ export default function Monteurs() {
       {/* ── Error / Loading ──────────────────────────────────────────── */}
       {error && (
         <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-          {error}
+          {error?.message || error}
         </div>
       )}
       {loading && (
@@ -333,7 +322,7 @@ export default function Monteurs() {
           modal={monteurModal}
           expertiseOpties={expertiseOpties}
           onClose={() => setMonteurModal(null)}
-          onOpgeslagen={laad}
+          onOpgeslagen={invalideerMonteurs}
         />
       )}
       {groepModal && (
@@ -341,7 +330,7 @@ export default function Monteurs() {
           modal={groepModal}
           monteurs={monteurs}
           onClose={() => setGroepModal(null)}
-          onOpgeslagen={laad}
+          onOpgeslagen={invalideerGroepen}
         />
       )}
     </div>
