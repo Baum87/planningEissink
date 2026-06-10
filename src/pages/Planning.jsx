@@ -672,18 +672,18 @@ export default function Planning({ onNavigate }) {
                                       className="text-[10px] font-bold leading-tight truncate"
                                       style={{ color: kleur.fg }}
                                     >
-                                      {tv.projecten?.werknummer}
-                                      {tv.projecten?.projectleider_initialen && (
-                                        <span style={{ opacity: 0.75 }}>
-                                          {' · '}{tv.projecten.projectleider_initialen}
-                                        </span>
-                                      )}
+                                      {tv.projecten?.omschrijving || tv.projecten?.werknummer}
                                     </div>
                                     <div
                                       className="text-[10px] leading-tight truncate"
                                       style={{ color: kleur.fg, opacity: 0.72 }}
                                     >
-                                      {tv.projecten?.omschrijving}
+                                      {tv.projecten?.werknummer}
+                                      {tv.projecten?.projectleider_initialen && (
+                                        <span>
+                                          {' · '}{tv.projecten.projectleider_initialen}
+                                        </span>
+                                      )}
                                     </div>
                                   </>
                                 )}

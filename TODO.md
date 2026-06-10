@@ -14,13 +14,11 @@ Bijgehouden naast CONTEXT.md — technische context staat daar.
 
 ## Kort daarna
 
-- [ ] **Mobiele weergave Overzicht — gelijktrekken met Planning**
-      Overzicht heeft geen mobiele aanpassing. Planning toont 3 werkdagen compact.
-      Overzicht moet hetzelfde gedrag krijgen.
+- [x] **Mobiele weergave Overzicht — gelijktrekken met Planning**
+      3-daagse navigatie, compacte naamkolom, toolbar stabiel, naam/werknummer omgedraaid. ✓
 
-- [ ] **Mobiele weergave Beheer — knoppen analyseren**
-      Knoppen steken buiten de pagina op mobiel. Analyseren welke knoppen/secties
-      het probleem veroorzaken en oplossen.
+- [x] **Mobiele weergave Beheer — knoppen analyseren**
+      Knoppen wrappen nu op mobiel via flex-wrap. ✓
 
 - [ ] **Favicon per tenant instellen**
       Uitzoeken waar het favicon-bestand per tenant neergezet wordt (public/ of Supabase Storage),
