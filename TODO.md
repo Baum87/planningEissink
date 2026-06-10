@@ -109,6 +109,7 @@ Bijgehouden naast CONTEXT.md — technische context staat daar.
 
 - [ ] **Realtime samenwerking (Supabase Realtime)**
       Meerdere planners tegelijk — nog niet nodig voor Eissink.
+      Bij implementatie: `refetchInterval: 60_000` op toewijzingen-query in Planning.jsx verwijderen — Realtime vervangt de polling.
 
 - [ ] **ERP-koppeling via extern_id**
       Webhook patroon via Edge Functions. extern_id staat al in datamodel.

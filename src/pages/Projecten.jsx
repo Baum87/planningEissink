@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuth, heeftVolledigeToegang } from '../context/AuthContext'
 import { useTenant } from '../context/TenantContext'
 import {
@@ -10,7 +11,6 @@ import {
 import { getProfielen } from '../services/gebruikersbeheerService'
 import { KLEURENPALET, projKleur, minstGebruikteKleur } from '../lib/kleurenpalet'
 import { profielenUitProjecten } from '../lib/profielen'
-import { useAsyncData } from '../hooks/useAsyncData'
 import { naarStr } from '../lib/datum'
 
 function TrashIcon() {
@@ -63,10 +63,15 @@ export default function Projecten() {
   const { kolomZichtbaar, veldLabel } = useTenant()
   const kanBewerken = heeftVolledigeToegang(rol)
 
-  const { data: _projecten, loading, error, herlaad: laadProjecten } = useAsyncData(() => getProjecten({ metStats: true }))
-  const projecten = _projecten ?? []
-  const { data: _profielen } = useAsyncData(getProfielen)
-  const profielen = _profielen ?? []
+  const queryClient = useQueryClient()
+  const { data: projecten = [], isLoading: loading, error } = useQuery({
+    queryKey: ['projecten'],
+    queryFn: () => getProjecten({ metStats: true }),
+  })
+  const { data: profielen = [] } = useQuery({
+    queryKey: ['profielen'],
+    queryFn: getProfielen,
+  })
   const [zoek, setZoek] = useState('')
   const [filterPL, setFilterPL] = useState('')
   const [sort, setSort] = useState({ veld: 'created_at', dir: 'desc' })
@@ -95,7 +100,7 @@ export default function Projecten() {
     try {
       await updateProject(projectId, { kleur: hex })
       setKleurPicker(null)
-      await laadProjecten()
+      await queryClient.invalidateQueries({ queryKey: ['projecten'] })
     } catch (err) {
       setActiFout('Kleur opslaan mislukt: ' + err.message)
     }
@@ -165,7 +170,7 @@ export default function Projecten() {
     try {
       await deleteProject(id)
       setVerwijderBevestig(null)
-      await laadProjecten()
+      await queryClient.invalidateQueries({ queryKey: ['projecten'] })
     } catch (err) {
       setActiFout('Verwijderen mislukt: ' + err.message)
     }
@@ -203,7 +208,7 @@ export default function Projecten() {
         await updateProject(modal.project.id, payload)
       }
       setModal(null)
-      await laadProjecten()
+      await queryClient.invalidateQueries({ queryKey: ['projecten'] })
     } catch (err) {
       setModalFout('Opslaan mislukt: ' + err.message)
     } finally {
@@ -250,7 +255,7 @@ export default function Projecten() {
       {/* Laad- of actiefout */}
       {(error || actiFout) && (
         <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 flex items-center justify-between gap-3">
-          <span>{error || actiFout}</span>
+          <span>{error?.message || actiFout}</span>
           {actiFout && <button onClick={() => setActiFout(null)} className="text-red-400 hover:text-red-700 shrink-0">✕</button>}
         </div>
       )}
