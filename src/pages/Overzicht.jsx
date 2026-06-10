@@ -3,7 +3,8 @@ import { useAuth, isGebruiker } from '../context/AuthContext'
 import { useMonteurs, useToewijzingen, useProjecten, usePeriodes, useProfielen } from '../hooks/queries'
 import { projKleur } from '../lib/kleurenpalet'
 import { profielenUitProjecten } from '../lib/profielen'
-import { getMaandag, plusDagen, naarStr, isoWeek, fDag, fDagNaam, fDatumLang } from '../lib/datum'
+import { getMaandag, plusDagen, naarStr, isoWeek, fDag, fDagNaam, fDatumLang, plusWerkdagen } from '../lib/datum'
+import { useIsMobile } from '../hooks/useIsMobile'
 
 // ─── Constanten ───────────────────────────────────────────────────────────────
 
@@ -29,8 +30,10 @@ export default function Overzicht() {
 
   // ── Datum berekeningen ──────────────────────────────────────────────────────
 
+  const isMobile = useIsMobile()
   const aantalDagen = toonUitgebreid ? 56 : 21
-  const dagBreedte = toonUitgebreid ? 40 : DAG_B
+  const dagBreedte = isMobile ? 0 : toonUitgebreid ? 40 : DAG_B
+  const naamBreedte = isMobile ? 120 : NAAM_B
   const van = naarStr(startDatum)
   const tot = naarStr(plusDagen(startDatum, aantalDagen - 1))
 
@@ -49,10 +52,18 @@ export default function Overzicht() {
     [startDatum, aantalDagen]
   )
 
-  const zDagen = useMemo(
-    () => alleDagen.filter((d) => toonWeekend || (d.getDay() !== 0 && d.getDay() !== 6)),
-    [alleDagen, toonWeekend]
-  )
+  const zDagen = useMemo(() => {
+    if (isMobile) {
+      const result = []
+      let cur = new Date(startDatum)
+      while (result.length < 3) {
+        if (cur.getDay() !== 0 && cur.getDay() !== 6) result.push(new Date(cur))
+        cur.setDate(cur.getDate() + 1)
+      }
+      return result
+    }
+    return alleDagen.filter((d) => toonWeekend || (d.getDay() !== 0 && d.getDay() !== 6))
+  }, [alleDagen, toonWeekend, isMobile, startDatum])
 
   const weekGroepen = useMemo(() => {
     const gs = []
@@ -66,9 +77,10 @@ export default function Overzicht() {
   }, [zDagen])
 
   const periodeLabel = useMemo(() => {
-    const wks = [...new Set(alleDagen.map(isoWeek))]
+    const basis = isMobile ? zDagen : alleDagen
+    const wks = [...new Set(basis.map(isoWeek))]
     return wks.length === 1 ? `Wk ${wks[0]}` : `Wk ${wks[0]} – ${wks[wks.length - 1]}`
-  }, [alleDagen])
+  }, [alleDagen, zDagen, isMobile])
 
   // ── Auto-filter voor Gebruiker-rol ─────────────────────────────────────────
 
@@ -158,7 +170,7 @@ export default function Overzicht() {
       <div className="flex items-center gap-3 flex-wrap">
         <div className="flex items-center gap-0.5">
           <button
-            onClick={() => setStartDatum((d) => plusDagen(d, -aantalDagen))}
+            onClick={() => setStartDatum((d) => isMobile ? plusWerkdagen(d, -3) : plusDagen(d, -aantalDagen))}
             className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors text-lg leading-none"
           >
             ‹
@@ -170,14 +182,14 @@ export default function Overzicht() {
             Vandaag
           </button>
           <button
-            onClick={() => setStartDatum((d) => plusDagen(d, aantalDagen))}
+            onClick={() => setStartDatum((d) => isMobile ? plusWerkdagen(d, 3) : plusDagen(d, aantalDagen))}
             className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors text-lg leading-none"
           >
             ›
           </button>
         </div>
 
-        <span className="text-sm font-semibold text-gray-700">{periodeLabel}</span>
+        <span className="text-sm font-semibold text-gray-700 whitespace-nowrap min-w-[96px]">{periodeLabel}</span>
 
         <select
           value={filterProjectleider}
@@ -190,8 +202,8 @@ export default function Overzicht() {
           ))}
         </select>
 
-        <div className="ml-auto flex items-center gap-4">
-          <label className="flex items-center gap-2 cursor-pointer select-none">
+        <div className="hidden md:flex ml-auto items-center gap-4">
+          <label className="hidden md:flex items-center gap-2 cursor-pointer select-none">
             <span className="text-sm text-gray-500">8 weken</span>
             <button
               type="button"
@@ -209,7 +221,7 @@ export default function Overzicht() {
               />
             </button>
           </label>
-          <label className="flex items-center gap-2 cursor-pointer select-none">
+          <label className="hidden md:flex items-center gap-2 cursor-pointer select-none">
             <span className="text-sm text-gray-500">Weekend</span>
             <button
               type="button"
@@ -242,14 +254,14 @@ export default function Overzicht() {
         style={{ maxHeight: 'calc(100vh - 185px)' }}
       >
         <div>
-          {/* Week-header */}
+          {/* Week-header — verborgen op mobiel (toolbar toont periode al) */}
           <div
-            className="sticky top-0 z-20 flex bg-white border-b border-gray-200"
+            className={`sticky top-0 z-20 bg-white border-b border-gray-200 ${isMobile ? 'hidden' : 'flex'}`}
             style={{ height: WEEK_H }}
           >
             <div
               className="sticky left-0 z-30 bg-white border-r border-gray-100 shrink-0"
-              style={{ width: NAAM_B }}
+              style={{ width: naamBreedte }}
             />
             {weekGroepen.map((wg) => (
               <div
@@ -267,11 +279,11 @@ export default function Overzicht() {
           {/* Dag-header */}
           <div
             className="sticky z-20 flex bg-gray-50 border-b border-gray-200"
-            style={{ top: WEEK_H, height: DAG_H }}
+            style={{ top: isMobile ? 0 : WEEK_H, height: DAG_H }}
           >
             <div
               className="sticky left-0 z-30 bg-gray-50 border-r border-gray-100 shrink-0"
-              style={{ width: NAAM_B }}
+              style={{ width: naamBreedte }}
             />
             {zDagen.map((d) => {
               const str = naarStr(d)
@@ -325,18 +337,18 @@ export default function Overzicht() {
                 {/* Naam cel */}
                 <div
                   className="sticky left-0 z-10 bg-white border-r border-gray-100 flex flex-col justify-center px-3 shrink-0"
-                  style={{ width: NAAM_B }}
+                  style={{ width: naamBreedte }}
                 >
-                  <div className="text-xs font-semibold text-gray-900 font-mono truncate leading-tight">
+                  <div className="text-xs font-semibold text-gray-900 truncate leading-tight">
+                    {project.omschrijving || project.werknummer}
+                  </div>
+                  <div className="text-[10px] text-gray-400 font-mono truncate leading-tight">
                     {project.werknummer}
                     {(project.projectleider?.afkorting ?? project.projectleider_initialen) && (
-                      <span className="font-sans font-medium text-gray-500">
+                      <span className="font-sans">
                         {' · '}{project.projectleider?.afkorting ?? project.projectleider_initialen}
                       </span>
                     )}
-                  </div>
-                  <div className="text-[10px] text-gray-400 truncate leading-tight">
-                    {project.omschrijving}
                   </div>
                 </div>
 

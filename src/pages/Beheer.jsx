@@ -160,14 +160,14 @@ function GebruikersTab() {
           <button onClick={() => setActiFout(null)} className="text-red-400 hover:text-red-700 shrink-0">✕</button>
         </div>
       )}
-      <div className="flex items-center justify-between mb-6">
-        <div>
+      <div className="flex flex-wrap items-center gap-4 mb-6">
+        <div className="flex-1 min-w-0">
           <h1 className="text-xl font-semibold text-gray-900">Gebruikersbeheer</h1>
           <p className="text-sm text-gray-500 mt-0.5">
             {laden ? 'Laden…' : `${gebruikers.length} gebruiker${gebruikers.length !== 1 ? 's' : ''}`}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button
             onClick={() => setToonModal('persoon')}
             className="px-4 py-2 bg-white border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
