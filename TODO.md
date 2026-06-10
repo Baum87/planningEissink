@@ -35,9 +35,10 @@ Bijgehouden naast CONTEXT.md — technische context staat daar.
       Bij een fout in laadTenant() wordt de fout nu geswallowed via console.error.
       Gebruiker ziet niets — fout naar UI doorgeven via een error-state. ✓
 
-- [ ] **Audit log triggers**
+- [x] **Audit log triggers**
       Tabel bestaat al, wordt nog niet gevuld.
       Triggers toevoegen op projecten, monteurs, toewijzingen.
+      Migratie 016: AFTER triggers op projecten, monteurs en toewijzingen. ✓
 
 - [ ] **Smoke test stap 2 en 3 uitvoeren**
       Na volgende RLS-migratie: planner en gebruiker-rol testen via rls_smoke_test.sql.
