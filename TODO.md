@@ -40,8 +40,9 @@ Bijgehouden naast CONTEXT.md — technische context staat daar.
       Triggers toevoegen op projecten, monteurs, toewijzingen.
       Migratie 016: AFTER triggers op projecten, monteurs en toewijzingen. ✓
 
-- [ ] **Smoke test stap 2 en 3 uitvoeren**
+- [x] **Smoke test stap 2 en 3 uitvoeren**
       Na volgende RLS-migratie: planner en gebruiker-rol testen via rls_smoke_test.sql.
+      Alle 4 stappen doorlopen: anon geblokkeerd, planner/gebruiker correct in app, cross-tenant isolatie OK. ✓
 
 - [ ] **React Query of SWR introduceren**
       Caching en optimistic updates — merkbaar voordeel voor planner bij snelle acties.
