@@ -44,6 +44,18 @@ export function TenantProvider({ children }) {
     laadTenant()
   }, [user])
 
+  useEffect(() => {
+    const url = tenant?.logo_url
+    if (!url) return
+    let link = document.querySelector("link[rel~='icon']")
+    if (!link) {
+      link = document.createElement('link')
+      link.rel = 'icon'
+      document.head.appendChild(link)
+    }
+    link.href = url
+  }, [tenant])
+
   function kolomZichtbaar(tabel, kolom) {
     if (!instellingen?.kolommen_config) return true
     return instellingen.kolommen_config[tabel]?.[kolom] ?? true

@@ -268,8 +268,11 @@ function AppInner() {
             {/* Tenant naam — desktop links, mobiel gecentreerd — beide klikbaar naar planning */}
             <button
               onClick={() => navigeerNaar('planning')}
-              className="hidden md:block text-sm font-semibold text-gray-900 mr-6 hover:text-gray-600 transition-colors"
+              className="hidden md:flex items-center gap-2 text-sm font-semibold text-gray-900 mr-6 hover:text-gray-600 transition-colors"
             >
+              {tenant?.logo_url && (
+                <img src={tenant.logo_url} alt="" className="h-7 w-7 object-contain rounded" />
+              )}
               {tenant?.naam ?? 'Planning'}
             </button>
             <button
