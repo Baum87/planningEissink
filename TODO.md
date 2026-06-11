@@ -37,8 +37,8 @@ Bijgehouden naast CONTEXT.md — technische context staat daar.
       Elke toetsaanslag filtert direct over alle rijen. `useDeferredValue` of 200ms debounce
       voorkomt geblokkeerde frames bij grote datasets.
 
-- [ ] **`getProjecten` / `getProjectenMetStats` samenvoegen**
-      Twee bijna-identieke service-functies. Één functie met parameter `metStats = false`.
+- [x] **`getProjecten` / `getProjectenMetStats` samenvoegen**
+      Was al gedaan — één functie met `metStats = false` parameter. ✓
 
 ---
 

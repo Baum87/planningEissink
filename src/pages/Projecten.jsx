@@ -8,6 +8,7 @@ import {
   deleteProject,
 } from '../services/projectenService'
 import { useProjecten, useProfielen } from '../hooks/queries'
+import { useZoek } from '../hooks/useZoek'
 import { KLEURENPALET, projKleur, minstGebruikteKleur } from '../lib/kleurenpalet'
 import { profielenUitProjecten } from '../lib/profielen'
 import { naarStr } from '../lib/datum'
@@ -65,7 +66,7 @@ export default function Projecten() {
   const queryClient = useQueryClient()
   const { data: projecten = [], isLoading: loading, error } = useProjecten({ metStats: true })
   const { data: profielen = [] } = useProfielen()
-  const [zoek, setZoek] = useState('')
+  const [zoek, setZoek, zoekDeferred] = useZoek()
   const [filterPL, setFilterPL] = useState('')
   const [sort, setSort] = useState({ veld: 'created_at', dir: 'desc' })
   const [modal, setModal] = useState(null)
@@ -121,7 +122,7 @@ export default function Projecten() {
   const alleProjectleiders = useMemo(() => profielenUitProjecten(projecten), [projecten])
 
   const gefilterd = useMemo(() => {
-    const q = zoek.trim().toLowerCase()
+    const q = zoekDeferred.trim().toLowerCase()
     return verrijkt.filter(
       (p) =>
         (!filterPL || p.projectleider_id === filterPL) &&
@@ -130,7 +131,7 @@ export default function Projecten() {
           p.omschrijving?.toLowerCase().includes(q) ||
           p.opdrachtgever?.toLowerCase().includes(q))
     )
-  }, [verrijkt, zoek, filterPL])
+  }, [verrijkt, zoekDeferred, filterPL])
 
   const gesorteerd = useMemo(() => {
     const { veld, dir } = sort

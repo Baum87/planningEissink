@@ -11,6 +11,7 @@ import { profielenUitProjecten } from '../lib/profielen'
 import { avatarKleur, initialen, monteurNaam } from '../lib/avatar'
 import { getMaandag, plusDagen, naarStr, isoWeek, fDag, fDagNaam, prevWerkdag, nextWerkdag, plusWerkdagen, aaneengesloten } from '../lib/datum'
 import { useIsMobile } from '../hooks/useIsMobile'
+import { useZoek } from '../hooks/useZoek'
 import InplanModal from '../components/InplanModal'
 import MonteurPopup from '../components/MonteurPopup'
 
@@ -33,7 +34,7 @@ export default function Planning({ onNavigate }) {
   const [toonWeekend, setToonWeekend] = useState(false)
   const [toonUitgebreid, setToonUitgebreid] = useState(false)
   const [uitgeklapt, setUitgeklapt] = useState(new Set())
-  const [zoek, setZoek] = useState('')
+  const [zoek, setZoek, zoekDeferred] = useZoek()
   const [filterExpertise, setFilterExpertise] = useState('')
   const [filterProjectleider, setFilterProjectleider] = useState('')
   const [filterProject, setFilterProject] = useState('')
@@ -209,7 +210,7 @@ export default function Planning({ onNavigate }) {
   // ── Rijen opbouwen: eigen → groepen → zzp ─────────────────────────────────
 
   const rijen = useMemo(() => {
-    const q = zoek.trim().toLowerCase()
+    const q = zoekDeferred.trim().toLowerCase()
     const match = (m) =>
       (!q || monteurNaam(m).toLowerCase().includes(q)) &&
       (!filterExpertise || (m.expertises ?? []).includes(filterExpertise)) &&
@@ -244,7 +245,7 @@ export default function Planning({ onNavigate }) {
       ...groepRijen,
       ...zzp.map((m) => ({ type: 'monteur', monteur: m })),
     ]
-  }, [monteurs, groepen, groepLedenIds, uitgeklapt, zoek, filterExpertise, gefilterdeMonteurIds, gefilterdeMonteurIdsProject, alleenIngepland, ingeplandeMonteurIds])
+  }, [monteurs, groepen, groepLedenIds, uitgeklapt, zoekDeferred, filterExpertise, gefilterdeMonteurIds, gefilterdeMonteurIdsProject, alleenIngepland, ingeplandeMonteurIds])
 
   function toggleGroep(id) {
     setUitgeklapt((prev) => {

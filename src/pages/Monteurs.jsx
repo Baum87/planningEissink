@@ -12,6 +12,7 @@ import {
   setGroepLeden,
 } from '../services/monteursService'
 import { useMonteurs, useGroepen, useExpertises } from '../hooks/queries'
+import { useZoek } from '../hooks/useZoek'
 import { avatarKleur, initialen, monteurNaam } from '../lib/avatar'
 
 const LEEG_MONTEUR = {
@@ -49,7 +50,7 @@ export default function Monteurs() {
   const { data: expertisesData = [] } = useExpertises()
   const expertiseOpties = useMemo(() => expertisesData.map((e) => e.naam), [expertisesData])
 
-  const [zoek, setZoek] = useState('')
+  const [zoek, setZoek, zoekDeferred] = useZoek()
   const [filter, setFilter] = useState('Allemaal')
   const [sort, setSort] = useState({ veld: 'achternaam', dir: 'asc' })
   const [monteurModal, setMonteurModal] = useState(null)
@@ -58,7 +59,7 @@ export default function Monteurs() {
   const [actiFout, setActiFout] = useState(null)
 
   const gefilterd = useMemo(() => {
-    const q = zoek.trim().toLowerCase()
+    const q = zoekDeferred.trim().toLowerCase()
     return monteurs.filter((m) => {
       const matchZoek =
         !q ||
@@ -71,7 +72,7 @@ export default function Monteurs() {
         m.expertises?.some((e) => e.toLowerCase() === filter.toLowerCase())
       return matchZoek && matchFilter
     })
-  }, [monteurs, zoek, filter])
+  }, [monteurs, zoekDeferred, filter])
 
   const gesorteerd = useMemo(() => {
     const { veld, dir } = sort

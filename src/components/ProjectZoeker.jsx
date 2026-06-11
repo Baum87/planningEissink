@@ -1,21 +1,22 @@
-import { useState, useMemo, useEffect, useRef } from 'react'
+import { useMemo, useEffect, useRef } from 'react'
 import { projKleur } from '../lib/kleurenpalet'
+import { useZoek } from '../hooks/useZoek'
 
 export default function ProjectZoeker({ projecten, value, onChange, onNieuwProject }) {
-  const [zoek, setZoek] = useState('')
+  const [zoek, setZoek, zoekDeferred] = useZoek()
   const inputRef = useRef(null)
 
   const geselecteerd = value ? projecten.find((p) => p.id === value) : null
 
   const gefilterd = useMemo(() => {
-    const q = zoek.trim().toLowerCase()
+    const q = zoekDeferred.trim().toLowerCase()
     if (!q) return projecten
     return projecten.filter(
       (p) =>
         p.werknummer?.toLowerCase().includes(q) ||
         p.omschrijving?.toLowerCase().includes(q)
     )
-  }, [projecten, zoek])
+  }, [projecten, zoekDeferred])
 
   useEffect(() => {
     if (!geselecteerd && inputRef.current) inputRef.current.focus()
