@@ -540,21 +540,26 @@ function GroepModal({ modal, monteurs, onClose, onOpgeslagen }) {
   const [leden, setLeden] = useState(() =>
     (bestaand?.groep_leden ?? []).map((gl) => gl.monteur_id)
   )
-  const [toevoegenId, setToevoegenId] = useState('')
   const [bevestigVerwijder, setBevestigVerwijder] = useState(false)
   const [bezig, setBezig] = useState(false)
   const [fout, setFout] = useState(null)
+  const [zoekLid, setZoekLid, zoekLidDeferred] = useZoek()
 
-  const beschikbaar = monteurs.filter((m) => !leden.includes(m.id))
+  const beschikbaar = useMemo(() => {
+    const lijst = monteurs.filter((m) => !leden.includes(m.id))
+    const q = zoekLidDeferred.trim().toLowerCase()
+    if (!q) return lijst
+    return lijst.filter((m) => monteurNaam(m).toLowerCase().includes(q))
+  }, [monteurs, leden, zoekLidDeferred])
 
   function verwijderLid(id) {
     setLeden((prev) => prev.filter((l) => l !== id))
   }
 
-  function voegLidToe() {
-    if (!toevoegenId || leden.includes(toevoegenId)) return
-    setLeden((prev) => [...prev, toevoegenId])
-    setToevoegenId('')
+  function voegLidToe(id) {
+    if (!id || leden.includes(id)) return
+    setLeden((prev) => [...prev, id])
+    setZoekLid('')
   }
 
   async function handleOpslaan(e) {
@@ -643,29 +648,45 @@ function GroepModal({ modal, monteurs, onClose, onOpgeslagen }) {
           </div>
         </Veld>
 
-        {beschikbaar.length > 0 && (
-          <div className="flex gap-2">
-            <select
-              value={toevoegenId}
-              onChange={(e) => setToevoegenId(e.target.value)}
-              className={`flex-1 ${INVOER}`}
-            >
-              <option value="">Monteur toevoegen…</option>
-              {beschikbaar.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {monteurNaam(m)}
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              onClick={voegLidToe}
-              disabled={!toevoegenId}
-              className="px-3 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-40 transition-colors"
-            >
-              Toevoegen
-            </button>
-          </div>
+        {monteurs.filter((m) => !leden.includes(m.id)).length > 0 && (
+          <Veld label="Monteur toevoegen">
+            <input
+              type="text"
+              value={zoekLid}
+              onChange={(e) => setZoekLid(e.target.value)}
+              placeholder="Zoek op naam…"
+              className={INVOER}
+            />
+            <ul className="mt-1 border border-gray-200 rounded-lg overflow-y-auto" style={{ maxHeight: 160 }}>
+              {beschikbaar.length === 0 ? (
+                <li className="px-3 py-2 text-xs text-gray-400">
+                  {zoekLid.trim() ? 'Geen resultaten' : 'Alle monteurs zijn al lid'}
+                </li>
+              ) : (
+                beschikbaar.map((m) => {
+                  const nm = monteurNaam(m)
+                  const [bg, fg] = avatarKleur(nm)
+                  return (
+                    <li key={m.id} className="border-b border-gray-100 last:border-b-0">
+                      <button
+                        type="button"
+                        onClick={() => voegLidToe(m.id)}
+                        className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-gray-50 transition-colors"
+                      >
+                        <div
+                          className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0"
+                          style={{ backgroundColor: bg, color: fg }}
+                        >
+                          {initialen(nm)}
+                        </div>
+                        <span className="text-sm text-gray-900">{nm}</span>
+                      </button>
+                    </li>
+                  )
+                })
+              )}
+            </ul>
+          </Veld>
         )}
 
         <div className="flex items-center justify-between pt-2">
