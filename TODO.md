@@ -12,36 +12,6 @@ Bijgehouden naast CONTEXT.md — technische context staat daar.
 
 ---
 
-## Kort daarna
-
-- [x] **Mobiele weergave Overzicht — gelijktrekken met Planning**
-      3-daagse navigatie, compacte naamkolom, toolbar stabiel, naam/werknummer omgedraaid. ✓
-
-- [x] **Mobiele weergave Beheer — knoppen analyseren**
-      Knoppen wrappen nu op mobiel via flex-wrap. ✓
-
-- [ ] **Favicon per tenant instellen**
-      Uitzoeken waar het favicon-bestand per tenant neergezet wordt (public/ of Supabase Storage),
-      hoe het dynamisch geladen wordt op basis van de actieve tenant, en hoe het getoond
-      wordt in de browsertab en op de pagina.
-
----
-
-## Code kwaliteit — restant
-
-- [ ] **Request cancellation via AbortController**
-      Snelle weeknavigatie verstuurt meerdere fetch-requests tegelijk.
-      Laatste response wint — kan stale data tonen. AbortController lost dit op.
-
-- [ ] **Debounce zoekbalken**
-      Elke toetsaanslag filtert direct over alle rijen. `useDeferredValue` of 200ms debounce
-      voorkomt geblokkeerde frames bij grote datasets.
-
-- [x] **`getProjecten` / `getProjectenMetStats` samenvoegen**
-      Was al gedaan — één functie met `metStats = false` parameter. ✓
-
----
-
 ## Later
 
 - [ ] **Staging omgeving**
@@ -176,6 +146,24 @@ Bijgehouden naast CONTEXT.md — technische context staat daar.
 
 - [x] **Bestaande gebruikers: afkorting toevoegen aan app_metadata**
       Uitgevoerd voor remco@baumeister.nl (RB) en initialen veld opgeruimd.
+
+- [x] **Mobiele weergave Overzicht — gelijktrekken met Planning**
+      3-daagse navigatie, compacte naamkolom, toolbar stabiel, naam/werknummer omgedraaid. ✓
+
+- [x] **Mobiele weergave Beheer — knoppen analyseren**
+      Knoppen wrappen nu op mobiel via flex-wrap. ✓
+
+- [x] **Favicon per tenant instellen**
+      logo_url uit tenants-tabel als favicon via TenantContext. Logo ook in desktop-header. ✓
+
+- [x] **Debounce zoekbalken**
+      useDeferredValue via gedeelde useZoek hook. Planning, Monteurs, Projecten, ProjectZoeker. ✓
+
+- [x] **Zoekbaar ledenlijst in GroepModal**
+      Select-dropdown vervangen door gefilterde scrollbare lijst met useZoek. ✓
+
+- [x] **`getProjecten` / `getProjectenMetStats` samenvoegen**
+      Was al gedaan — één functie met `metStats = false` parameter. ✓
 
 ### Code kwaliteit laag 1 — uitgevoerd
 
