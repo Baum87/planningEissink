@@ -58,6 +58,8 @@ export default function Planning({ onNavigate }) {
   const { data: monteurs = [], isLoading: loadingMonteurs, error: errorMonteurs } = useMonteurs({ metVandaag: true })
   const { data: groepen = [], isLoading: loadingGroepen } = useGroepen()
   const { data: toewijzingen = [], isLoading: loadingTv, error: errorTv } = useToewijzingen(van, tot)
+  const { data: tvVandaag = [] } = useToewijzingen(vandaag, vandaag)
+  const aantalVandaag = useMemo(() => new Set(tvVandaag.map((t) => t.monteur_id)).size, [tvVandaag])
   const { data: projecten = [] } = useProjecten()
   const { data: periodes = [] } = usePeriodes()
   const { data: profielen = [], isLoading: loadingProf } = useProfielen()
@@ -311,7 +313,7 @@ export default function Planning({ onNavigate }) {
           placeholder="Zoek monteur…"
           value={zoek}
           onChange={(e) => setZoek(e.target.value)}
-          className="w-44 px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors"
+          className="w-32 md:w-44 px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors"
         />
 
         <select
@@ -362,7 +364,14 @@ export default function Planning({ onNavigate }) {
             onClick={() => setStartDatum(getMaandag(new Date()))}
             className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
           >
-            Vandaag
+            Vandaag{aantalVandaag > 0 && (
+              <span
+                className="ml-1 text-gray-400"
+                title="Aantal ingeplande monteurs vandaag"
+              >
+                {aantalVandaag}
+              </span>
+            )}
           </button>
           <button
             onClick={() => setStartDatum((d) => isMobile ? plusWerkdagen(d, 3) : plusDagen(d, aantalDagen))}
