@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { getMonteurs, getGroepen } from '../services/monteursService'
-import { getToewijzingen } from '../services/toewijzingenService'
+import { getToewijzingen, getStatistiekenData, getAlleStatistiekenData } from '../services/toewijzingenService'
 import { getProjecten } from '../services/projectenService'
 import { getPeriodes } from '../services/periodesService'
 import { getProfielen } from '../services/gebruikersbeheerService'
@@ -50,4 +50,16 @@ export const useToewijzingen = (van, tot) =>
     queryKey: ['toewijzingen', van, tot],
     queryFn: () => getToewijzingen(van, tot),
     refetchInterval: 60_000,
+  })
+
+export const useStatistiekenData = (van, tot) =>
+  useQuery({
+    queryKey: ['statistieken', van, tot],
+    queryFn: () => getStatistiekenData(van, tot),
+  })
+
+export const useStatistiekenAlles = () =>
+  useQuery({
+    queryKey: ['statistieken-alles'],
+    queryFn: getAlleStatistiekenData,
   })

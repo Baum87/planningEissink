@@ -14,6 +14,15 @@ Bijgehouden naast CONTEXT.md — technische context staat daar.
 
 ## Later
 
+- [ ] **Statistieken: ziek/vrij projecten vertekenen het beeld**
+      Momenteel worden "ziek" en "vrij" als gewone projecten aangemaakt. Toewijzingen aan deze
+      projecten tellen mee in de statistieken als "ingepland", terwijl een zieke of vrije monteur
+      juist níet productief inzetbaar is. Dit geeft een te rooskleurig beeld van de bezetting.
+      Oplossing: voeg een `is_afwezigheid boolean` kolom toe aan de `projecten` tabel. Hiermee kun je:
+      (1) afwezigheidsdagen uitsluiten van de productiviteitstelling,
+      (2) ze optioneel als aparte grijze balk in de grafiek tonen (inzicht in verzuimpatronen).
+      Kleine migratie + aanpassing in Beheer-UI om de vlag per project in te stellen.
+
 - [ ] **Staging omgeving**
       Lokaal testen dekt de meeste risico's. Staging wordt relevant als Eissink dagelijks
       actief is én er grote migraties of een tweede developer bij komen.

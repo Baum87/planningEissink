@@ -8,13 +8,15 @@ import Overzicht from './pages/Overzicht'
 import Projecten from './pages/Projecten'
 import Monteurs from './pages/Monteurs'
 import Beheer from './pages/Beheer'
+import Statistieken from './pages/Statistieken'
 
 const ALLE_TABS = [
   { id: 'planning',  label: 'Planning',  component: Planning,  rollen: null },
   { id: 'overzicht', label: 'Overzicht', component: Overzicht, rollen: null },
   { id: 'projecten', label: 'Projecten', component: Projecten, rollen: null },
   { id: 'monteurs',  label: 'Monteurs',  component: Monteurs,  rollen: null },
-  { id: 'beheer',    label: 'Beheer',    component: Beheer,    rollen: ['admin'] },
+  { id: 'beheer',        label: 'Beheer',        component: Beheer,        rollen: ['admin'] },
+  { id: 'statistieken', label: 'Statistieken', component: Statistieken, rollen: ['admin'] },
 ]
 
 function HamburgerIcon() {

@@ -57,3 +57,41 @@ export async function deleteToewijzing(id) {
   const { error } = await supabase.from('toewijzingen').delete().eq('id', id)
   if (error) throw error
 }
+
+export async function getStatistiekenData(van, tot) {
+  const PAGE = 1000
+  let all = []
+  let from = 0
+  while (true) {
+    const { data, error } = await supabase
+      .from('toewijzingen')
+      .select('datum_van, monteurs(type)')
+      .lte('datum_van', tot)
+      .gte('datum_tot', van)
+      .order('datum_van')
+      .range(from, from + PAGE - 1)
+    if (error) throw error
+    all = all.concat(data)
+    if (data.length < PAGE) break
+    from += PAGE
+  }
+  return all
+}
+
+export async function getAlleStatistiekenData() {
+  const PAGE = 1000
+  let all = []
+  let from = 0
+  while (true) {
+    const { data, error } = await supabase
+      .from('toewijzingen')
+      .select('datum_van, monteurs(type)')
+      .order('datum_van')
+      .range(from, from + PAGE - 1)
+    if (error) throw error
+    all = all.concat(data)
+    if (data.length < PAGE) break
+    from += PAGE
+  }
+  return all
+}
