@@ -1,7 +1,7 @@
 import { supabase, getTenantId } from '../lib/supabase'
 import { naarStr } from '../lib/datum'
 
-function getWerkdagen(van, tot, skipDagen = new Set()) {
+export function berekenWerkdagen(van, tot, skipDagen = new Set()) {
   const dagen = []
   let cur = new Date(van + 'T00:00:00')
   const eindD = new Date(tot + 'T00:00:00')
@@ -35,7 +35,7 @@ export async function getToewijzingen(van, tot) {
 
 // Maakt één record per werkdag (ma-vr) — weekends en feestdagen/bouwvak worden overgeslagen
 export async function createToewijzing({ monteur_id, project_id, datum_van, datum_tot }, skipDagen = new Set()) {
-  const werkdagen = getWerkdagen(datum_van, datum_tot, skipDagen)
+  const werkdagen = berekenWerkdagen(datum_van, datum_tot, skipDagen)
   if (werkdagen.length === 0) return []
   const tenant_id = await getTenantId()
   const inserts = werkdagen.map((dag) => ({

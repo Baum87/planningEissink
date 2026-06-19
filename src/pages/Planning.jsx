@@ -11,6 +11,7 @@ import {
   createToewijzing,
   deleteToewijzing,
   deleteToewijzingenBulk,
+  berekenWerkdagen,
 } from '../services/toewijzingenService'
 import { useMonteurs, useGroepen, useToewijzingen, useProjecten, usePeriodes, useProfielen } from '../hooks/queries'
 import { projKleur } from '../lib/kleurenpalet'
@@ -339,6 +340,30 @@ export default function Planning({ onNavigate }) {
 
   async function handleVerwijderPeriode(ids) {
     await Promise.all(ids.map((id) => deleteToewijzing(id)))
+    setModal(null)
+    await queryClient.invalidateQueries({ queryKey: ['toewijzingen'] })
+  }
+
+  async function handleWijzigPeriode(ids, nieuwVan, nieuwTot) {
+    const oudeToewijzingen = toewijzingen.filter((t) => ids.includes(t.id))
+    const oudeDagen = new Set(oudeToewijzingen.map((t) => t.datum_van))
+    const nieuweDagen = berekenWerkdagen(nieuwVan, nieuwTot, hardSkipDagen)
+    const nieuweDagenSet = new Set(nieuweDagen)
+    const teVerwijderenIds = oudeToewijzingen.filter((t) => !nieuweDagenSet.has(t.datum_van)).map((t) => t.id)
+    const teCreërenDagen = nieuweDagen.filter((d) => !oudeDagen.has(d))
+    if (teCreërenDagen.length > 0) {
+      await Promise.all(
+        teCreërenDagen.map((dag) =>
+          createToewijzing(
+            { monteur_id: modal.monteur.id, project_id: modal.tv.project_id, datum_van: dag, datum_tot: dag },
+            hardSkipDagen,
+          )
+        )
+      )
+    }
+    if (teVerwijderenIds.length > 0) {
+      await deleteToewijzingenBulk(teVerwijderenIds)
+    }
     setModal(null)
     await queryClient.invalidateQueries({ queryKey: ['toewijzingen'] })
   }
@@ -876,6 +901,8 @@ export default function Planning({ onNavigate }) {
           onNaarProjecten={onNavigate ? () => { setModal(null); onNavigate('projecten') } : undefined}
           periodeData={periodeData}
           onVerwijderPeriode={handleVerwijderPeriode}
+          onWijzigPeriode={handleWijzigPeriode}
+          skipDagen={hardSkipDagen}
         />
       )}
 
