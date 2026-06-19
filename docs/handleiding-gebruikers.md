@@ -51,8 +51,20 @@ Als Gebruiker staat de zoekbalk bij inloggen automatisch op jouw eigen naam.
 **Inplannen — hele groep (alleen Planner)**
 Groepen staan onderaan de lijst. Klik op een cel in de rij van een groep om alle leden van die groep tegelijk in te plannen op hetzelfde project en dezelfde periode. Alle leden worden in één stap ingepland.
 
-**Bestaande inplanning bekijken of verwijderen (alleen Planner)**
-Klik op een gekleurd blok in de planning. Je ziet het project, de periode en een knop om de inplanning te verwijderen — voor één dag of voor de hele periode.
+**Bestaande inplanning bekijken, wijzigen of verwijderen (alleen Planner)**
+Klik op een gekleurd blok in de planning. Je ziet het project en de periode, met de volgende opties:
+
+- **Verwijder dag** — verwijdert alleen de dag waarop je hebt geklikt.
+- **Verwijder periode** — verwijdert de hele aaneengesloten reeks dagen van dit project voor deze monteur.
+- **Wijzigen** — pas de start- en einddatum van de periode aan. Terwijl je de datums invult zie je direct hoeveel werkdagen er ingepland worden. Als er een feestdag in de nieuwe periode valt, wordt dat gemeld zodat je niet voor verrassingen komt te staan.
+
+**Inplanning verslepen naar andere datum of monteur (alleen Planner)**
+Je kunt een bestaand blok direct naar een andere plek slepen zonder het venster te openen:
+1. Houd de muisknop ingedrukt op een gekleurd blok en beweeg — het blok licht op om aan te geven dat je sleept.
+2. Sleep naar de gewenste dag of naar een andere monteur-rij.
+3. Laat los — de volledige aaneengesloten periode verplaatst mee naar de nieuwe startdatum.
+
+Let op: slepen is uitgeschakeld in de 8-weken weergave omdat de cellen dan te smal zijn.
 
 ---
 
