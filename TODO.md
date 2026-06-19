@@ -28,8 +28,17 @@ Bijgehouden naast CONTEXT.md — technische context staat daar.
       actief is én er grote migraties of een tweede developer bij komen.
       Opzet: apart Supabase project + Vercel preview branch.
 
-- [ ] **Drag-and-drop via dnd-kit**
-      Grootste UX-verbetering voor Planner. CSS-structuur planning.jsx al rekening mee houden.
+- [ ] **UNIQUE constraint op toewijzingen — laag risico, hoge zekerheid**
+      Situatie: er is geen unieke constraint op `(tenant_id, monteur_id, project_id, datum_van)`.
+      Duplicaten kunnen theoretisch ontstaan bij drag & drop of toekomstige modal-wijzigen: als
+      `createToewijzing` slaagt maar de daaropvolgende `deleteToewijzingenBulk` faalt (netwerk
+      wegvalt in het raam van milliseconden), bestaat het project op de oude én nieuwe plek.
+      Kans in de praktijk: zeer laag (<1%). Gevolgen: visuele cel-splitsing voor diezelfde dag,
+      statistieken tellen die dag dubbel. Niet catastrofaal, maar stiekem — je merkt het pas als
+      je goed kijkt. Oplossing is één migratie:
+      `ALTER TABLE toewijzingen ADD CONSTRAINT uq_toewijzing_monteur_project_dag
+       UNIQUE (tenant_id, monteur_id, project_id, datum_van);`
+      Dit maakt het onmogelijk in plaats van onwaarschijnlijk. Aanraden vóór modal-wijzigen gebouwd wordt.
 
 - [ ] **Mobile — monteur-view**
       Monteurs zijn potentiële gebruikersgroep (174 personen).
@@ -75,7 +84,7 @@ Bijgehouden naast CONTEXT.md — technische context staat daar.
 
 ## Bewust buiten scope (v1)
 
-- Drag-and-drop (architectuur is er klaar voor)
+- Drag-and-drop uitgebreid (resize blokken, projectenpaneel links)
 - Unit / integratietests / E2E (1 klant, 3 gebruikers — overkill nu)
 - CI/CD pipeline met automatische checks
 - PWA / offline support
@@ -192,6 +201,13 @@ Bijgehouden naast CONTEXT.md — technische context staat daar.
 - [x] **`alert()` vervangen door inline fout-state in modals**
 - [x] **`getTenantId()` cachen**
 - [x] **`laad()` in Planning.jsx: bewaar `uitgeklapt` bij data-refresh**
+
+### Drag & drop — uitgevoerd
+
+- [x] **Bestaande planningsblokken verslepen (datum + monteur)**
+      dnd-kit geïnstalleerd. Blokken slepen naar andere dag of monteur. Hele aaneengesloten
+      periode verplaatst mee. Create-before-delete volgorde beschermt data bij netwerkfouten.
+      Klikgedrag (modal openen) ongewijzigd. Uitgeschakeld in 8-weken modus (cellen te smal). ✓
 
 ### Code kwaliteit laag 3 — uitgevoerd
 
