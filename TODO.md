@@ -28,6 +28,13 @@ Bijgehouden naast CONTEXT.md — technische context staat daar.
       actief is én er grote migraties of een tweede developer bij komen.
       Opzet: apart Supabase project + Vercel preview branch.
 
+- [ ] **Changelog tabblad in Beheer**
+      De data wordt al bijgehouden in `src/lib/updates.js` — elke update die daar toegevoegd wordt
+      blijft permanent bewaard. Wat ontbreekt is een UI om dit terug te lezen.
+      Idee: extra tabblad in Beheer.jsx dat alle entries uit updates.js toont als tijdlijn,
+      inclusief datum, titel, doelgroep (rollen) en omschrijving per item.
+      Alleen zichtbaar voor Admin. Geen database nodig — alles komt uit het bestaande register.
+
 - [ ] **UNIQUE constraint op toewijzingen — laag risico, hoge zekerheid**
       Situatie: er is geen unieke constraint op `(tenant_id, monteur_id, project_id, datum_van)`.
       Duplicaten kunnen theoretisch ontstaan bij drag & drop of toekomstige modal-wijzigen: als
