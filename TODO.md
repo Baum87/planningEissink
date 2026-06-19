@@ -54,8 +54,8 @@ Bijgehouden naast CONTEXT.md — technische context staat daar.
 - [ ] **Uptime monitoring**
       Bijv. UptimeRobot (free) — melding als app down is.
 
-- [ ] **Custom domain: app.byggr.nl**
-      Vercel custom domain instellen.
+- [x] **Custom domain: planning.byggr.nl** ✓ live
+      Vercel custom domain geconfigureerd en actief op planning.byggr.nl.
 
 - [ ] **Supabase Pro upgrade**
       Bij eerste betalende klant: dagelijkse backups, geen pauzering, PITR.
