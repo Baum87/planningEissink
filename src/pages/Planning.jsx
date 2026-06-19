@@ -1,9 +1,16 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
+import {
+  DndContext, DragOverlay,
+  MouseSensor, TouchSensor,
+  useSensor, useSensors,
+  useDraggable, useDroppable,
+} from '@dnd-kit/core'
 import { useQueryClient } from '@tanstack/react-query'
 import { useAuth, heeftVolledigeToegang, isGebruiker } from '../context/AuthContext'
 import {
   createToewijzing,
   deleteToewijzing,
+  deleteToewijzingenBulk,
 } from '../services/toewijzingenService'
 import { useMonteurs, useGroepen, useToewijzingen, useProjecten, usePeriodes, useProfielen } from '../hooks/queries'
 import { projKleur } from '../lib/kleurenpalet'
@@ -23,6 +30,39 @@ const ROW_H  = 48
 const WEEK_H = 32
 const DAG_H  = 40
 
+// ─── Drag & Drop hulpcomponenten ──────────────────────────────────────────────
+
+function DroppableDagCel({ id, data, disabled, className, style, onClick, children }) {
+  const { setNodeRef, isOver } = useDroppable({ id, data, disabled })
+  return (
+    <div
+      ref={setNodeRef}
+      className={`${className}${isOver && !disabled ? ' ring-2 ring-inset ring-blue-400' : ''}`}
+      style={style}
+      onClick={onClick}
+    >
+      {children}
+    </div>
+  )
+}
+
+function DraagblokInner({ id, data, kanSlepen, style, className, onClick, title, children }) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id, data, disabled: !kanSlepen })
+  return (
+    <div
+      ref={setNodeRef}
+      {...(kanSlepen ? listeners : {})}
+      {...(kanSlepen ? attributes : {})}
+      onClick={onClick}
+      title={title}
+      className={`${className}${kanSlepen ? ' cursor-grab active:cursor-grabbing' : ' cursor-pointer'}`}
+      style={{ ...style, opacity: isDragging ? 0.25 : 1 }}
+    >
+      {children}
+    </div>
+  )
+}
+
 // ─── Planning ─────────────────────────────────────────────────────────────────
 
 export default function Planning({ onNavigate }) {
@@ -41,6 +81,7 @@ export default function Planning({ onNavigate }) {
   const [alleenIngepland, setAlleenIngepland] = useState(false)
   const [modal, setModal] = useState(null)
   const [monteurPopup, setMonteurPopup] = useState(null)
+  const [dragData, setDragData] = useState(null)
 
   const isMobile = useIsMobile()
 
@@ -302,9 +343,51 @@ export default function Planning({ onNavigate }) {
     await queryClient.invalidateQueries({ queryKey: ['toewijzingen'] })
   }
 
+  // ── Drag & Drop ────────────────────────────────────────────────────────────
+
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
+  )
+
+  function handleDragStart({ active }) {
+    if (!active?.data?.current) return
+    const { tv, monteurId, dagStr } = active.data.current
+    const relevantTvs = (tvMap[monteurId] ?? []).filter((t) => t.project_id === tv.project_id)
+    const daten = relevantTvs.map((t) => t.datum_van)
+    const block = aaneengesloten(daten, dagStr)
+    const periodeIds = relevantTvs.filter((t) => block.includes(t.datum_van)).map((t) => t.id)
+    setDragData({ tv, monteurId, periodeIds, periodeVan: block[0], aantalDagen: block.length })
+  }
+
+  async function handleDragEnd({ over }) {
+    if (!over || !dragData || !over.data?.current) { setDragData(null); return }
+    const { monteurId: nieuwMonteurId, dagStr: nieuwDagStr } = over.data.current
+    const { tv, monteurId: oudMonteurId, periodeIds, periodeVan, aantalDagen } = dragData
+    setDragData(null)
+    if (nieuwMonteurId === oudMonteurId && nieuwDagStr === periodeVan) return
+    const nieuwTot = naarStr(plusWerkdagen(new Date(nieuwDagStr + 'T00:00:00'), aantalDagen - 1))
+    try {
+      await createToewijzing(
+        { monteur_id: nieuwMonteurId, project_id: tv.project_id, datum_van: nieuwDagStr, datum_tot: nieuwTot },
+        hardSkipDagen,
+      )
+      await deleteToewijzingenBulk(periodeIds)
+    } catch (e) {
+      console.error('Verslepen mislukt:', e)
+    } finally {
+      await queryClient.invalidateQueries({ queryKey: ['toewijzingen'] })
+    }
+  }
+
+  function handleDragCancel() {
+    setDragData(null)
+  }
+
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
+    <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
     <div className="flex flex-col gap-3">
       {/* Toolbar */}
       <div className="flex items-center gap-3 flex-wrap">
@@ -653,20 +736,26 @@ export default function Planning({ onNavigate }) {
 
                     if (tvList.length > 0) {
                       return (
-                        <div
+                        <DroppableDagCel
                           key={dagStr}
-                          className="relative border-l border-white/40 flex flex-row overflow-hidden group/cel cursor-pointer"
+                          id={`cel-${monteur.id}-${dagStr}`}
+                          data={{ monteurId: monteur.id, dagStr }}
+                          disabled={isWeekend || isHardPeriode}
+                          className="relative border-l border-white/40 flex flex-row overflow-hidden group/cel"
                           style={{ flex: 1, minWidth: dagBreedte, height: ROW_H }}
                         >
                           {tvList.map((tv, i) => {
                             const kleur = projKleur(tv.projecten)
                             const compact = toonUitgebreid || ((dagBreedte || 90) / tvList.length < 40)
                             return (
-                              <div
+                              <DraagblokInner
                                 key={tv.id}
+                                id={`tv-${tv.id}`}
+                                data={{ tv, monteurId: monteur.id, dagStr }}
+                                kanSlepen={kanInplannen && !toonUitgebreid}
                                 onClick={() => openModal(monteur, dagStr, tv)}
                                 title={`${tv.projecten?.werknummer} — ${tv.projecten?.omschrijving}`}
-                                className="cursor-pointer flex flex-col justify-center overflow-hidden"
+                                className="flex flex-col justify-center overflow-hidden"
                                 style={{
                                   width: `${100 / tvList.length}%`,
                                   height: '100%',
@@ -697,7 +786,7 @@ export default function Planning({ onNavigate }) {
                                     </div>
                                   </>
                                 )}
-                              </div>
+                              </DraagblokInner>
                             )
                           })}
                           {kanInplannen && (
@@ -710,13 +799,16 @@ export default function Planning({ onNavigate }) {
                               +
                             </button>
                           )}
-                        </div>
+                        </DroppableDagCel>
                       )
                     }
 
                     return (
-                      <div
+                      <DroppableDagCel
                         key={dagStr}
+                        id={`cel-${monteur.id}-${dagStr}`}
+                        data={{ monteurId: monteur.id, dagStr }}
+                        disabled={isWeekend || isHardPeriode}
                         onClick={kanInplannen ? () => openModal(monteur, dagStr) : undefined}
                         className={`border-l border-gray-100 flex items-center justify-center transition-colors ${
                           kanInplannen ? 'cursor-pointer group/cel' : ''
@@ -738,7 +830,7 @@ export default function Planning({ onNavigate }) {
                             +
                           </span>
                         )}
-                      </div>
+                      </DroppableDagCel>
                     )
                   })}
                 </div>
@@ -756,6 +848,21 @@ export default function Planning({ onNavigate }) {
           )}
         </div>
       </div>
+
+      <DragOverlay dropAnimation={null}>
+        {dragData ? (() => {
+          const kleur = projKleur(dragData.tv.projecten)
+          return (
+            <div
+              className="rounded shadow-xl px-3 py-2 text-xs font-semibold pointer-events-none select-none"
+              style={{ backgroundColor: kleur.bg, color: kleur.fg, minWidth: 80 }}
+            >
+              <div className="font-bold truncate">{dragData.tv.projecten?.omschrijving || dragData.tv.projecten?.werknummer}</div>
+              {dragData.aantalDagen > 1 && <div style={{ opacity: 0.7 }}>{dragData.aantalDagen} dagen</div>}
+            </div>
+          )
+        })() : null}
+      </DragOverlay>
 
       {/* Inplan modal */}
       {modal && (
@@ -781,6 +888,7 @@ export default function Planning({ onNavigate }) {
       )}
 
     </div>
+    </DndContext>
   )
 }
 
