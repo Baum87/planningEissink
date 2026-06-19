@@ -9,6 +9,7 @@ import Projecten from './pages/Projecten'
 import Monteurs from './pages/Monteurs'
 import Beheer from './pages/Beheer'
 import Statistieken from './pages/Statistieken'
+import UpdatesBadge from './components/UpdatesBadge'
 
 const ALLE_TABS = [
   { id: 'planning',  label: 'Planning',  component: Planning,  rollen: null },
@@ -301,6 +302,7 @@ function AppInner() {
 
             {/* Desktop: gebruiker + info + uitloggen */}
             <div className="hidden md:flex ml-auto items-center gap-4">
+              <UpdatesBadge rol={rol} />
               {naam && (
                 <span className="text-xs text-gray-400">{naam}</span>
               )}
@@ -342,9 +344,10 @@ function AppInner() {
               </button>
             ))}
             <div className="px-6 py-3.5 border-t border-gray-100 flex items-center justify-between">
-              {naam && (
-                <span className="text-xs text-gray-400">{naam}</span>
-              )}
+              <div className="flex items-center gap-2">
+                <UpdatesBadge rol={rol} />
+                {naam && <span className="text-xs text-gray-400">{naam}</span>}
+              </div>
               <div className="flex items-center gap-4">
                 <button
                   onClick={() => { setHandleidingOpen(true); setHamburgerOpen(false) }}
