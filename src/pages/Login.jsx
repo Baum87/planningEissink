@@ -40,11 +40,8 @@ export default function Login() {
 
         {/* Logo */}
         <div className="mb-10 text-center">
-          <div className="flex items-center justify-center gap-2 mb-1">
-            <img src="/favicon.svg" alt="Planr" className="w-7 h-7" />
-            <span className="text-2xl font-bold text-gray-900 tracking-tight">Planr</span>
-          </div>
-          <p className="text-xs text-gray-400 tracking-wide uppercase">Personeelsplanning</p>
+          <span className="text-2xl font-bold text-gray-900 tracking-tight">Planr</span>
+          <p className="text-xs text-gray-400 tracking-wide uppercase mt-1">Personeelsplanning</p>
         </div>
 
         <form onSubmit={handleInloggen} className="space-y-4">
