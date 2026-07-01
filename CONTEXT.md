@@ -31,9 +31,10 @@ Commercieel aan te bieden aan andere afbouw- en installatiebedrijven.
 - Kolommen en modules configureerbaar per tenant via tenant_instellingen (JSONB)
 
 ## Rollen
-- `admin` — volledige toegang, inclusief Beheer en Statistieken tabbladen
+- `admin` — volledige toegang, inclusief Beheer, Statistieken en Prognose tabbladen
 - `planner` — volledige schrijfrechten (planning, projecten, monteurs, groepen, periodes)
 - `gebruiker` — alleen lezen (voorheen: projectleider), auto-filter op eigen naam bij login
+- `directie` — volledig CRUD op prognose_projecten; read-only op alle operationele data
 - `monteur` — toekomstig: alleen eigen toewijzingen inzien
 
 ## Gebruikersbeheer
@@ -92,7 +93,9 @@ profiel.afkorting || profiel.weergave_naam
 ### Multi-tenancy tabellen (migratie 001)
 - tenants: id, naam, slug, logo_url, primaire_kleur, label_project, label_monteur, actief, created_at
   (`favicon_url` kolom verwijderd in migratie 017 — logo_url was al aanwezig en wordt gebruikt)
-- tenant_instellingen: id, tenant_id, kolommen_config (JSONB), modules_config (JSONB), updated_at
+- tenant_instellingen: id, tenant_id, kolommen_config (JSONB), modules_config (JSONB), prognose_config (JSONB), updated_at
+  (`prognose_config` is een aparte kolom — niet in modules_config — omdat het strings bevat, niet alleen booleans.
+  Voorbeeld: `{ "groepering_veld": "projectleider_id", "toon_potentieel_default": true }`)
 - tenant_expertises: id, tenant_id, naam, volgorde, created_at
 - audit_log: id, tenant_id, user_id, actie, tabel, record_id, oude_waarde (JSONB), nieuwe_waarde (JSONB), created_at
 
@@ -109,6 +112,15 @@ profiel.afkorting || profiel.weergave_naam
   (datum_van = datum_tot = één werkdag per record — weekenden worden overgeslagen bij aanmaken)
 - periodes: id, tenant_id, naam, datum_van, datum_tot, created_at
   (bouwvak/feestdagen — worden overgeslagen bij inplannen)
+
+### Prognose (nog te migreren)
+- prognose_projecten: id (UUID PK), tenant_id, naam, omschrijving, projectnummer,
+  projectleider_id (nullable FK → profielen, ON DELETE SET NULL),
+  status ('potentieel' | 'in_opdracht', default 'potentieel'), status_gewijzigd_op,
+  aanneemsom (numeric 12,2), start_datum (date, altijd maandag), duur_weken (int),
+  bezetting_gemiddeld (nullable), bezetting_intern (nullable), bezetting_onderaannemer (nullable),
+  kleur (varchar 7), operationeel_project_id (nullable FK → projecten, ON DELETE SET NULL),
+  created_at, updated_at
 
 ### Indexen
 - idx_projecten_tenant_id, idx_monteurs_tenant_id, idx_groepen_tenant_id
@@ -182,7 +194,7 @@ Trigger-functie `log_wijziging()`: SECURITY DEFINER, logt INSERT/UPDATE/DELETE.
 Fouten bij het wegschrijven worden stilzwijgend opgevangen (EXCEPTION WHEN OTHERS THEN NULL)
 zodat een logging-fout de app-actie nooit blokkeert.
 
-## UI — zes tabbladen
+## UI — zeven tabbladen
 1. **Planning** — tijdlijn (3 of 8 weken), monteurs als rijen, 100px dagkolommen,
    horizontaal scrollbaar, weekend aan/uit schakelaar,
    filter op projectleider (UUID via profielen), expertise en project.
@@ -201,13 +213,95 @@ zodat een logging-fout de app-actie nooit blokkeert.
    - **Periodes** — bouwvak/feestdagen aanmaken en beheren
 6. **Statistieken** *(admin only)* — bar charts (recharts) van inplanning per dag of per maand,
    uitgesplitst naar Intern vs. Onderaannemer. Periodefilter instelbaar.
+7. **Prognose** *(admin + directie)* — rolling-window orderportefeuille voor directie.
+   Zie sectie "Prognose-tijdlijn" voor volledige ontwerpbeslissingen.
 
-Tabbladen conditioneel zichtbaar op basis van rol (Beheer + Statistieken: alleen `admin`).
+Tabbladen conditioneel zichtbaar op basis van rol (Beheer + Statistieken: alleen `admin`;
+Prognose: `admin` + `directie`).
 Modules ook configureerbaar per tenant via modules_config in tenant_instellingen.
 
 Header bevat: tenant-logo + naam, navigatietabs, UpdatesBadge (update-notificatie per rol),
 gebruikersnaam, info-icoon (opent Handleiding modal), uitlogknop.
 Mobiel: hamburger-menu met dezelfde opties in een dropdown.
+
+## Prognose-tijdlijn (directie)
+
+### Doel
+Rolling-window overzicht van de volledige orderportefeuille voor directie: van offerte tot lopende
+opdracht. Bewust losstaand van de operationele planning — geen mandag-nauwkeurigheid nodig.
+Directie beheert de financiële en bezettingsprognose; de planner beheert de dag-tot-dag uitvoering.
+
+### Workflow: potentieel → in opdracht
+1. Directie maakt prognose-project aan (status: `potentieel`)
+2. Directie zet status op `in_opdracht`
+3. Edge Function `prognose-in-opdracht` (service_role) maakt automatisch een record aan in `projecten`:
+   `naam → omschrijving`, `projectnummer → werknummer`, `projectleider_id → projectleider_id`, `kleur → kleur`
+4. `operationeel_project_id` op het prognose-record wordt gezet (FK naar het nieuwe projecten-record)
+5. Planner ziet het project verschijnen in de Projecten-tab, vult aan (adres, opdrachtgever)
+   en begint met inplannen
+6. Prognose-record blijft bestaan — directie houdt de financiële tijdlijn bij
+
+Edge Function is nodig omdat directie geen INSERT-recht heeft op `projecten` via de normale RLS.
+Patroon is identiek aan de bestaande `gebruikersbeheer` Edge Function.
+
+### RLS
+- `prognose_projecten`: alle operaties voor `get_user_rol() IN ('admin', 'directie') AND tenant_id = get_user_tenant_id()`
+- Directie heeft read-only toegang tot operationele tabellen (SELECT-policies checken geen rol)
+- INSERT op `projecten` bij statusovergang: via Edge Function met service_role
+- Bestaande policies blijven ongewijzigd
+- Smoke test uitbreiden: planner kan prognose niet lezen, directie kan toewijzingen niet schrijven
+
+### Tijdlijn UI
+- Rolling window van 26 weken, start op maandag van huidige week (`getMaandag(new Date())`)
+- Weekkolommen (~80–100px) — geen dagkolommen
+- Navigatie springt per 4 weken (niet per 26 — voor fine-grained bladeren met context)
+- Rijen: prognose_projecten gegroepeerd op instelbaar veld uit `prognose_config.groepering_veld`
+  - Groep-header-rij + project-subrijen (zelfde structuur als groepen in Planning.jsx)
+  - Projecten zonder projectleider vallen in een "Niet toegewezen"-groep
+  - Filter op groeperingssleutel bovenaan (dropdown)
+- Cel-rendering: projectkleur als het project die week overlapt
+  - `potentieel` → gestreept patroon (`repeating-linear-gradient` in CSS — nieuw, niet in bestaande code)
+  - `in_opdracht` → solide kleur
+  - Geen tekst in de balk op weekschaal; details bij hover of klik (PrognoseModal)
+- Twee wisselbare weergaven via toggle:
+  - **Financieel** — aanneemsom ÷ duur_weken = bedrag per week, getoond in de totaalregel
+  - **Bezetting** — bezetting_gemiddeld per week in de totaalregel
+- Kleurlogica: hergebruik `projKleur({ id, kleur })` uit `kleurenpalet.js`
+
+### Totaalregel
+- Sticky onderaan (`position: sticky; bottom: 0` binnen het bestaande overflow-auto grid)
+- Per week: totaal aanneemsom-per-week én bezetting (totaal / intern / onderaannemer)
+- Volgt actief filter en "toon potentieel"-toggle
+- Als bezetting niet overal ingevuld is: "X fte (op basis van Y van Z projecten)"
+
+### PrognoseModal (nieuw component)
+- Klik lege cel → modal opent, startweek voorgevuld op basis van aangeklikte cel
+- Klik bestaande balk → zelfde modal in bewerkstand
+- Velden: naam*, projectnummer, omschrijving, projectleider (dropdown op profielen — zelfde als
+  projectformulier), status, aanneemsom, startweek (weekkiezer), duur_weken*, bezetting_gemiddeld,
+  bezetting_intern, bezetting_onderaannemer, kleur
+- Eindweek automatisch berekend als readonly preview: `start_datum + duur_weken × 7`
+- Statusovergang naar `in_opdracht`: apart bevestigingsscherm met uitleg dat operationeel project
+  aangemaakt wordt
+- Geen drag-resize — duur aanpassen via het weekgetal in de modal
+- `InplanModal` wordt NIET hergebruikt — die is te strak gekoppeld aan monteurs/toewijzingen/werkdagen
+
+### Hergebruik uit bestaande codebase
+- `projKleur()` en `minstGebruikteKleur()` — direct herbruikbaar
+- Week-header HTML-structuur (WEEK_H constante, sticky top, weekGroepen-logica)
+- Navigatieknoppen ‹ Vandaag › — zelfde patroon en CSS
+- Toggle switches — zelfde HTML/CSS
+- `getMaandag()`, `isoWeek()`, `plusDagen()`, `naarStr()` uit datum.js
+- `useZoek()` voor filter, `useTenant()` voor prognose_config
+- Modal overlay-patroon (`fixed inset-0 z-50 bg-black/25 rounded-2xl shadow-2xl`)
+
+### Bewust buiten scope (prognose v1)
+- Synchronisatie van velden tussen prognose_projecten en projecten na koppeling
+- Margeberekening, kostprijs per mandag, facturatiekoppeling
+- Vergelijking raming vs. werkelijke planning
+- Automatische gat-signalering, win-rate rapportage
+- Export naar PDF/Excel
+- Referentielijn beschikbare capaciteit
 
 ## Inplannen
 - Klikken op lege cel → modal met project zoekfunctie + van/tot datum
@@ -238,11 +332,13 @@ src/
     Overzicht.jsx
     Beheer.jsx          — gebruikersbeheer + periodes (admin only)
     Statistieken.jsx    — bar charts inplanning (admin only)
+    Prognose.jsx        — prognose-tijdlijn orderportefeuille (admin + directie) [nog te bouwen]
   components/
     InplanModal.jsx     — inplan/wijzig modal (extracted uit Planning.jsx)
     MonteurPopup.jsx    — popup met monteursnamen bij Overzicht-cel klik
     ProjectZoeker.jsx   — herbruikbare projectzoek-dropdown
     UpdatesBadge.jsx    — update-notificatie badge (localStorage persistentie per rol)
+    PrognoseModal.jsx   — aanmaken/bewerken modal voor prognose-projecten [nog te bouwen]
   services/
     projectenService.js
     monteursService.js
@@ -250,6 +346,7 @@ src/
     periodesService.js
     expertisesService.js
     gebruikersbeheerService.js  — Edge Function wrapper (uitnodigen, aanmaken, rol wijzigen, etc.)
+    prognoseService.js          — CRUD op prognose_projecten + aanroep Edge Function [nog te bouwen]
   hooks/
     useIsMobile.js
     useAsyncData.js     — generieke async data hook
@@ -269,6 +366,11 @@ supabase/
     001_initial_schema.sql
     ...
     017_favicon_url_tenant.sql
+    018_prognose_projecten.sql  — [nog te schrijven] prognose_projecten tabel + prognose_config kolom
+                                   op tenant_instellingen + RLS policies
+  functions/
+    gebruikersbeheer/           — Edge Function gebruikersbeheer (bestaand)
+    prognose-in-opdracht/       — Edge Function statusovergang [nog te bouwen]
   tests/
     rls_smoke_test.sql
   seed.sql
@@ -290,6 +392,8 @@ docs/
 - [ ] Changelog tabblad in Beheer — data al beschikbaar in updates.js, UI ontbreekt nog
 
 ## Commerciële roadmap
+- [ ] **Prognose-tijdlijn** — directie-rol, prognose_projecten tabel, 26-weken tijdlijn,
+      statusovergang via Edge Function, PrognoseModal (zie sectie "Prognose-tijdlijn" voor volledig ontwerp)
 - [ ] Mobile monteur-view — lees-only view eigen toewijzingen (174 potentiële gebruikers)
 - [ ] Optimistic updates via React Query (useOptimisticMutation)
 - [ ] Realtime samenwerking (Supabase Realtime) — bij implementatie: refetchInterval verwijderen
