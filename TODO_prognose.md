@@ -76,18 +76,18 @@ Volgorde is bewust: database eerst, dan service, dan UI.
 
 - [ ] Aanmaken-modus: startweek voorgevuld op aangeklikte cel
 - [ ] Bewerkstand: bestaand prognose-project laden
-- [ ] Velden:
-  - naam (verplicht)
-  - projectnummer
-  - omschrijving
-  - projectleider (dropdown op profielen — zelfde component/patroon als projectformulier)
-  - status toggle (potentieel / in opdracht)
-  - aanneemsom
-  - startweek (weekkiezer — snap naar maandag via `getMaandag()`)
-  - duur_weken (verplicht)
-  - eindweek als readonly preview: `start_datum + duur_weken × 7`
-  - bezetting_gemiddeld, bezetting_intern, bezetting_onderaannemer (alle optioneel)
-  - kleurkiezer (hergebruik `minstGebruikteKleur()`)
+- [ ] Veldvolgorde:
+  1. Omschrijving (verplicht)
+  2. Projectnummer
+  3. Opdrachtgever
+  4. Projectleider (dropdown op profielen)
+  5. Status (standaard: in_opdracht; toggle potentieel / in_opdracht)
+  6. Aanneemsom (€ prefix)
+  7. Startweek (weekkiezer — snap naar maandag via `getMaandag()`)
+  8. Duur in weken (verplicht)
+  - Eindweek als readonly preview: `start_datum + duur_weken × 7`
+  - Kleur: auto-toegewezen via `minstGebruikteKleur()`, optioneel aanpasbaar
+  - Geen bezettingsvelden
 - [ ] Statusovergang naar `in_opdracht`: bevestigingsscherm met uitleg
       ("Dit maakt automatisch een operationeel project aan voor de planner.")
 - [ ] Verwijder-knop (met bevestiging) — verwijdert alleen prognose-record, niet het operationele project
@@ -99,33 +99,29 @@ Volgorde is bewust: database eerst, dan service, dan UI.
 
 ### Toolbar
 - [ ] Navigatie ‹ Vandaag › — springt per 4 weken
-- [ ] Periodeweergave label (bijv. "Wk 27 – Wk 52")
-- [ ] Filter op groeperingssleutel (dropdown, gevuld vanuit unieke waarden in data)
-- [ ] Toggle "Toon potentieel" aan/uit
-- [ ] Toggle weergave: Financieel / Bezetting
+- [ ] Periodeweergave label (bijv. "Wk 27 – Wk 52 · 2025")
+- [ ] Toggle "Potentieel tonen" aan/uit
+- [ ] Knop "Nieuw project" rechts — opent PrognoseModal zonder voorgevulde cel
 
 ### Tijdlijn grid
-- [ ] Week-header — sticky top, 26 kolommen (~80–100px breed)
-- [ ] Rijstructuur: groep-header-rij + prognose-project-subrijen
-  - Groepering op `prognose_config.groepering_veld` (default: `projectleider_id`)
-  - "Niet toegewezen"-groep voor projecten zonder projectleider
-  - Groepen in- en uitklappen (zelfde patroon als Planning.jsx)
+- [ ] Week-header — sticky top, 26 kolommen (~85px breed)
+- [ ] Rijstructuur: platte lijst gesorteerd op PL-initialen (afkorting), zonder-PL onderaan
+- [ ] Linkerkolom drie delen:
+  - PL-kleurblokje met initialen via `avatarKleur(profielnaam)` (~40px)
+  - Omschrijving (bold) + opdrachtgever (grijs, klein) — flex-1
+  - Aanneemsom + duur in weken rechts (~100px)
 - [ ] Cel-rendering per week:
   - Project overlapt week → cel toont projectkleur via `projKleur()`
   - `potentieel` → gestreept (`repeating-linear-gradient(45deg, ...)` over de kleur)
   - `in_opdracht` → solide kleur
   - Geen tekst in de balk; details bij klik (PrognoseModal)
 - [ ] Klik lege cel → PrognoseModal aanmaken, startweek voorgevuld
-- [ ] Klik gevulde cel → PrognoseModal bewerken
+- [ ] Klik gevulde balk → PrognoseModal bewerken (startweek + duur aanpasbaar)
 
 ### Totaalregel
 - [ ] Sticky onderaan (`position: sticky; bottom: 0`)
-- [ ] Per week optellen:
-  - Financieel: aanneemsom ÷ duur_weken
-  - Bezetting: gemiddeld / intern / onderaannemer
-- [ ] Incomplete indicator als niet alle projecten bezetting hebben:
-      "X fte (op basis van Y van Z projecten)"
-- [ ] Volgt actief filter en "toon potentieel"-toggle
+- [ ] Per week: som van aanneemsom ÷ duur_weken over alle zichtbare projecten
+- [ ] Volgt "toon potentieel"-toggle
 
 ---
 

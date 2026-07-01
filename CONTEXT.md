@@ -255,35 +255,38 @@ Patroon is identiek aan de bestaande `gebruikersbeheer` Edge Function.
 - Rolling window van 26 weken, start op maandag van huidige week (`getMaandag(new Date())`)
 - Weekkolommen (~80–100px) — geen dagkolommen
 - Navigatie springt per 4 weken (niet per 26 — voor fine-grained bladeren met context)
-- Rijen: prognose_projecten gegroepeerd op instelbaar veld uit `prognose_config.groepering_veld`
-  - Groep-header-rij + project-subrijen (zelfde structuur als groepen in Planning.jsx)
-  - Projecten zonder projectleider vallen in een "Niet toegewezen"-groep
-  - Filter op groeperingssleutel bovenaan (dropdown)
+- Rijstructuur: platte lijst, gesorteerd op projectleider-initialen (afkorting)
+  - Geen collapsible groepen — alle projecten direct zichtbaar
+  - Linkerkolom bestaat uit drie delen:
+    1. PL-kleurindicator met initialen — kleur via `avatarKleur()` op profielnaam (vaste kleur per PL)
+    2. Omschrijving + opdrachtgever
+    3. Aanneemsom + duur in weken
+  - Projecten zonder projectleider staan onderaan
 - Cel-rendering: projectkleur als het project die week overlapt
-  - `potentieel` → gestreept patroon (`repeating-linear-gradient` in CSS — nieuw, niet in bestaande code)
+  - `potentieel` → gestreept patroon (`repeating-linear-gradient` in CSS)
   - `in_opdracht` → solide kleur
-  - Geen tekst in de balk op weekschaal; details bij hover of klik (PrognoseModal)
-- Twee wisselbare weergaven via toggle:
-  - **Financieel** — aanneemsom ÷ duur_weken = bedrag per week, getoond in de totaalregel
-  - **Bezetting** — bezetting_gemiddeld per week in de totaalregel
+  - Geen tekst in de balk op weekschaal; details bij klik (PrognoseModal)
+- "Nieuw project" knop in toolbar → PrognoseModal aanmaken
+- Klik lege cel → PrognoseModal aanmaken, startweek voorgevuld
+- Klik gevulde balk → PrognoseModal bewerken (startweek + duur aanpasbaar)
 - Kleurlogica: hergebruik `projKleur({ id, kleur })` uit `kleurenpalet.js`
 
 ### Totaalregel
 - Sticky onderaan (`position: sticky; bottom: 0` binnen het bestaande overflow-auto grid)
-- Per week: totaal aanneemsom-per-week én bezetting (totaal / intern / onderaannemer)
-- Volgt actief filter en "toon potentieel"-toggle
-- Als bezetting niet overal ingevuld is: "X fte (op basis van Y van Z projecten)"
+- Per week: totaal aanneemsom ÷ duur_weken opgeteld over alle zichtbare projecten
+- Volgt "toon potentieel"-toggle
 
 ### PrognoseModal (nieuw component)
+- Klik "Nieuw project" knop → modal opent zonder voorgevulde cel
 - Klik lege cel → modal opent, startweek voorgevuld op basis van aangeklikte cel
-- Klik bestaande balk → zelfde modal in bewerkstand
-- Velden: naam*, projectnummer, omschrijving, projectleider (dropdown op profielen — zelfde als
-  projectformulier), status, aanneemsom, startweek (weekkiezer), duur_weken*, bezetting_gemiddeld,
-  bezetting_intern, bezetting_onderaannemer, kleur
+- Klik bestaande balk → zelfde modal in bewerkstand; startweek en duur aanpasbaar
+- Veldvolgorde: omschrijving*, projectnummer, opdrachtgever, projectleider (dropdown profielen),
+  status (standaard: in_opdracht), aanneemsom, startweek, duur_weken*
 - Eindweek automatisch berekend als readonly preview: `start_datum + duur_weken × 7`
+- Kleur: automatisch toegewezen via `minstGebruikteKleur()`, optioneel aan te passen
+- Geen bezettingsvelden — bewust weggelaten
 - Statusovergang naar `in_opdracht`: apart bevestigingsscherm met uitleg dat operationeel project
   aangemaakt wordt
-- Geen drag-resize — duur aanpassen via het weekgetal in de modal
 - `InplanModal` wordt NIET hergebruikt — die is te strak gekoppeld aan monteurs/toewijzingen/werkdagen
 
 ### Hergebruik uit bestaande codebase
