@@ -34,7 +34,7 @@ Commercieel aan te bieden aan andere afbouw- en installatiebedrijven.
 - `admin` — volledige toegang, inclusief Beheer, Statistieken en Prognose tabbladen
 - `planner` — volledige schrijfrechten (planning, projecten, monteurs, groepen, periodes)
 - `gebruiker` — alleen lezen (voorheen: projectleider), auto-filter op eigen naam bij login
-- `directie` — volledig CRUD op prognose_projecten; read-only op alle operationele data
+- `management` — volledig CRUD op prognose_projecten; read-only op alle operationele data
 - `monteur` — toekomstig: alleen eigen toewijzingen inzien
 
 ## Gebruikersbeheer
@@ -213,21 +213,21 @@ zodat een logging-fout de app-actie nooit blokkeert.
    - **Periodes** — bouwvak/feestdagen aanmaken en beheren
 6. **Statistieken** *(admin only)* — bar charts (recharts) van inplanning per dag of per maand,
    uitgesplitst naar Intern vs. Onderaannemer. Periodefilter instelbaar.
-7. **Prognose** *(admin + directie)* — rolling-window orderportefeuille voor directie.
+7. **Prognose** *(admin + management)* — rolling-window orderportefeuille voor management.
    Zie sectie "Prognose-tijdlijn" voor volledige ontwerpbeslissingen.
 
 Tabbladen conditioneel zichtbaar op basis van rol (Beheer + Statistieken: alleen `admin`;
-Prognose: `admin` + `directie`).
+Prognose: `admin` + `management`).
 Modules ook configureerbaar per tenant via modules_config in tenant_instellingen.
 
 Header bevat: tenant-logo + naam, navigatietabs, UpdatesBadge (update-notificatie per rol),
 gebruikersnaam, info-icoon (opent Handleiding modal), uitlogknop.
 Mobiel: hamburger-menu met dezelfde opties in een dropdown.
 
-## Prognose-tijdlijn (directie)
+## Prognose-tijdlijn (management)
 
 ### Doel
-Rolling-window overzicht van de volledige orderportefeuille voor directie: van offerte tot lopende
+Rolling-window overzicht van de volledige orderportefeuille voor management: van offerte tot lopende
 opdracht. Bewust losstaand van de operationele planning — geen mandag-nauwkeurigheid nodig.
 Directie beheert de financiële en bezettingsprognose; de planner beheert de dag-tot-dag uitvoering.
 
@@ -239,17 +239,17 @@ Directie beheert de financiële en bezettingsprognose; de planner beheert de dag
 4. `operationeel_project_id` op het prognose-record wordt gezet (FK naar het nieuwe projecten-record)
 5. Planner ziet het project verschijnen in de Projecten-tab, vult aan (adres, opdrachtgever)
    en begint met inplannen
-6. Prognose-record blijft bestaan — directie houdt de financiële tijdlijn bij
+6. Prognose-record blijft bestaan — management houdt de financiële tijdlijn bij
 
-Edge Function is nodig omdat directie geen INSERT-recht heeft op `projecten` via de normale RLS.
+Edge Function is nodig omdat management geen INSERT-recht heeft op `projecten` via de normale RLS.
 Patroon is identiek aan de bestaande `gebruikersbeheer` Edge Function.
 
 ### RLS
-- `prognose_projecten`: alle operaties voor `get_user_rol() IN ('admin', 'directie') AND tenant_id = get_user_tenant_id()`
+- `prognose_projecten`: alle operaties voor `get_user_rol() IN ('admin', 'management') AND tenant_id = get_user_tenant_id()`
 - Directie heeft read-only toegang tot operationele tabellen (SELECT-policies checken geen rol)
 - INSERT op `projecten` bij statusovergang: via Edge Function met service_role
 - Bestaande policies blijven ongewijzigd
-- Smoke test uitbreiden: planner kan prognose niet lezen, directie kan toewijzingen niet schrijven
+- Smoke test uitbreiden: planner kan prognose niet lezen, management kan toewijzingen niet schrijven
 
 ### Tijdlijn UI
 - Rolling window van 26 weken, start op maandag van huidige week (`getMaandag(new Date())`)
@@ -332,7 +332,7 @@ src/
     Overzicht.jsx
     Beheer.jsx          — gebruikersbeheer + periodes (admin only)
     Statistieken.jsx    — bar charts inplanning (admin only)
-    Prognose.jsx        — prognose-tijdlijn orderportefeuille (admin + directie) [nog te bouwen]
+    Prognose.jsx        — prognose-tijdlijn orderportefeuille (admin + management) [nog te bouwen]
   components/
     InplanModal.jsx     — inplan/wijzig modal (extracted uit Planning.jsx)
     MonteurPopup.jsx    — popup met monteursnamen bij Overzicht-cel klik
@@ -392,7 +392,7 @@ docs/
 - [ ] Changelog tabblad in Beheer — data al beschikbaar in updates.js, UI ontbreekt nog
 
 ## Commerciële roadmap
-- [ ] **Prognose-tijdlijn** — directie-rol, prognose_projecten tabel, 26-weken tijdlijn,
+- [ ] **Prognose-tijdlijn** — management-rol, prognose_projecten tabel, 26-weken tijdlijn,
       statusovergang via Edge Function, PrognoseModal (zie sectie "Prognose-tijdlijn" voor volledig ontwerp)
 - [ ] Mobile monteur-view — lees-only view eigen toewijzingen (174 potentiële gebruikers)
 - [ ] Optimistic updates via React Query (useOptimisticMutation)
