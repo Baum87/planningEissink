@@ -16,10 +16,11 @@ Volgorde is bewust: database eerst, dan service, dan UI.
   - aanneemsom (numeric 12,2, nullable)
   - start_datum (date — altijd maandag)
   - duur_weken (int, CHECK > 0)
-  - bezetting_gemiddeld, bezetting_intern, bezetting_onderaannemer (numeric 5,1, allemaal nullable)
+  - bezetting_gemiddeld (numeric 5,1, nullable) — v1: niet in UI, klaar voor toekomstige per-week bezetting
   - kleur (varchar 7, nullable)
   - operationeel_project_id (nullable FK → projecten, ON DELETE SET NULL)
   - created_at, updated_at
+- [ ] Tabel `prognose_bezetting` NOG NIET aanmaken — schema gedocumenteerd in CONTEXT.md voor later
 - [ ] RLS op `prognose_projecten`:
   - SELECT/INSERT/UPDATE/DELETE: `get_user_rol() IN ('admin', 'management') AND tenant_id = get_user_tenant_id()`
 - [ ] Index op `(tenant_id, start_datum)` voor tijdlijn-queries
@@ -146,6 +147,8 @@ Volgorde is bewust: database eerst, dan service, dan UI.
 
 ## Bewust uitgesteld
 
+- Bezetting per week (`prognose_bezetting` subtabel) — schema al gedocumenteerd in CONTEXT.md
+- Monteurs-getal in cellen + monteurs-totaalregel (volgt na `prognose_bezetting`)
 - Synchronisatie van velden tussen prognose en operationeel project na koppeling
 - Margeberekening, kostprijs per mandag
 - Vergelijking raming vs. werkelijke planning

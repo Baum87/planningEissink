@@ -118,7 +118,7 @@ profiel.afkorting || profiel.weergave_naam
   projectleider_id (nullable FK → profielen, ON DELETE SET NULL),
   status ('potentieel' | 'in_opdracht', default 'potentieel'), status_gewijzigd_op,
   aanneemsom (numeric 12,2), start_datum (date, altijd maandag), duur_weken (int),
-  bezetting_gemiddeld (nullable), bezetting_intern (nullable), bezetting_onderaannemer (nullable),
+  bezetting_gemiddeld (nullable),  -- in v1 niet invoerbaar via UI; kolom bewaard voor toekomstige per-week bezetting
   kleur (varchar 7), operationeel_project_id (nullable FK → projecten, ON DELETE SET NULL),
   created_at, updated_at
 
@@ -298,7 +298,28 @@ Patroon is identiek aan de bestaande `gebruikersbeheer` Edge Function.
 - `useZoek()` voor filter, `useTenant()` voor prognose_config
 - Modal overlay-patroon (`fixed inset-0 z-50 bg-black/25 rounded-2xl shadow-2xl`)
 
+### Toekomstige uitbreiding: bezetting per week
+Wanneer management per project wil aangeven hoeveel monteurs er per week werken
+(bijv. "week 1–2: 2 monteurs, week 3–4: 4 monteurs, week 5–6: 2 monteurs"),
+komt er een subtabel:
+
+```
+prognose_bezetting
+  id                   uuid PK
+  prognose_project_id  uuid → prognose_projecten (CASCADE DELETE)
+  week_offset          int   -- 0 = startweek, 1 = week daarna, etc.
+  aantal_monteurs      int
+```
+
+De cellen tonen dan het getal per week; de totaalregel telt monteurs op over
+alle projecten per week. `bezetting_gemiddeld` op `prognose_projecten` blijft
+als ruwe schatting naast de detailtabel bestaan.
+
+In v1 is `bezetting_gemiddeld` aanwezig in het schema maar niet invoerbaar
+via de UI. De cellen tonen alleen kleur, de totaalregel alleen aanneemsom.
+
 ### Bewust buiten scope (prognose v1)
+- Bezetting per week (subtabel `prognose_bezetting`) — datamodel is er klaar voor
 - Synchronisatie van velden tussen prognose_projecten en projecten na koppeling
 - Margeberekening, kostprijs per mandag, facturatiekoppeling
 - Vergelijking raming vs. werkelijke planning
