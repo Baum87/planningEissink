@@ -24,7 +24,7 @@ Volgorde is bewust: database eerst, dan service, dan UI.
 - [x] RLS op `prognose_projecten`:
   - SELECT/INSERT/UPDATE/DELETE: `get_user_rol() IN ('admin', 'management') AND tenant_id = get_user_tenant_id()`
 - [x] Index op `(tenant_id, start_datum)` voor tijdlijn-queries
-- [ ] Smoke test uitbreiden in `rls_smoke_test.sql`:
+- [x] Smoke test uitbreiden in `rls_smoke_test.sql`:
   - planner kan prognose_projecten niet lezen
   - management kan toewijzingen niet schrijven
   - management kan prognose_projecten lezen en schrijven
