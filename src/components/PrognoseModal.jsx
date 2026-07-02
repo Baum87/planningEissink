@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { KLEURENPALET } from '../lib/kleurenpalet'
 import { getMaandag, naarStr, isoWeek } from '../lib/datum'
 import { useProfielen } from '../hooks/queries'
@@ -30,6 +30,12 @@ export default function PrognoseModal({
   const [startD, setStartD]     = useState(project?.start_datum ?? startDatum ?? vandaagMaandag())
   const [duurWeken, setDuurWeken] = useState(project?.duur_weken != null ? String(project.duur_weken) : '')
   const [kleur, setKleur]       = useState(project?.kleur ?? autoKleur)
+
+  useEffect(() => {
+    function handleKey(e) { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', handleKey)
+    return () => document.removeEventListener('keydown', handleKey)
+  }, [onClose])
 
   const [kiesKleur, setKiesKleur]               = useState(false)
   const [bezig, setBezig]                       = useState(false)
