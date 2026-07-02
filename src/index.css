@@ -9,3 +9,21 @@
     @apply font-sans bg-white text-gray-900 antialiased;
   }
 }
+
+@media print {
+  @page {
+    size: A0 landscape;
+    margin: 10mm;
+  }
+
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .prognose-scroll-container {
+    overflow: visible !important;
+    max-height: none !important;
+    border-radius: 0 !important;
+  }
+}

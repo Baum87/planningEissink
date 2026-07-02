@@ -191,6 +191,15 @@ Volgorde is bewust: database eerst, dan service, dan UI.
 - Margeberekening, kostprijs per mandag
 - Vergelijking raming vs. werkelijke planning
 - Automatische gat-signalering
-- Export PDF/Excel
+- **Export — Optie 1: Browser print (geïmplementeerd)**
+  `@media print` CSS: toolbar verborgen, scrollcontainer opgeheven, A0 liggend, kleuren bewaard.
+
+- **Export — Optie 2: html2canvas + jsPDF**
+  Downloadknop genereert PDF-bestand zonder printdialoog. Tekst wordt raster (niet doorzoekbaar).
+  Geschikt als gebruiker liever een bestand download dan print.
+
+- **Export — Optie 3: @react-pdf/renderer**
+  Tijdlijn herbouwen als vector-PDF. Tekst doorzoekbaar, professioneel resultaat.
+  Significant werk — alleen zinvol bij behoefte aan merkgebonden of archiveerbare exports.
 - Referentielijn beschikbare capaciteit
 - Mobiele weergave Prognose

@@ -241,7 +241,7 @@ export default function Prognose() {
           <select
             value={filterPl}
             onChange={(e) => setFilterPl(e.target.value)}
-            className="px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors bg-white text-gray-600"
+            className="print:hidden px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors bg-white text-gray-600"
           >
             <option value="">Alle PL</option>
             {alleProjectleiders.map((pl) => (
@@ -251,7 +251,7 @@ export default function Prognose() {
         )}
 
         {/* Navigatie */}
-        <div className="flex items-center gap-0.5">
+        <div className="print:hidden flex items-center gap-0.5">
           <button
             onClick={() => navigeer(-NAV_STAP)}
             className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors text-lg leading-none"
@@ -268,7 +268,7 @@ export default function Prognose() {
 
         <span className="text-sm font-semibold text-gray-700">{periodeLabel}</span>
 
-        <div className="ml-auto flex items-center gap-4">
+        <div className="print:hidden ml-auto flex items-center gap-4">
           {/* Toggle Potentieel */}
           <label className="flex items-center gap-2 cursor-pointer select-none">
             <span className="text-sm text-gray-500">Potentieel</span>
@@ -323,7 +323,7 @@ export default function Prognose() {
       {/* ── Grid — zelfde container-aanpak als Planning ───────────────────────── */}
       <div
         ref={containerRef}
-        className="border border-gray-200 rounded-xl overflow-auto"
+        className="border border-gray-200 rounded-xl overflow-auto prognose-scroll-container"
         style={{ maxHeight: 'calc(100vh - 160px)', userSelect: drag ? 'none' : 'auto' }}
       >
         <div style={{ minWidth: NAAM_B + WEKEN * WEEK_B }}>
