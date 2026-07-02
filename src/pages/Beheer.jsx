@@ -19,8 +19,8 @@ import {
 import { createPeriode, updatePeriode, deletePeriode } from '../services/periodesService'
 import { usePeriodes } from '../hooks/queries'
 
-const ROLLEN = ['admin', 'planner', 'gebruiker', 'monteur']
-const ROL_LABELS = { admin: 'Admin', planner: 'Planner', gebruiker: 'Gebruiker', monteur: 'Monteur' }
+const ROLLEN = ['admin', 'management', 'planner', 'gebruiker', 'monteur']
+const ROL_LABELS = { admin: 'Admin', management: 'Management', planner: 'Planner', gebruiker: 'Gebruiker', monteur: 'Monteur' }
 
 const TABS = [
   { id: 'gebruikers', label: 'Gebruikers' },

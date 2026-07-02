@@ -1,31 +1,61 @@
 // 60 zachte pasteltinten (Tailwind 100/200/300) — passend bij Apple-achtige uitstraling
+// Volgorde: eerst 1 tint per kleurgroep door de hele cirkel, dan lichter/donkerder ronden.
+// Zo krijgen opeenvolgende projecten maximale kleurvariatie ipv clusters van dezelfde tint.
 export const KLEURENPALET = [
-  // Red / Rose
-  '#fee2e2', '#fecaca', '#fca5a5',
-  '#ffe4e6', '#fecdd3', '#fda4af',
-  // Orange / Amber
-  '#ffedd5', '#fed7aa', '#fdba74',
-  '#fef3c7', '#fde68a', '#fcd34d',
-  // Yellow / Lime
-  '#fef9c3', '#fef08a', '#fde047',
-  '#ecfccb', '#d9f99d', '#bef264',
-  // Green / Emerald
-  '#dcfce7', '#bbf7d0', '#86efac',
-  '#d1fae5', '#a7f3d0', '#6ee7b7',
-  // Teal / Cyan
-  '#ccfbf1', '#99f6e4', '#5eead4',
-  '#cffafe', '#a5f3fc', '#67e8f9',
-  // Sky / Blue
-  '#e0f2fe', '#bae6fd', '#7dd3fc',
-  '#dbeafe', '#bfdbfe', '#93c5fd',
-  // Indigo / Violet
-  '#e0e7ff', '#c7d2fe', '#a5b4fc',
-  '#ede9fe', '#ddd6fe', '#c4b5fd',
-  // Purple / Fuchsia
-  '#f3e8ff', '#e9d5ff', '#d8b4fe',
-  '#fae8ff', '#f5d0fe', '#f0abfc',
-  // Pink
-  '#fce7f3', '#fbcfe8', '#f9a8d4',
+  // Ronde 1 — lichtste tint, elke kleurgroep één keer
+  '#fee2e2', // red
+  '#ffe4e6', // rose
+  '#ffedd5', // orange
+  '#fef3c7', // amber
+  '#fef9c3', // yellow
+  '#ecfccb', // lime
+  '#dcfce7', // green
+  '#d1fae5', // emerald
+  '#ccfbf1', // teal
+  '#cffafe', // cyan
+  '#e0f2fe', // sky
+  '#dbeafe', // blue
+  '#e0e7ff', // indigo
+  '#ede9fe', // violet
+  '#f3e8ff', // purple
+  '#fae8ff', // fuchsia
+  '#fce7f3', // pink
+  // Ronde 2 — middeltint
+  '#fecaca', // red
+  '#fecdd3', // rose
+  '#fed7aa', // orange
+  '#fde68a', // amber
+  '#fef08a', // yellow
+  '#d9f99d', // lime
+  '#bbf7d0', // green
+  '#a7f3d0', // emerald
+  '#99f6e4', // teal
+  '#a5f3fc', // cyan
+  '#bae6fd', // sky
+  '#bfdbfe', // blue
+  '#c7d2fe', // indigo
+  '#ddd6fe', // violet
+  '#e9d5ff', // purple
+  '#f5d0fe', // fuchsia
+  '#fbcfe8', // pink
+  // Ronde 3 — diepste tint
+  '#fca5a5', // red
+  '#fda4af', // rose
+  '#fdba74', // orange
+  '#fcd34d', // amber
+  '#fde047', // yellow
+  '#bef264', // lime
+  '#86efac', // green
+  '#6ee7b7', // emerald
+  '#5eead4', // teal
+  '#67e8f9', // cyan
+  '#7dd3fc', // sky
+  '#93c5fd', // blue
+  '#a5b4fc', // indigo
+  '#c4b5fd', // violet
+  '#d8b4fe', // purple
+  '#f0abfc', // fuchsia
+  '#f9a8d4', // pink
   // Neutrals (stone / slate / zinc)
   '#f5f5f4', '#e7e5e0', '#d6d3d1',
   '#f1f5f9', '#e2e8f0', '#cbd5e1',
