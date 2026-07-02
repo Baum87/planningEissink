@@ -178,8 +178,15 @@ Volgorde is bewust: database eerst, dan service, dan UI.
 
 ## Bewust uitgesteld
 
-- Bezetting per week (`prognose_bezetting` subtabel) — schema al gedocumenteerd in CONTEXT.md
-- Monteurs-getal in cellen + monteurs-totaalregel (volgt na `prognose_bezetting`)
+- **Monteurs in cellen + totaalregel — Niveau 1 (aanbevolen)**
+  `bezetting_gemiddeld` bestaat al in `prognose_projecten` maar is nog niet in de UI.
+  Invoerveld toevoegen aan PrognoseModal. Getal tonen in balkcellen. Totaalregel sommeren per week.
+  Geen migratie nodig. Geschikt voor projecten met stabiele bezetting.
+
+- **Monteurs in cellen + totaalregel — Niveau 2 (complex)**
+  Nieuwe `prognose_bezetting` subtabel: per project per week een monteurs_aantal.
+  Vereist migratie, RLS, service en inline grid-editing per cel.
+  Alleen zinvol als projecten sterk fluctuerende bezetting hebben.
 - Synchronisatie van velden tussen prognose en operationeel project na koppeling
 - Margeberekening, kostprijs per mandag
 - Vergelijking raming vs. werkelijke planning
