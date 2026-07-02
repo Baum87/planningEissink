@@ -272,7 +272,7 @@ export default function Prognose() {
           {rijen.map((project) => {
             const pl = project.projectleider
             // avatarKleur vereist een niet-lege string — 'Z' als fallback bij ontbrekende PL
-            const [bg, fg] = avatarKleur(pl?.weergave_naam || 'Z')
+            const [bg, fg] = avatarKleur(pl?.weergave_naam || 'Z', pl?.avatar_kleur)
             const afk   = pl?.afkorting ?? '—'
             const kleur = projKleur(project)
 

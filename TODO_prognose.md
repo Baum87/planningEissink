@@ -33,7 +33,7 @@ Volgorde is bewust: database eerst, dan service, dan UI.
 
 ## Stap 2 — Edge Function: prognose-in-opdracht
 
-- [ ] Nieuwe Edge Function `supabase/functions/prognose-in-opdracht/`
+- [x] Nieuwe Edge Function `supabase/functions/prognose-in-opdracht/`
   - Ontvangt: `prognose_project_id`
   - Valideert: aanroeper is `admin` of `management`, zelfde tenant
   - Maakt record aan in `projecten` (service_role):
@@ -41,7 +41,7 @@ Volgorde is bewust: database eerst, dan service, dan UI.
   - Zet `operationeel_project_id` op het prognose-record
   - Zet `status = 'in_opdracht'` en `status_gewijzigd_op = now()`
   - Geeft het nieuwe `projecten`-record terug
-- [ ] Patroon volgen van bestaande `gebruikersbeheer` Edge Function (zelfde auth-header structuur)
+- [x] Patroon volgen van bestaande `gebruikersbeheer` Edge Function (zelfde auth-header structuur)
 
 ---
 
@@ -127,8 +127,8 @@ Volgorde is bewust: database eerst, dan service, dan UI.
 
 ## Stap 8 — Beheer: management-gebruiker aanmaken
 
-- [ ] Rol `management` toevoegen aan `ROLLEN` array in `Beheer.jsx`
-- [ ] `ROL_LABELS` uitbreiden: `management: 'Management'`
+- [x] Rol `management` toevoegen aan `ROLLEN` array in `Beheer.jsx`
+- [x] `ROL_LABELS` uitbreiden: `management: 'Management'`
 
 ---
 
@@ -146,7 +146,7 @@ Volgorde is bewust: database eerst, dan service, dan UI.
 
 ## V2 — na stabilisatie van v1
 
-- [ ] **Audit-trigger voor prognose_projecten (migratie 019)**
+- [x] **Audit-trigger voor prognose_projecten (migratie 019)**
       `create trigger audit_prognose_projecten after insert or update or delete on public.prognose_projecten for each row execute function log_wijziging();`
       Functie bestaat al — één statement uitvoeren in Supabase SQL editor.
 
@@ -156,13 +156,14 @@ Volgorde is bewust: database eerst, dan service, dan UI.
       Relevant zodat planners weten wat er aankomt. RLS hoeft niet aan te passen (SELECT is al open voor alle rollen via tenant check). Alleen `kanPrognose(rol)` aanvullen met read-only variant.
 
 
-- [ ] **Avatar-kleur opslaan per gebruiker**
-      `avatar_kleur varchar(7) nullable` toevoegen aan `profielen`. Kleurkiezer in Beheer per gebruiker-rij.
-      `avatarKleur()` gebruikt opgeslagen kleur met hash als fallback. Overal profiel-object meegeven i.p.v. alleen naam.
+- [x] **Avatar-kleur opslaan per gebruiker** (migratie 020)
+      `avatar_kleur varchar(7) nullable` toegevoegd aan `profielen`. Kleurkiezer in Beheer voor zowel gebruikers met als zonder account.
+      `avatarKleur()` gebruikt opgeslagen kleur met hash als fallback. Beheer toont gekleurd bolletje per gebruiker.
 
-- [ ] **Projectkleur koppelen aan projectleider-kleur**
-      Vereist bovenstaande avatar-kleur feature. Autokleur bij nieuw project wordt dan de kleur van de gekozen PL.
-      Projecten zonder PL behouden de huidige `minstGebruikteKleur()` logica als fallback.
+- [x] **Prognose-projectkleur koppelen aan projectleider-kleur**
+      Wanneer PL gekozen wordt in PrognoseModal → kleur-state springt automatisch naar PL's avatar_kleur.
+      Gebruiker kan daarna nog handmatig overschrijven via de kleurkiezer.
+      PROJECTLEIDER_SELECT uitgebreid met avatar_kleur. Projecten zonder PL gebruiken `minstGebruikteKleur()` als fallback.
 
 - [ ] **Drag & drop op prognose-tijdlijn**
       Horizontaal slepen van een projectbalk verschuift `start_datum` (snap naar maandag).

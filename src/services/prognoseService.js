@@ -1,6 +1,6 @@
 import { supabase, getTenantId } from '../lib/supabase'
 
-const PROJECTLEIDER_SELECT = '*, projectleider:profielen!projectleider_id(id, afkorting, weergave_naam)'
+const PROJECTLEIDER_SELECT = '*, projectleider:profielen!projectleider_id(id, afkorting, weergave_naam, avatar_kleur)'
 
 export async function getPrognoseProjecten(van, tot) {
   let query = supabase

@@ -23,8 +23,8 @@ export const uitnodigen = (email, naam, afkorting, rol) =>
 export const aanmaken = (email, naam, afkorting, rol, wachtwoord) =>
   roepAan('aanmaken', { email, naam, afkorting, rol, wachtwoord })
 export const rolWijzigen = (user_id, rol) => roepAan('rol_wijzigen', { user_id, rol })
-export const updateGebruiker = (user_id, { naam, email, afkorting, wachtwoord, rol }) =>
-  roepAan('wijzigen', { user_id, naam, email, afkorting, wachtwoord, rol })
+export const updateGebruiker = (user_id, { naam, email, afkorting, wachtwoord, rol, avatar_kleur }) =>
+  roepAan('wijzigen', { user_id, naam, email, afkorting, wachtwoord, rol, avatar_kleur })
 export const verwijderen = (user_id) => roepAan('verwijderen', { user_id })
 
 export const profielAanmaken = (naam, afkorting) =>
@@ -39,7 +39,7 @@ export const profielKoppelenAanmaken = (profiel_id, email, wachtwoord) =>
 export async function getProfielen() {
   const { data, error } = await supabase
     .from('profielen')
-    .select('id, user_id, afkorting, weergave_naam')
+    .select('id, user_id, afkorting, weergave_naam, avatar_kleur')
     .order('weergave_naam')
   if (error) throw new Error(error.message)
   return data ?? []
@@ -55,6 +55,15 @@ export const profielenZonderAccount = async () => {
   return data
 }
 
+export const alleProfielen = async () => {
+  const { data, error } = await supabase
+    .from('profielen')
+    .select('id, user_id, weergave_naam, afkorting, created_at, avatar_kleur')
+    .order('weergave_naam')
+  if (error) throw new Error(error.message)
+  return data ?? []
+}
+
 export const profielVerwijderen = async (profiel_id) => {
   const { error } = await supabase
     .from('profielen')
@@ -63,10 +72,10 @@ export const profielVerwijderen = async (profiel_id) => {
   if (error) throw new Error(error.message)
 }
 
-export const profielUpdaten = async (profiel_id, { weergave_naam, afkorting }) => {
+export const profielUpdaten = async (profiel_id, velden) => {
   const { error } = await supabase
     .from('profielen')
-    .update({ weergave_naam, afkorting })
+    .update(velden)
     .eq('id', profiel_id)
   if (error) throw new Error(error.message)
 }

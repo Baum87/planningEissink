@@ -2,6 +2,8 @@ import { useState, useMemo } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../context/AuthContext'
 import { fDatumKort } from '../lib/datum'
+import { KLEURENPALET } from '../lib/kleurenpalet'
+import { avatarKleur } from '../lib/avatar'
 import {
   lijstGebruikers,
   uitnodigen,
@@ -12,7 +14,7 @@ import {
   profielAanmaken,
   profielKoppelen,
   profielKoppelenAanmaken,
-  profielenZonderAccount,
+  alleProfielen,
   profielVerwijderen,
   profielUpdaten,
 } from '../services/gebruikersbeheerService'
@@ -84,19 +86,28 @@ function GebruikersTab() {
     queryFn: async () => {
       const [{ gebruikers: lijst }, profielen] = await Promise.all([
         lijstGebruikers(),
-        profielenZonderAccount(),
+        alleProfielen(),
       ])
-      const metAccount = lijst.map((g) => ({ ...g, heeftAccount: true }))
-      const zonderAccount = profielen.map((p) => ({
-        id: p.id,
-        naam: p.weergave_naam,
-        afkorting: p.afkorting,
-        email: null,
-        rol: null,
-        created_at: p.created_at,
-        last_sign_in_at: null,
-        heeftAccount: false,
-      }))
+      const profielByUserId = new Map(
+        profielen.filter((p) => p.user_id).map((p) => [p.user_id, p])
+      )
+      const metAccount = lijst.map((g) => {
+        const profiel = profielByUserId.get(g.id)
+        return { ...g, heeftAccount: true, avatar_kleur: profiel?.avatar_kleur ?? null }
+      })
+      const zonderAccount = profielen
+        .filter((p) => !p.user_id)
+        .map((p) => ({
+          id: p.id,
+          naam: p.weergave_naam,
+          afkorting: p.afkorting,
+          email: null,
+          rol: null,
+          created_at: p.created_at,
+          last_sign_in_at: null,
+          heeftAccount: false,
+          avatar_kleur: p.avatar_kleur ?? null,
+        }))
       return [...metAccount, ...zonderAccount]
     },
   })
@@ -243,7 +254,19 @@ function GebruikersTab() {
                       {isZijzelf && <span className="ml-2 text-xs text-gray-400">(jij)</span>}
                     </td>
                     <td className="px-4 py-3 text-gray-900">{g.naam?.split(' ').slice(1).join(' ') || '—'}</td>
-                    <td className="px-4 py-3 text-xs text-gray-400">{g.afkorting ?? ''}</td>
+                    <td className="px-4 py-3">
+                      {g.afkorting && (() => {
+                        const [bg, fg] = avatarKleur(g.naam || 'Z', g.avatar_kleur)
+                        return (
+                          <div
+                            className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-semibold"
+                            style={{ backgroundColor: bg, color: fg }}
+                          >
+                            {g.afkorting}
+                          </div>
+                        )
+                      })()}
+                    </td>
                     <td className="px-4 py-3 text-gray-500">{g.email ?? '—'}</td>
                     <td className="px-4 py-3">
                       {g.heeftAccount ? (
@@ -662,6 +685,8 @@ function GebruikerModal({ gebruiker, isZijzelf, onOpgeslagen, onClose }) {
   const [afkorting, setAfkorting] = useState(gebruiker.afkorting ?? '')
   const [rol, setRol] = useState(gebruiker.rol)
   const [wachtwoord, setWachtwoord] = useState('')
+  const [avatarKleur, setAvatarKleur] = useState(gebruiker.avatar_kleur ?? null)
+  const [kiesKleur, setKiesKleur] = useState(false)
   const [bezig, setBezig] = useState(false)
   const [fout, setFout] = useState(null)
 
@@ -672,13 +697,14 @@ function GebruikerModal({ gebruiker, isZijzelf, onOpgeslagen, onClose }) {
     try {
       const naam = `${voornaam.trim()} ${achternaam.trim()}`.trim()
       await updateGebruiker(gebruiker.id, {
-        naam:       naam                                 || undefined,
-        email:      email.trim()                         || undefined,
-        afkorting:  afkorting.trim()                     || null,
-        wachtwoord: wachtwoord                           || undefined,
-        rol:        rol !== gebruiker.rol ? rol : undefined,
+        naam:        naam                                 || undefined,
+        email:       email.trim()                         || undefined,
+        afkorting:   afkorting.trim()                     || null,
+        wachtwoord:  wachtwoord                           || undefined,
+        rol:         rol !== gebruiker.rol ? rol : undefined,
+        avatar_kleur: avatarKleur,
       })
-      onOpgeslagen({ ...gebruiker, naam, email: email.trim(), afkorting: afkorting.trim() || null, rol })
+      onOpgeslagen({ ...gebruiker, naam, email: email.trim(), afkorting: afkorting.trim() || null, rol, avatar_kleur: avatarKleur })
       onClose()
     } catch (e) {
       setFout(e.message)
@@ -720,6 +746,37 @@ function GebruikerModal({ gebruiker, isZijzelf, onOpgeslagen, onClose }) {
               placeholder="bijv. JK" />
           </div>
           <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-medium text-gray-700">Kleur</label>
+              <div className="flex items-center gap-2">
+                <div
+                  className="w-5 h-5 rounded-full border border-gray-200"
+                  style={{ backgroundColor: avatarKleur ?? '#e5e7eb' }}
+                />
+                <button type="button" onClick={() => setKiesKleur((v) => !v)}
+                  className="text-xs text-gray-400 hover:text-gray-700 transition-colors">
+                  {kiesKleur ? 'Verberg' : 'Wijzig'}
+                </button>
+                {avatarKleur && (
+                  <button type="button" onClick={() => setAvatarKleur(null)}
+                    className="text-xs text-gray-400 hover:text-red-500 transition-colors">
+                    Wis
+                  </button>
+                )}
+              </div>
+            </div>
+            {kiesKleur && (
+              <div className="flex flex-wrap gap-1.5">
+                {KLEURENPALET.map((c) => (
+                  <button key={c} type="button" onClick={() => setAvatarKleur(c)}
+                    className={`w-5 h-5 rounded-full transition-transform ${avatarKleur === c ? 'ring-2 ring-offset-1 ring-gray-500 scale-110' : ''}`}
+                    style={{ backgroundColor: c }}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Nieuw wachtwoord <span className="text-gray-400 font-normal">(laat leeg om niet te wijzigen)</span>
             </label>
@@ -757,6 +814,8 @@ function ProfielBewerkenModal({ profiel, onOpgeslagen, onClose }) {
   const [voornaam, setVoornaam] = useState(naamDelen[0] ?? '')
   const [achternaam, setAchternaam] = useState(naamDelen.slice(1).join(' ') ?? '')
   const [afkorting, setAfkorting] = useState(profiel.afkorting ?? '')
+  const [avatarKleur, setAvatarKleur] = useState(profiel.avatar_kleur ?? null)
+  const [kiesKleur, setKiesKleur] = useState(false)
   const [bezig, setBezig] = useState(false)
   const [fout, setFout] = useState(null)
 
@@ -766,8 +825,12 @@ function ProfielBewerkenModal({ profiel, onOpgeslagen, onClose }) {
     setFout(null)
     try {
       const naam = `${voornaam.trim()} ${achternaam.trim()}`.trim()
-      await profielUpdaten(profiel.id, { weergave_naam: naam, afkorting: afkorting.trim() || null })
-      onOpgeslagen({ ...profiel, naam, afkorting: afkorting.trim() || null })
+      await profielUpdaten(profiel.id, {
+        weergave_naam: naam,
+        afkorting: afkorting.trim() || null,
+        avatar_kleur: avatarKleur,
+      })
+      onOpgeslagen({ ...profiel, naam, afkorting: afkorting.trim() || null, avatar_kleur: avatarKleur })
       onClose()
     } catch (e) {
       setFout(e.message)
@@ -802,6 +865,40 @@ function ProfielBewerkenModal({ profiel, onOpgeslagen, onClose }) {
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
               placeholder="JJ" />
           </div>
+
+          {/* Kleur */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-medium text-gray-700">Kleur</label>
+              <div className="flex items-center gap-2">
+                <div
+                  className="w-5 h-5 rounded-full border border-gray-200"
+                  style={{ backgroundColor: avatarKleur ?? '#e5e7eb' }}
+                />
+                <button type="button" onClick={() => setKiesKleur((v) => !v)}
+                  className="text-xs text-gray-400 hover:text-gray-700 transition-colors">
+                  {kiesKleur ? 'Verberg' : 'Wijzig'}
+                </button>
+                {avatarKleur && (
+                  <button type="button" onClick={() => setAvatarKleur(null)}
+                    className="text-xs text-gray-400 hover:text-red-500 transition-colors">
+                    Wis
+                  </button>
+                )}
+              </div>
+            </div>
+            {kiesKleur && (
+              <div className="flex flex-wrap gap-1.5">
+                {KLEURENPALET.map((c) => (
+                  <button key={c} type="button" onClick={() => setAvatarKleur(c)}
+                    className={`w-5 h-5 rounded-full transition-transform ${avatarKleur === c ? 'ring-2 ring-offset-1 ring-gray-500 scale-110' : ''}`}
+                    style={{ backgroundColor: c }}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
           {fout && <p className="text-sm text-red-600">{fout}</p>}
           <div className="flex gap-3 pt-2">
             <button type="button" onClick={onClose}

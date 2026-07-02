@@ -4,7 +4,8 @@ const AVATAR_KLEUREN = [
   ['#cffafe', '#155e75'], ['#d1fae5', '#064e3b'],
 ]
 
-export function avatarKleur(naam = '') {
+export function avatarKleur(naam = '', opgeslagenKleur = null) {
+  if (opgeslagenKleur) return [opgeslagenKleur, '#1a202c']
   return AVATAR_KLEUREN[naam.charCodeAt(0) % AVATAR_KLEUREN.length]
 }
 

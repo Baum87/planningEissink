@@ -264,9 +264,9 @@ Deno.serve(async (req) => {
     return json({ ok: true })
   }
 
-  // ── wijzigen (naam, email, afkorting, wachtwoord, rol) ───────────────
+  // ── wijzigen (naam, email, afkorting, wachtwoord, rol, avatar_kleur) ───────────────
   if (actie === 'wijzigen') {
-    const { user_id, naam, email, afkorting, wachtwoord, rol } = body
+    const { user_id, naam, email, afkorting, wachtwoord, rol, avatar_kleur } = body
     if (!user_id) return json({ error: 'user_id is verplicht' }, 400)
     if (rol && !GELDIGE_ROLLEN.includes(rol)) return json({ error: 'Ongeldig rol' }, 400)
 
@@ -296,6 +296,7 @@ Deno.serve(async (req) => {
     const profielUpdates: Record<string, unknown> = {}
     if (naam)             profielUpdates.weergave_naam = naam
     if (afkorting !== undefined) profielUpdates.afkorting = afkorting || null
+    if (avatar_kleur !== undefined) profielUpdates.avatar_kleur = avatar_kleur || null
 
     if (Object.keys(profielUpdates).length > 0) {
       const { error: profielError } = await admin

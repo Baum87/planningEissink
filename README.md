@@ -111,7 +111,7 @@ audit_log            — mutaties per tenant
 
 ### Kern-tabellen (allemaal met tenant_id)
 ```
-profielen            — koppelt auth.users aan app-identiteit (naam, afkorting, monteur_id)
+profielen            — koppelt auth.users aan app-identiteit (naam, afkorting, avatar_kleur)
 projecten            — werknummer, omschrijving, plaats, projectleider_id (FK profielen)
 monteurs             — voornaam, achternaam, type (Intern/Onderaannemer), expertises[]
 groepen              — naam
@@ -154,7 +154,7 @@ Voer de migraties in volgorde uit in de Supabase SQL Editor:
 ```
 supabase/migrations/001_initial_schema.sql
 ...
-supabase/migrations/018_prognose_projecten.sql
+supabase/migrations/020_avatar_kleur_profielen.sql
 ```
 
 Daarna `supabase/seed.sql` voor de basis tenant-records.

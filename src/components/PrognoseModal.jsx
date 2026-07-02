@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { KLEURENPALET } from '../lib/kleurenpalet'
 import { getMaandag, naarStr, isoWeek } from '../lib/datum'
 import { useProfielen } from '../hooks/queries'
@@ -36,6 +36,14 @@ export default function PrognoseModal({
     document.addEventListener('keydown', handleKey)
     return () => document.removeEventListener('keydown', handleKey)
   }, [])
+
+  // Kleur meebeweegt met PL — sla initiële mount over zodat bestaande kleur niet wordt overschreven
+  const isInitialMount = useRef(true)
+  useEffect(() => {
+    if (isInitialMount.current) { isInitialMount.current = false; return }
+    const pl = profielen.find((p) => p.id === projectleiderId)
+    if (pl?.avatar_kleur) setKleur(pl.avatar_kleur)
+  }, [projectleiderId])
 
   const [kiesKleur, setKiesKleur]               = useState(false)
   const [bezig, setBezig]                       = useState(false)
