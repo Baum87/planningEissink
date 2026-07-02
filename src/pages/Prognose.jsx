@@ -48,6 +48,7 @@ export default function Prognose() {
 
   const [startDatum, setStartDatum] = useState(() => getMaandag(new Date()))
   const [toonPotentieel, setToonPotentieel] = useState(true)
+  const [toonWeekbedrag, setToonWeekbedrag] = useState(true)
   const [filterPl, setFilterPl] = useState('')
   const [modal, setModal] = useState(null)
   const [drag, setDrag] = useState(null) // { project, startX, startScrollLeft, weekDelta }
@@ -268,7 +269,7 @@ export default function Prognose() {
         <span className="text-sm font-semibold text-gray-700">{periodeLabel}</span>
 
         <div className="ml-auto flex items-center gap-4">
-          {/* Toggle Potentieel — zelfde switch-stijl als Planning */}
+          {/* Toggle Potentieel */}
           <label className="flex items-center gap-2 cursor-pointer select-none">
             <span className="text-sm text-gray-500">Potentieel</span>
             <button
@@ -283,6 +284,26 @@ export default function Prognose() {
               <span
                 className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all duration-200 ${
                   toonPotentieel ? 'left-[18px]' : 'left-0.5'
+                }`}
+              />
+            </button>
+          </label>
+
+          {/* Toggle Weekbedrag */}
+          <label className="flex items-center gap-2 cursor-pointer select-none">
+            <span className="text-sm text-gray-500">Weekbedrag</span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={toonWeekbedrag}
+              onClick={() => setToonWeekbedrag((v) => !v)}
+              className={`relative w-9 h-5 rounded-full transition-colors focus:outline-none ${
+                toonWeekbedrag ? 'bg-gray-800' : 'bg-gray-200'
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all duration-200 ${
+                  toonWeekbedrag ? 'left-[18px]' : 'left-0.5'
                 }`}
               />
             </button>
@@ -447,7 +468,7 @@ export default function Prognose() {
                     >
                       {raakt && (
                         <div
-                          className="w-full mx-0.5 rounded-sm"
+                          className="w-full mx-0.5 rounded-sm flex items-center justify-center"
                           style={{
                             height: 20,
                             backgroundColor: kleur.bg,
@@ -455,7 +476,13 @@ export default function Prognose() {
                               backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(255,255,255,0.5) 4px, rgba(255,255,255,0.5) 8px)',
                             } : {}),
                           }}
-                        />
+                        >
+                          {toonWeekbedrag && project.status === 'in_opdracht' && project.aanneemsom && (
+                            <span style={{ fontSize: 9, color: 'rgba(0,0,0,0.5)', lineHeight: 1 }}>
+                              {compactBedrag(Number(project.aanneemsom) / project.duur_weken)}
+                            </span>
+                          )}
+                        </div>
                       )}
                     </div>
                   )
