@@ -5,6 +5,7 @@ import { getProjecten } from '../services/projectenService'
 import { getPeriodes } from '../services/periodesService'
 import { getProfielen } from '../services/gebruikersbeheerService'
 import { getExpertises } from '../services/expertisesService'
+import { getPrognoseProjecten } from '../services/prognoseService'
 
 export const useProjecten = (opties = {}) =>
   useQuery({
@@ -62,4 +63,10 @@ export const useStatistiekenAlles = () =>
   useQuery({
     queryKey: ['statistieken-alles'],
     queryFn: getAlleStatistiekenData,
+  })
+
+export const usePrognoseProjecten = (van, tot) =>
+  useQuery({
+    queryKey: ['prognose-projecten', van, tot],
+    queryFn: () => getPrognoseProjecten(van, tot),
   })

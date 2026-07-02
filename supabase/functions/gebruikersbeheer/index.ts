@@ -12,7 +12,7 @@ function json(data: unknown, status = 200) {
   })
 }
 
-const GELDIGE_ROLLEN = ['admin', 'planner', 'gebruiker', 'monteur', 'projectleider']
+const GELDIGE_ROLLEN = ['admin', 'management', 'planner', 'gebruiker', 'monteur', 'projectleider']
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })

@@ -10,12 +10,14 @@ import Monteurs from './pages/Monteurs'
 import Beheer from './pages/Beheer'
 import Statistieken from './pages/Statistieken'
 import UpdatesBadge from './components/UpdatesBadge'
+import Prognose from './pages/Prognose'
 
 const ALLE_TABS = [
   { id: 'planning',  label: 'Planning',  component: Planning,  rollen: null },
   { id: 'overzicht', label: 'Overzicht', component: Overzicht, rollen: null },
   { id: 'projecten', label: 'Projecten', component: Projecten, rollen: null },
   { id: 'monteurs',  label: 'Monteurs',  component: Monteurs,  rollen: null },
+  { id: 'prognose',      label: 'Prognose',      component: Prognose,      rollen: ['admin', 'management'] },
   { id: 'beheer',        label: 'Beheer',        component: Beheer,        rollen: ['admin'] },
   { id: 'statistieken', label: 'Statistieken', component: Statistieken, rollen: ['admin'] },
 ]
@@ -368,7 +370,7 @@ function AppInner() {
       {handleidingOpen && <HandleidingModal onClose={() => setHandleidingOpen(false)} />}
 
       <main
-        className={`px-6 py-6${activeTab !== 'planning' && activeTab !== 'overzicht' ? ' max-w-screen-xl mx-auto' : ''}${activeTab === 'projecten' || activeTab === 'monteurs' ? ' flex flex-col overflow-hidden' : ''}`}
+        className={`px-6 py-6${activeTab !== 'planning' && activeTab !== 'overzicht' && activeTab !== 'prognose' ? ' max-w-screen-xl mx-auto' : ''}${activeTab === 'projecten' || activeTab === 'monteurs' ? ' flex flex-col overflow-hidden' : ''}`}
         style={activeTab === 'projecten' || activeTab === 'monteurs' ? { height: 'calc(100vh - 57px)' } : undefined}
       >
         <ActivePage onNavigate={navigeerNaar} />

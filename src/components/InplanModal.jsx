@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { avatarKleur, monteurNaam, initialen } from '../lib/avatar'
 import { projKleur } from '../lib/kleurenpalet'
 import { fDatumLang, fBereikLang } from '../lib/datum'
@@ -19,6 +19,12 @@ export default function InplanModal({ modal, projecten, kanInplannen, onInplanne
   const [wijzigModus, setWijzigModus] = useState(false)
   const [wijzigVan, setWijzigVan] = useState(periodeData?.van ?? dag)
   const [wijzigTot, setWijzigTot] = useState(periodeData?.tot ?? dag)
+
+  useEffect(() => {
+    function handleKey(e) { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', handleKey)
+    return () => document.removeEventListener('keydown', handleKey)
+  }, [])
 
   const [avgBg, avgFg] = avatarKleur(isGroep ? modal.groep?.naam ?? '' : monteurNaam(modal.monteur ?? {}))
 
