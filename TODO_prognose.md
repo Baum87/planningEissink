@@ -170,8 +170,9 @@ Volgorde is bewust: database eerst, dan service, dan UI.
       Raw pointer events — geen @dnd-kit nodig. Scroll-offset correct verrekend.
       Escape annuleert drag. Klik na drag opent geen modal.
 
-- [ ] **Resize-handle op prognose-tijdlijn**
-      Rechterrand van balk slepen past `duur_weken` aan. Uitgesteld — duur aanpassen via modal dekt de behoefte voorlopig.
+- [x] **Duur inline aanpasbaar via chip in linkerkolom**
+      Klik op `4w` chip → invoerveld met auto-select, Enter/blur slaat op, Escape annuleert.
+      Resize-handle niet nodig — inline edit dekt de behoefte volledig.
 
 ---
 

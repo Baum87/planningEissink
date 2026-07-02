@@ -51,6 +51,7 @@ export default function Prognose() {
   const [filterPl, setFilterPl] = useState('')
   const [modal, setModal] = useState(null)
   const [drag, setDrag] = useState(null) // { project, startX, startScrollLeft, weekDelta }
+  const [editDuur, setEditDuur] = useState(null) // { projectId, waarde }
   const containerRef = useRef(null)
   const wasDragged = useRef(false)
 
@@ -168,6 +169,19 @@ export default function Prognose() {
       window.removeEventListener('keydown', handleKeyDown)
     }
   }, [drag])
+
+  async function handleDuurOpslaan() {
+    if (!editDuur) return
+    const weken = parseInt(editDuur.waarde, 10)
+    if (!weken || weken < 1) { setEditDuur(null); return }
+    setEditDuur(null)
+    try {
+      await updatePrognoseProject(editDuur.projectId, { duur_weken: weken })
+      await queryClient.invalidateQueries({ queryKey: ['prognose-projecten'] })
+    } catch {
+      // project springt terug via query invalidation
+    }
+  }
 
   // ── Modals openen ─────────────────────────────────────────────────────────
 
@@ -348,35 +362,76 @@ export default function Prognose() {
                 className={`flex border-b border-gray-100 hover:bg-gray-50/50 group ${isDragging ? 'opacity-75' : ''}`}
                 style={{ height: ROW_H }}
               >
-                {/* Linker infocolom: PL avatar — naam/opdrachtgever — aanneemsom/duur */}
+                {/* Linker infocolom */}
                 <div
                   className="sticky left-0 z-10 bg-white group-hover:bg-gray-50/50 border-r border-gray-100 flex items-center gap-2 px-3 shrink-0 select-none"
-                  style={{ width: NAAM_B, cursor: kanWritten ? (isDragging ? 'grabbing' : 'grab') : 'default' }}
-                  onPointerDown={(e) => kanWritten && handleBarPointerDown(e, project)}
-                  onClick={() => {
-                    if (wasDragged.current) { wasDragged.current = false; return }
-                    kanWritten && openBewerk(project)
-                  }}
+                  style={{ width: NAAM_B }}
                 >
+                  {/* Drag + modal zone: avatar + naam */}
                   <div
-                    className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-semibold shrink-0"
-                    style={{ backgroundColor: bg, color: fg }}
+                    className="flex items-center gap-2 flex-1 min-w-0"
+                    style={{ cursor: kanWritten ? (isDragging ? 'grabbing' : 'pointer') : 'default' }}
+                    onPointerDown={(e) => kanWritten && handleBarPointerDown(e, project)}
+                    onClick={() => {
+                      if (wasDragged.current) { wasDragged.current = false; return }
+                      kanWritten && openBewerk(project)
+                    }}
                   >
-                    {afk}
+                    <div
+                      className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-semibold shrink-0"
+                      style={{ backgroundColor: bg, color: fg }}
+                    >
+                      {afk}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-semibold text-gray-900 truncate">{project.omschrijving}</div>
+                      {project.opdrachtgever && (
+                        <div className="text-[10px] text-gray-400 truncate">{project.opdrachtgever}</div>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs font-semibold text-gray-900 truncate">{project.omschrijving}</div>
-                    {project.opdrachtgever && (
-                      <div className="text-[10px] text-gray-400 truncate">{project.opdrachtgever}</div>
-                    )}
-                  </div>
-                  <div className="text-right shrink-0 ml-1">
+
+                  {/* Aanneemsom + duur chip */}
+                  <div className="flex flex-col items-end shrink-0 gap-0.5">
                     {project.aanneemsom && (
-                      <div className="text-[10px] font-medium text-gray-600">
+                      <span className="text-xs font-medium text-gray-600">
                         {compactBedrag(Number(project.aanneemsom))}
-                      </div>
+                      </span>
                     )}
-                    <div className="text-[10px] text-gray-400">{project.duur_weken}w</div>
+                    {editDuur?.projectId === project.id ? (
+                      <input
+                        type="number"
+                        min="1"
+                        autoFocus
+                        onFocus={(e) => e.target.select()}
+                        value={editDuur.waarde}
+                        onChange={(e) => setEditDuur((d) => ({ ...d, waarde: e.target.value }))}
+                        onBlur={handleDuurOpslaan}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleDuurOpslaan()
+                          if (e.key === 'Escape') setEditDuur(null)
+                        }}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-10 px-1 py-0.5 text-xs border border-gray-400 rounded bg-white text-gray-900 outline-none text-center"
+                      />
+                    ) : (
+                      <button
+                        type="button"
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          if (kanWritten) setEditDuur({ projectId: project.id, waarde: String(project.duur_weken) })
+                        }}
+                        className={`px-1.5 py-0.5 text-xs rounded border transition-colors ${
+                          kanWritten
+                            ? 'border-gray-200 bg-gray-50 text-gray-700 hover:border-gray-400 cursor-pointer'
+                            : 'border-transparent text-gray-400 cursor-default'
+                        }`}
+                      >
+                        {project.duur_weken}w
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -387,14 +442,8 @@ export default function Prognose() {
                     <div
                       key={i}
                       className="border-l border-gray-100 shrink-0 flex items-center"
-                      style={{ width: WEEK_B, height: ROW_H, cursor: kanWritten ? (isDragging ? 'grabbing' : 'pointer') : 'default' }}
+                      style={{ width: WEEK_B, height: ROW_H, cursor: !kanWritten ? 'default' : isDragging ? 'grabbing' : raakt ? 'grab' : 'default' }}
                       onPointerDown={(e) => { if (kanWritten && raakt) handleBarPointerDown(e, project) }}
-                      onClick={() => {
-                        if (!kanWritten) return
-                        if (wasDragged.current) { wasDragged.current = false; return }
-                        if (raakt) openBewerk(project)
-                        else openNieuw(naarStr(weekStart))
-                      }}
                     >
                       {raakt && (
                         <div
