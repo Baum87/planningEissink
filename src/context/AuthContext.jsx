@@ -54,6 +54,8 @@ export function useAuth() {
 }
 
 export function isGebruiker(rol)      { return rol === 'gebruiker' }
+export function isManagement(rol)     { return rol === 'management' }
+export function kanPrognose(rol)      { return rol === 'admin' || rol === 'management' }
 
 export function heeftVolledigeToegang(rol) {
   return rol === 'admin' || rol === 'planner'

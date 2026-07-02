@@ -7,8 +7,8 @@ Volgorde is bewust: database eerst, dan service, dan UI.
 
 ## Stap 1 — Database (migratie 018)
 
-- [ ] `prognose_config jsonb DEFAULT '{}'` kolom toevoegen aan `tenant_instellingen`
-- [ ] Tabel `prognose_projecten` aanmaken:
+- [x] `prognose_config jsonb DEFAULT '{}'` kolom toevoegen aan `tenant_instellingen`
+- [x] Tabel `prognose_projecten` aanmaken:
   - id, tenant_id, naam, omschrijving, projectnummer
   - projectleider_id (nullable FK → profielen, ON DELETE SET NULL)
   - status ('potentieel' | 'in_opdracht', default 'potentieel')
@@ -20,10 +20,10 @@ Volgorde is bewust: database eerst, dan service, dan UI.
   - kleur (varchar 7, nullable)
   - operationeel_project_id (nullable FK → projecten, ON DELETE SET NULL)
   - created_at, updated_at
-- [ ] Tabel `prognose_bezetting` NOG NIET aanmaken — schema gedocumenteerd in CONTEXT.md voor later
-- [ ] RLS op `prognose_projecten`:
+- [x] Tabel `prognose_bezetting` NOG NIET aanmaken — schema gedocumenteerd in CONTEXT.md voor later
+- [x] RLS op `prognose_projecten`:
   - SELECT/INSERT/UPDATE/DELETE: `get_user_rol() IN ('admin', 'management') AND tenant_id = get_user_tenant_id()`
-- [ ] Index op `(tenant_id, start_datum)` voor tijdlijn-queries
+- [x] Index op `(tenant_id, start_datum)` voor tijdlijn-queries
 - [ ] Smoke test uitbreiden in `rls_smoke_test.sql`:
   - planner kan prognose_projecten niet lezen
   - management kan toewijzingen niet schrijven
@@ -47,29 +47,29 @@ Volgorde is bewust: database eerst, dan service, dan UI.
 
 ## Stap 3 — Service en hooks
 
-- [ ] `src/services/prognoseService.js`:
+- [x] `src/services/prognoseService.js`:
   - `getPrognoseProjecten(van, tot)` — haalt projecten op die de periode overlappen
   - `createPrognoseProject(velden)`
   - `updatePrognoseProject(id, velden)`
   - `deletePrognoseProject(id)`
-  - `setInOpdracht(id)` — roept Edge Function aan
-- [ ] `src/hooks/queries.js` uitbreiden:
+  - `setInOpdracht(id)` — roept Edge Function aan (stub, werkt na Stap 2)
+- [x] `src/hooks/queries.js` uitbreiden:
   - `usePrognoseProjecten(van, tot)` — React Query hook
 
 ---
 
 ## Stap 4 — AuthContext
 
-- [ ] Helper `isManagement(rol)` toevoegen: `rol === 'management'`
-- [ ] Helper `kanPrognose(rol)` toevoegen: `rol === 'admin' || rol === 'management'`
+- [x] Helper `isManagement(rol)` toevoegen: `rol === 'management'`
+- [x] Helper `kanPrognose(rol)` toevoegen: `rol === 'admin' || rol === 'management'`
 
 ---
 
 ## Stap 5 — App.jsx
 
-- [ ] Tab toevoegen aan `ALLE_TABS`:
+- [x] Tab toevoegen aan `ALLE_TABS`:
   `{ id: 'prognose', label: 'Prognose', component: Prognose, rollen: ['admin', 'management'] }`
-- [ ] Import van `Prognose` pagina toevoegen
+- [x] Import van `Prognose` pagina toevoegen
 
 ---
 
