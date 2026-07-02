@@ -155,6 +155,10 @@ Volgorde is bewust: database eerst, dan service, dan UI.
       `avatar_kleur varchar(7) nullable` toevoegen aan `profielen`. Kleurkiezer in Beheer per gebruiker-rij.
       `avatarKleur()` gebruikt opgeslagen kleur met hash als fallback. Overal profiel-object meegeven i.p.v. alleen naam.
 
+- [ ] **Projectkleur koppelen aan projectleider-kleur**
+      Vereist bovenstaande avatar-kleur feature. Autokleur bij nieuw project wordt dan de kleur van de gekozen PL.
+      Projecten zonder PL behouden de huidige `minstGebruikteKleur()` logica als fallback.
+
 - [ ] **Drag & drop op prognose-tijdlijn**
       Horizontaal slepen van een projectbalk verschuift `start_datum` (snap naar maandag).
       Resize-handle op rechterrand past `duur_weken` aan.
