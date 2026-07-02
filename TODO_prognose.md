@@ -165,11 +165,13 @@ Volgorde is bewust: database eerst, dan service, dan UI.
       Gebruiker kan daarna nog handmatig overschrijven via de kleurkiezer.
       PROJECTLEIDER_SELECT uitgebreid met avatar_kleur. Projecten zonder PL gebruiken `minstGebruikteKleur()` als fallback.
 
-- [ ] **Drag & drop op prognose-tijdlijn**
+- [x] **Drag op prognose-tijdlijn**
       Horizontaal slepen van een projectbalk verschuift `start_datum` (snap naar maandag).
-      Resize-handle op rechterrand past `duur_weken` aan.
-      `@dnd-kit` is al geïnstalleerd. Eenvoudiger dan Planning (alleen horizontaal, geen rijwisseling).
-      Uitgesteld omdat klik-op-balk → modal dezelfde behoefte dekt in v1.
+      Raw pointer events — geen @dnd-kit nodig. Scroll-offset correct verrekend.
+      Escape annuleert drag. Klik na drag opent geen modal.
+
+- [ ] **Resize-handle op prognose-tijdlijn**
+      Rechterrand van balk slepen past `duur_weken` aan. Uitgesteld — duur aanpassen via modal dekt de behoefte voorlopig.
 
 ---
 

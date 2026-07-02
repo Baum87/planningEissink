@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useAuth, kanPrognose } from '../context/AuthContext'
 import { usePrognoseProjecten } from '../hooks/queries'
@@ -50,6 +50,9 @@ export default function Prognose() {
   const [toonPotentieel, setToonPotentieel] = useState(true)
   const [filterPl, setFilterPl] = useState('')
   const [modal, setModal] = useState(null)
+  const [drag, setDrag] = useState(null) // { project, startX, startScrollLeft, weekDelta }
+  const containerRef = useRef(null)
+  const wasDragged = useRef(false)
 
   const van = naarStr(startDatum)
   const tot = naarStr(plusDagen(startDatum, WEKEN * 7))
@@ -112,6 +115,59 @@ export default function Prognose() {
       return r
     })
   }
+
+  // ── Drag ──────────────────────────────────────────────────────────────────
+
+  function handleBarPointerDown(e, project) {
+    e.preventDefault()
+    e.stopPropagation()
+    setDrag({
+      project,
+      startX: e.clientX,
+      startScrollLeft: containerRef.current?.scrollLeft ?? 0,
+      weekDelta: 0,
+    })
+  }
+
+  useEffect(() => {
+    if (!drag) return
+
+    function handlePointerMove(e) {
+      const currentScroll = containerRef.current?.scrollLeft ?? 0
+      const totalDeltaX = (e.clientX - drag.startX) + (currentScroll - drag.startScrollLeft)
+      const weekDelta = Math.round(totalDeltaX / WEEK_B)
+      setDrag((d) => d ? { ...d, weekDelta } : d)
+    }
+
+    async function handlePointerUp() {
+      if (drag.weekDelta !== 0) {
+        wasDragged.current = true
+        const d = new Date(drag.project.start_datum + 'T00:00:00')
+        d.setDate(d.getDate() + drag.weekDelta * 7)
+        const nieuweStart = naarStr(getMaandag(d))
+        try {
+          await updatePrognoseProject(drag.project.id, { start_datum: nieuweStart })
+          await queryClient.invalidateQueries({ queryKey: ['prognose-projecten'] })
+        } catch {
+          // project springt terug naar originele positie via query invalidation
+        }
+      }
+      setDrag(null)
+    }
+
+    function handleKeyDown(e) {
+      if (e.key === 'Escape') setDrag(null)
+    }
+
+    window.addEventListener('pointermove', handlePointerMove)
+    window.addEventListener('pointerup', handlePointerUp)
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove)
+      window.removeEventListener('pointerup', handlePointerUp)
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [drag])
 
   // ── Modals openen ─────────────────────────────────────────────────────────
 
@@ -231,8 +287,9 @@ export default function Prognose() {
 
       {/* ── Grid — zelfde container-aanpak als Planning ───────────────────────── */}
       <div
+        ref={containerRef}
         className="border border-gray-200 rounded-xl overflow-auto"
-        style={{ maxHeight: 'calc(100vh - 160px)' }}
+        style={{ maxHeight: 'calc(100vh - 160px)', userSelect: drag ? 'none' : 'auto' }}
       >
         <div style={{ minWidth: NAAM_B + WEKEN * WEEK_B }}>
 
@@ -276,17 +333,30 @@ export default function Prognose() {
             const afk   = pl?.afkorting ?? '—'
             const kleur = projKleur(project)
 
+            const isDragging = drag?.project.id === project.id
+            const effectiefProject = isDragging && drag.weekDelta !== 0
+              ? (() => {
+                  const d = new Date(project.start_datum + 'T00:00:00')
+                  d.setDate(d.getDate() + drag.weekDelta * 7)
+                  return { ...project, start_datum: naarStr(getMaandag(d)) }
+                })()
+              : project
+
             return (
               <div
                 key={project.id}
-                className="flex border-b border-gray-100 hover:bg-gray-50/50 group"
+                className={`flex border-b border-gray-100 hover:bg-gray-50/50 group ${isDragging ? 'opacity-75' : ''}`}
                 style={{ height: ROW_H }}
               >
                 {/* Linker infocolom: PL avatar — naam/opdrachtgever — aanneemsom/duur */}
                 <div
-                  className="sticky left-0 z-10 bg-white group-hover:bg-gray-50/50 border-r border-gray-100 flex items-center gap-2 px-3 shrink-0"
-                  style={{ width: NAAM_B, cursor: kanWritten ? 'pointer' : 'default' }}
-                  onClick={() => kanWritten && openBewerk(project)}
+                  className="sticky left-0 z-10 bg-white group-hover:bg-gray-50/50 border-r border-gray-100 flex items-center gap-2 px-3 shrink-0 select-none"
+                  style={{ width: NAAM_B, cursor: kanWritten ? (isDragging ? 'grabbing' : 'grab') : 'default' }}
+                  onPointerDown={(e) => kanWritten && handleBarPointerDown(e, project)}
+                  onClick={() => {
+                    if (wasDragged.current) { wasDragged.current = false; return }
+                    kanWritten && openBewerk(project)
+                  }}
                 >
                   <div
                     className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-semibold shrink-0"
@@ -312,14 +382,16 @@ export default function Prognose() {
 
                 {/* Week cellen */}
                 {weken.map((weekStart, i) => {
-                  const raakt = overlapt(project, weekStart)
+                  const raakt = overlapt(effectiefProject, weekStart)
                   return (
                     <div
                       key={i}
                       className="border-l border-gray-100 shrink-0 flex items-center"
-                      style={{ width: WEEK_B, height: ROW_H, cursor: kanWritten ? 'pointer' : 'default' }}
+                      style={{ width: WEEK_B, height: ROW_H, cursor: kanWritten ? (isDragging ? 'grabbing' : 'pointer') : 'default' }}
+                      onPointerDown={(e) => { if (kanWritten && raakt) handleBarPointerDown(e, project) }}
                       onClick={() => {
                         if (!kanWritten) return
+                        if (wasDragged.current) { wasDragged.current = false; return }
                         if (raakt) openBewerk(project)
                         else openNieuw(naarStr(weekStart))
                       }}
