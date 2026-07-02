@@ -134,17 +134,22 @@ Volgorde is bewust: database eerst, dan service, dan UI.
 
 ## Stap 9 — Testen
 
-- [ ] Management-gebruiker aanmaken via Beheer-tab
-- [ ] Inloggen als management: alleen Planning (read), Overzicht (read), Projecten (read),
+- [x] Management-gebruiker aanmaken via Beheer-tab
+- [x] Inloggen als management: alleen Planning (read), Overzicht (read), Projecten (read),
       Monteurs (read), Prognose (CRUD) zichtbaar
-- [ ] Prognose-project aanmaken (potentieel)
-- [ ] Status wijzigen naar in_opdracht → operationeel project verschijnt in Projecten-tab
-- [ ] Planner kan prognose-tab niet zien
-- [ ] Totaalregel klopt bij filter en toggle
+- [x] Prognose-project aanmaken (potentieel)
+- [x] Status wijzigen naar in_opdracht → operationeel project verschijnt in Projecten-tab
+- [x] Planner kan prognose-tab niet zien
+- [x] Totaalregel klopt bij filter en toggle
 
 ---
 
 ## V2 — na stabilisatie van v1
+
+- [ ] **Prognose leesbaar voor planners**
+      Planner ziet Prognose-tab in read-only — geen knoppen, geen klikbare cellen.
+      Relevant zodat planners weten wat er aankomt. RLS hoeft niet aan te passen (SELECT is al open voor alle rollen via tenant check). Alleen `kanPrognose(rol)` aanvullen met read-only variant.
+
 
 - [ ] **Avatar-kleur opslaan per gebruiker**
       `avatar_kleur varchar(7) nullable` toevoegen aan `profielen`. Kleurkiezer in Beheer per gebruiker-rij.
