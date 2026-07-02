@@ -16,6 +16,8 @@ Live: [planning-eissink.vercel.app](https://planning-eissink.vercel.app)
 
 **Monteurs** — Tabel met eigen monteurs en ZZP'ers, inclusief expertises en groepsbeheer.
 
+**Prognose** — Horizontale tijdlijn (26 weken) voor management en admins. Potentiële en bevestigde projecten met aanneemsom, projectleider en kleur. Totaalregel per week. Eén klik zet een prognose-project om naar een operationeel project in de planningtab.
+
 **Beheer** — Gebruikersbeheer voor admins: uitnodigen, rol wijzigen, verwijderen.
 
 ---
@@ -26,7 +28,8 @@ Opgeslagen in `app_metadata`. Beheer via het Beheer-tabblad in de app (alleen zi
 
 | Rol | Toegang |
 |---|---|
-| `admin` | Volledig + gebruikersbeheer |
+| `admin` | Volledig + gebruikersbeheer + prognose |
+| `management` | Prognose (CRUD) + overige tabs alleen lezen |
 | `planner` | Volledig: inplannen, projecten, monteurs |
 | `gebruiker` | Alleen lezen (projectleiders) |
 | `monteur` | Toekomstig: eigen toewijzingen |
@@ -62,7 +65,11 @@ src/
     Overzicht.jsx
     Projecten.jsx
     Monteurs.jsx
+    Prognose.jsx                # 26-weeks tijdlijn voor management/admin
     Beheer.jsx                  # Admin: gebruikersbeheer
+  components/
+    InplanModal.jsx
+    PrognoseModal.jsx           # Aanmaken/bewerken prognose-projecten
   services/
     toewijzingenService.js
     projectenService.js
@@ -70,21 +77,24 @@ src/
     periodesService.js
     expertisesService.js
     gebruikersbeheerService.js  # Roept Edge Function aan
+    prognoseService.js          # CRUD prognose_projecten + in-opdracht
   lib/
     supabase.js
     avatar.js                   # avatarKleur, initialen, monteurNaam
     datum.js                    # getMaandag, plusDagen, fDatumLang, etc.
-    kleurenpalet.js
+    kleurenpalet.js             # KLEURENPALET, minstGebruikteKleur, projKleur
   App.jsx
   main.jsx                      # Sentry initialisatie
 supabase/
-  migrations/                   # 001–009, in volgorde uitvoeren
+  migrations/                   # 001–018, in volgorde uitvoeren
   seed.sql                      # Tenants + demo-data voor nieuwe opzet
   tests/
     rls_smoke_test.sql          # Handmatige RLS verificatie na migraties
   functions/
     gebruikersbeheer/
       index.ts                  # Edge Function: invite, rol wijzigen, delete
+    prognose-in-opdracht/
+      index.ts                  # Edge Function: zet prognose om naar operationeel project
 ```
 
 ---
@@ -101,13 +111,15 @@ audit_log            — mutaties per tenant
 
 ### Kern-tabellen (allemaal met tenant_id)
 ```
-profielen     — koppelt auth.users aan app-identiteit (naam, afkorting, monteur_id)
-projecten     — werknummer, omschrijving, plaats, projectleider_id (FK profielen)
-monteurs      — voornaam, achternaam, type (Intern/Onderaannemer), expertises[]
-groepen       — naam
-groep_leden   — koppeltabel groepen ↔ monteurs
-toewijzingen  — monteur_id, project_id, datum (datum_van = datum_tot = één werkdag)
-periodes      — bouwvak en feestdagen (worden overgeslagen bij inplannen)
+profielen            — koppelt auth.users aan app-identiteit (naam, afkorting, monteur_id)
+projecten            — werknummer, omschrijving, plaats, projectleider_id (FK profielen)
+monteurs             — voornaam, achternaam, type (Intern/Onderaannemer), expertises[]
+groepen              — naam
+groep_leden          — koppeltabel groepen ↔ monteurs
+toewijzingen         — monteur_id, project_id, datum (datum_van = datum_tot = één werkdag)
+periodes             — bouwvak en feestdagen (worden overgeslagen bij inplannen)
+prognose_projecten   — omschrijving, start_datum, duur_weken, status, aanneemsom, kleur
+                       operationeel_project_id (FK projecten) — gevuld na "in opdracht"
 ```
 
 ### Multi-tenancy en RLS
@@ -142,7 +154,7 @@ Voer de migraties in volgorde uit in de Supabase SQL Editor:
 ```
 supabase/migrations/001_initial_schema.sql
 ...
-supabase/migrations/009_rls_update_with_check.sql
+supabase/migrations/018_prognose_projecten.sql
 ```
 
 Daarna `supabase/seed.sql` voor de basis tenant-records.
@@ -152,6 +164,7 @@ Daarna `supabase/seed.sql` voor de basis tenant-records.
 ```bash
 SUPABASE_ACCESS_TOKEN=<token> npx supabase link --project-ref <project-ref>
 SUPABASE_ACCESS_TOKEN=<token> npx supabase functions deploy gebruikersbeheer
+SUPABASE_ACCESS_TOKEN=<token> npx supabase functions deploy prognose-in-opdracht
 ```
 
 ### 5. Starten
