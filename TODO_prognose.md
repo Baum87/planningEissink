@@ -176,6 +176,24 @@ Volgorde is bewust: database eerst, dan service, dan UI.
 
 ---
 
+## Morgen oppakken
+
+- [ ] **Vakanties en feestdagen tonen in prognose-tijdlijn**
+      Weekblokken met bouwvak of feestdagen visueel markeren (bijv. lichtgrijs of arcering in de weekkop).
+      Data komen uit de bestaande `periodes`-tabel. Overweeg: alleen bouwvakweken tonen, of ook losse feestdagen.
+
+- [ ] **Projecten zonder startdatum**
+      Momenteel vereist de prognose een `start_datum`. Projecten in een vroeg stadium hebben soms nog geen datum.
+      Optie: `start_datum` nullable maken + aparte sectie onderaan de tijdlijn voor "nog niet ingepland".
+      Vereist migratie (CHECK versoepelen) en UI-aanpassing in PrognoseModal en Prognose.jsx.
+
+- [ ] **Tab-herstel na paginaverversing (app-breed)**
+      Bij F5/refresh springt de app altijd terug naar de Planning-tab. Actieve tab opslaan in `localStorage`
+      en herstellen bij laden. Aanpassing in App.jsx (`useState` voor `activeTab` uitbreiden met localStorage-sync).
+      Geldt voor alle tabs, niet alleen Prognose.
+
+---
+
 ## Bewust uitgesteld
 
 - **Monteurs in cellen + totaalregel — Niveau 1 (aanbevolen)**

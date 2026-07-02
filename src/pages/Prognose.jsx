@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useAuth, kanPrognose } from '../context/AuthContext'
+import { useTenant } from '../context/TenantContext'
 import { usePrognoseProjecten } from '../hooks/queries'
 import { projKleur, minstGebruikteKleur } from '../lib/kleurenpalet'
 import { avatarKleur } from '../lib/avatar'
@@ -44,6 +45,7 @@ function overlapt(project, weekStart) {
 
 export default function Prognose() {
   const { rol } = useAuth()
+  const { tenant } = useTenant()
   const queryClient = useQueryClient()
 
   const [startDatum, setStartDatum] = useState(() => getMaandag(new Date()))
@@ -233,8 +235,20 @@ export default function Prognose() {
   return (
     <div className="flex flex-col gap-3">
 
+      {/* ── Print-only header ─────────────────────────────────────────────────── */}
+      <div className="hidden print:flex items-center gap-3 mb-2">
+        {tenant?.logo_url && (
+          <img src={tenant.logo_url} alt="" className="h-8 w-8 object-contain rounded" />
+        )}
+        <div>
+          <div className="text-xs text-gray-500">{tenant?.naam}</div>
+          <div className="text-sm font-semibold text-gray-900">Prognose planning</div>
+        </div>
+        <span className="ml-4 text-sm text-gray-500">{periodeLabel}</span>
+      </div>
+
       {/* ── Toolbar ───────────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-3 flex-wrap">
+      <div className="print:hidden flex items-center gap-3 flex-wrap">
 
         {/* PL filter — verschijnt zodra er projecten met een PL zijn */}
         {alleProjectleiders.length > 0 && (
@@ -266,7 +280,7 @@ export default function Prognose() {
           >›</button>
         </div>
 
-        <span className="text-sm font-semibold text-gray-700">{periodeLabel}</span>
+        <span className="print:hidden text-sm font-semibold text-gray-700">{periodeLabel}</span>
 
         <div className="print:hidden ml-auto flex items-center gap-4">
           {/* Toggle Potentieel */}
@@ -308,6 +322,19 @@ export default function Prognose() {
               />
             </button>
           </label>
+
+          <button
+            onClick={() => window.print()}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-colors"
+            title="Afdrukken op A0"
+          >
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 6V2h8v4" />
+              <rect x="2" y="6" width="12" height="7" rx="1.5" />
+              <path d="M4 10h8M4 13h5" />
+            </svg>
+            Afdrukken
+          </button>
 
           {kanWritten && (
             <button

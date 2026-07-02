@@ -19,11 +19,26 @@
   body {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+    min-width: 2600px;
   }
 
+  /* Verberg app-navigatie volledig */
+  header {
+    display: none !important;
+  }
+
+  /* Verwijder padding van main zodat grid vol breed kan */
+  main {
+    padding: 0 !important;
+    height: auto !important;
+  }
+
+  /* Opheffen van scroll-beperkingen */
   .prognose-scroll-container {
     overflow: visible !important;
     max-height: none !important;
+    width: max-content !important;
     border-radius: 0 !important;
+    border: none !important;
   }
 }
