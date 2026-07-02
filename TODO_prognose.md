@@ -146,6 +146,11 @@ Volgorde is bewust: database eerst, dan service, dan UI.
 
 ## V2 — na stabilisatie van v1
 
+- [ ] **Audit-trigger voor prognose_projecten (migratie 019)**
+      `create trigger audit_prognose_projecten after insert or update or delete on public.prognose_projecten for each row execute function log_wijziging();`
+      Functie bestaat al — één statement uitvoeren in Supabase SQL editor.
+
+
 - [ ] **Prognose leesbaar voor planners**
       Planner ziet Prognose-tab in read-only — geen knoppen, geen klikbare cellen.
       Relevant zodat planners weten wat er aankomt. RLS hoeft niet aan te passen (SELECT is al open voor alle rollen via tenant check). Alleen `kanPrognose(rol)` aanvullen met read-only variant.

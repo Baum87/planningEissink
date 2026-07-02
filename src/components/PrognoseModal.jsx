@@ -35,7 +35,7 @@ export default function PrognoseModal({
     function handleKey(e) { if (e.key === 'Escape') onClose() }
     document.addEventListener('keydown', handleKey)
     return () => document.removeEventListener('keydown', handleKey)
-  }, [onClose])
+  }, [])
 
   const [kiesKleur, setKiesKleur]               = useState(false)
   const [bezig, setBezig]                       = useState(false)
