@@ -322,23 +322,23 @@ export default function Prognose() {
       {/* ── Toolbar ───────────────────────────────────────────────────────────── */}
       <div className="print:hidden flex items-center gap-3 flex-wrap">
 
-        {/* Sortering */}
+        {/* Sortering — verborgen op mobiel */}
         <select
           value={sorteer}
           onChange={(e) => setSorteer(e.target.value)}
-          className="print:hidden px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors bg-white text-gray-600"
+          className="hidden sm:block print:hidden px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors bg-white text-gray-600"
         >
           <option value="pl">Sorteer: Projectleider</option>
           <option value="datum">Sorteer: Startdatum</option>
           <option value="bedrag">Sorteer: Aanneemsom</option>
         </select>
 
-        {/* PL filter — verschijnt zodra er projecten met een PL zijn */}
+        {/* PL filter — verborgen op mobiel */}
         {alleProjectleiders.length > 0 && (
           <select
             value={filterPl}
             onChange={(e) => setFilterPl(e.target.value)}
-            className="print:hidden px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors bg-white text-gray-600"
+            className="hidden sm:block print:hidden px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors bg-white text-gray-600"
           >
             <option value="">Alle PL</option>
             {alleProjectleiders.map((pl) => (
@@ -351,7 +351,7 @@ export default function Prognose() {
         <div className="print:hidden flex items-center gap-0.5">
           <button
             onClick={() => navigeer(-NAV_STAP)}
-            className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors text-lg leading-none"
+            className="w-11 h-11 sm:w-8 sm:h-8 flex items-center justify-center text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors text-lg leading-none"
           >‹</button>
           <button
             onClick={() => setStartDatum(getMaandag(new Date()))}
@@ -359,15 +359,15 @@ export default function Prognose() {
           >Vandaag</button>
           <button
             onClick={() => navigeer(NAV_STAP)}
-            className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors text-lg leading-none"
+            className="w-11 h-11 sm:w-8 sm:h-8 flex items-center justify-center text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors text-lg leading-none"
           >›</button>
         </div>
 
         <span className="print:hidden text-sm font-semibold text-gray-700">{periodeLabel}</span>
 
         <div className="print:hidden ml-auto flex items-center gap-4">
-          {/* Toggle Potentieel */}
-          <label className="flex items-center gap-2 cursor-pointer select-none">
+          {/* Toggle Potentieel — verborgen op mobiel */}
+          <label className="hidden sm:flex items-center gap-2 cursor-pointer select-none">
             <span className="text-sm text-gray-500">Potentieel</span>
             <button
               type="button"
@@ -386,8 +386,8 @@ export default function Prognose() {
             </button>
           </label>
 
-          {/* Toggle Weekbedrag */}
-          <label className="flex items-center gap-2 cursor-pointer select-none">
+          {/* Toggle Weekbedrag — verborgen op mobiel */}
+          <label className="hidden sm:flex items-center gap-2 cursor-pointer select-none">
             <span className="text-sm text-gray-500">Weekbedrag</span>
             <button
               type="button"
@@ -406,9 +406,10 @@ export default function Prognose() {
             </button>
           </label>
 
+          {/* Afdrukken — verborgen op mobiel */}
           <button
             onClick={() => window.print()}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-colors"
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-colors"
             title="Afdrukken op A0"
           >
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -551,7 +552,7 @@ export default function Prognose() {
                   {/* Aanneemsom + duur chip */}
                   <div className="flex flex-col items-end shrink-0 gap-0.5">
                     {project.aanneemsom && (
-                      <span className="text-xs font-medium text-gray-600">
+                      <span className="hidden sm:inline text-xs font-medium text-gray-600">
                         {compactBedrag(Number(project.aanneemsom))}
                       </span>
                     )}
