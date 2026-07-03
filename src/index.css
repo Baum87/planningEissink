@@ -19,7 +19,7 @@
   body {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
-    min-width: 2600px;
+    min-width: 4000px;
   }
 
   /* Verberg app-navigatie volledig */
@@ -27,9 +27,9 @@
     display: none !important;
   }
 
-  /* Verwijder padding van main zodat grid vol breed kan */
+  /* Witruimte rondom de afdruk */
   main {
-    padding: 0 !important;
+    padding: 12mm !important;
     height: auto !important;
   }
 

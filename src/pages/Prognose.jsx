@@ -18,7 +18,7 @@ import PrognoseModal from '../components/PrognoseModal'
 
 const NAAM_B   = 280
 const WEEK_B   = 85
-const WEKEN    = 36
+const WEKEN    = 42
 const ROW_H    = 48
 const HEADER_H = 40
 const NAV_STAP = 12
