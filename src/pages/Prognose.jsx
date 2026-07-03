@@ -134,8 +134,8 @@ export default function Prognose() {
 
   const weekInfo = useMemo(() =>
     weken.map((weekStart) => {
-      const bouwvak   = periodes.filter(p => p.type === 'bouwvak'   && weekOverlaptPeriode(weekStart, p))
-      const feestdagen = periodes.filter(p => p.type !== 'bouwvak'  && weekOverlaptPeriode(weekStart, p))
+      const bouwvak    = periodes.filter(p => p.blokkeer === false && weekOverlaptPeriode(weekStart, p))
+      const feestdagen = periodes.filter(p => p.blokkeer !== false && weekOverlaptPeriode(weekStart, p))
       return { isBouwvak: bouwvak.length > 0, feestdagen }
     }),
     [weken, periodes]
@@ -143,7 +143,7 @@ export default function Prognose() {
 
   const bouwvakWeekenSet = useMemo(() => {
     const set = new Set()
-    periodes.filter(p => p.type === 'bouwvak').forEach(p => {
+    periodes.filter(p => p.blokkeer === false).forEach(p => {
       const cur = getMaandag(new Date(p.datum_van + 'T00:00:00'))
       const tot = new Date(p.datum_tot + 'T00:00:00')
       while (cur <= tot) { set.add(naarStr(cur)); cur.setDate(cur.getDate() + 7) }
