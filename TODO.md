@@ -87,6 +87,32 @@ Bijgehouden naast CONTEXT.md — technische context staat daar.
 - [ ] **ERP-koppeling via extern_id**
       Webhook patroon via Edge Functions. extern_id staat al in datamodel.
 
+### Prognose Planning
+
+- [ ] **Prognose leesbaar voor planners**
+      Planner ziet Prognose-tab in read-only — geen knoppen, geen klikbare cellen.
+      RLS hoeft niet aan te passen. Alleen `kanPrognose(rol)` aanvullen met read-only variant.
+
+- [ ] **Monteurs in cellen + totaalregel — Niveau 1**
+      `bezetting_gemiddeld` bestaat al in `prognose_projecten`. Invoerveld in PrognoseModal,
+      getal tonen in balkcellen, totaalregel sommeren per week. Geen migratie nodig.
+
+- [ ] **Monteurs in cellen + totaalregel — Niveau 2**
+      Nieuwe `prognose_bezetting` subtabel: per project per week een monteurs_aantal.
+      Vereist migratie, RLS, service en inline grid-editing per cel.
+
+- [ ] **Synchronisatie prognose ↔ operationeel project na koppeling**
+
+- [ ] **Margeberekening en kostprijs per mandag**
+
+- [ ] **Vergelijking raming vs. werkelijke planning**
+
+- [ ] **Automatische gat-signalering**
+
+- [ ] **Referentielijn beschikbare capaciteit**
+
+- [ ] **Mobiele weergave Prognose** — volwaardige lijstweergave op mobiel als aparte sprint
+
 ---
 
 ## Bewust buiten scope (v1)
