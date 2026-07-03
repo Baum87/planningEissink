@@ -79,6 +79,7 @@ export default function Prognose() {
   const [toonPotentieel, setToonPotentieel] = useState(true)
   const [toonWeekbedrag, setToonWeekbedrag] = useState(true)
   const [filterPl, setFilterPl] = useState('')
+  const [sorteer, setSorteer] = useState('pl')
   const [modal, setModal] = useState(null)
   const [drag, setDrag] = useState(null) // { project, startX, startScrollLeft, weekDelta }
   const [editDuur, setEditDuur] = useState(null) // { projectId, waarde }
@@ -122,15 +123,31 @@ export default function Prognose() {
       ? projecten
       : projecten.filter((p) => p.status !== 'potentieel')
     if (filterPl) gefilterd = gefilterd.filter((p) => p.projectleider_id === filterPl)
+
     return [...gefilterd].sort((a, b) => {
+      if (sorteer === 'datum') {
+        // Zonder startdatum onderaan
+        if (!!a.start_datum !== !!b.start_datum) return a.start_datum ? -1 : 1
+        if (a.start_datum && b.start_datum && a.start_datum !== b.start_datum)
+          return a.start_datum.localeCompare(b.start_datum)
+        return a.omschrijving.localeCompare(b.omschrijving)
+      }
+      if (sorteer === 'bedrag') {
+        // Zonder aanneemsom onderaan
+        if (!!a.aanneemsom !== !!b.aanneemsom) return a.aanneemsom ? -1 : 1
+        if (a.aanneemsom !== b.aanneemsom) return Number(b.aanneemsom) - Number(a.aanneemsom)
+        return a.omschrijving.localeCompare(b.omschrijving)
+      }
+      // 'pl' (default): PL afkorting → startdatum vroeg→laat (zonder onderaan per PL) → omschrijving
       const afkA = a.projectleider?.afkorting ?? 'zzz'
       const afkB = b.projectleider?.afkorting ?? 'zzz'
       if (afkA !== afkB) return afkA.localeCompare(afkB)
-      // Binnen zelfde PL: projecten met startdatum voor projecten zonder
       if (!!a.start_datum !== !!b.start_datum) return a.start_datum ? -1 : 1
+      if (a.start_datum && b.start_datum && a.start_datum !== b.start_datum)
+        return a.start_datum.localeCompare(b.start_datum)
       return a.omschrijving.localeCompare(b.omschrijving)
     })
-  }, [projecten, toonPotentieel, filterPl])
+  }, [projecten, toonPotentieel, filterPl, sorteer])
 
   const weekInfo = useMemo(() =>
     weken.map((weekStart) => {
@@ -304,6 +321,17 @@ export default function Prognose() {
 
       {/* ── Toolbar ───────────────────────────────────────────────────────────── */}
       <div className="print:hidden flex items-center gap-3 flex-wrap">
+
+        {/* Sortering */}
+        <select
+          value={sorteer}
+          onChange={(e) => setSorteer(e.target.value)}
+          className="print:hidden px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors bg-white text-gray-600"
+        >
+          <option value="pl">Sorteer: Projectleider</option>
+          <option value="datum">Sorteer: Startdatum</option>
+          <option value="bedrag">Sorteer: Aanneemsom</option>
+        </select>
 
         {/* PL filter — verschijnt zodra er projecten met een PL zijn */}
         {alleProjectleiders.length > 0 && (
