@@ -75,7 +75,12 @@ export default function Prognose() {
   const { tenant } = useTenant()
   const queryClient = useQueryClient()
 
-  const [startDatum, setStartDatum] = useState(() => getMaandag(new Date()))
+  const huidigeMaandag = useMemo(() => naarStr(getMaandag(new Date())), [])
+  const [startDatum, setStartDatum] = useState(() => {
+    const d = getMaandag(new Date())
+    d.setDate(d.getDate() - 14)
+    return d
+  })
   const [toonPotentieel, setToonPotentieel] = useState(true)
   const [toonWeekbedrag, setToonWeekbedrag] = useState(true)
   const [filterPl, setFilterPl] = useState('')
@@ -354,7 +359,7 @@ export default function Prognose() {
             className="w-11 h-11 sm:w-8 sm:h-8 flex items-center justify-center text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors text-lg leading-none"
           >‹</button>
           <button
-            onClick={() => setStartDatum(getMaandag(new Date()))}
+            onClick={() => { const d = getMaandag(new Date()); d.setDate(d.getDate() - 14); setStartDatum(d) }}
             className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
           >Vandaag</button>
           <button
@@ -456,25 +461,32 @@ export default function Prognose() {
                   key={i}
                   className={`flex flex-col items-center justify-center border-l border-gray-100 shrink-0 w-[68px] sm:w-[85px] ${info?.isBouwvak ? 'bg-amber-100' : ''}`}
                 >
-                  {info?.isBouwvak ? (
-                    <>
-                      <span className="text-[10px] text-amber-700 font-medium leading-none uppercase tracking-wide">Bouwvak</span>
-                      <span className="text-[11px] font-semibold text-gray-600 leading-none mt-0.5">Wk {isoWeek(d)}</span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="text-[10px] text-gray-400 leading-none">{d.getFullYear()}</span>
-                      <span className="text-[11px] font-semibold text-gray-600 leading-none mt-0.5 flex items-center gap-0.5">
-                        Wk {isoWeek(d)}
-                        {info?.feestdagen.length > 0 && (
-                          <span
-                            title={info.feestdagen.map(f => f.naam).join(', ')}
-                            className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0"
-                          />
-                        )}
-                      </span>
-                    </>
-                  )}
+                  {(() => {
+                    const isHuidigeWeek = naarStr(d) === huidigeMaandag
+                    return info?.isBouwvak ? (
+                      <>
+                        <span className="text-[10px] text-amber-700 font-medium leading-none uppercase tracking-wide">Bouwvak</span>
+                        <span className={`text-[11px] font-semibold leading-none mt-0.5 flex items-center gap-0.5 ${isHuidigeWeek ? 'text-blue-600' : 'text-gray-600'}`}>
+                          Wk {isoWeek(d)}
+                          {isHuidigeWeek && <span className="w-1 h-1 rounded-full bg-blue-500 shrink-0" />}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-[10px] text-gray-400 leading-none">{d.getFullYear()}</span>
+                        <span className={`text-[11px] font-semibold leading-none mt-0.5 flex items-center gap-0.5 ${isHuidigeWeek ? 'text-blue-600' : 'text-gray-600'}`}>
+                          Wk {isoWeek(d)}
+                          {isHuidigeWeek && <span className="w-1 h-1 rounded-full bg-blue-500 shrink-0" />}
+                          {info?.feestdagen.length > 0 && (
+                            <span
+                              title={info.feestdagen.map(f => f.naam).join(', ')}
+                              className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0"
+                            />
+                          )}
+                        </span>
+                      </>
+                    )
+                  })()}
                 </div>
               )
             })}
