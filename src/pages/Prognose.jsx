@@ -445,8 +445,7 @@ export default function Prognose() {
             style={{ height: HEADER_H }}
           >
             <div
-              className="sticky left-0 z-30 bg-gray-50 border-r border-gray-100 shrink-0 flex items-center px-4"
-              style={{ width: NAAM_B }}
+              className="sticky left-0 z-30 bg-gray-50 border-r border-gray-100 shrink-0 flex items-center px-4 w-36 sm:w-[280px]"
             >
               <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Project</span>
             </div>
@@ -522,12 +521,11 @@ export default function Prognose() {
               >
                 {/* Linker infocolom */}
                 <div
-                  className="sticky left-0 z-10 bg-white group-hover:bg-gray-50 border-r border-gray-100 flex items-center gap-2 px-3 shrink-0 select-none"
-                  style={{ width: NAAM_B }}
+                  className="sticky left-0 z-10 bg-white group-hover:bg-gray-50 border-r border-gray-100 flex items-center gap-2 px-3 shrink-0 select-none w-36 sm:w-[280px]"
                 >
                   {/* Drag + modal zone: avatar + naam */}
                   <div
-                    className="flex items-center gap-2 flex-1 min-w-0"
+                    className="flex items-center gap-1.5 flex-1 min-w-0"
                     style={{ cursor: kanWritten ? (isDragging ? 'grabbing' : 'pointer') : 'default' }}
                     onPointerDown={(e) => kanWritten && handleBarPointerDown(e, project)}
                     onClick={() => {
@@ -535,24 +533,27 @@ export default function Prognose() {
                       kanWritten && openBewerk(project)
                     }}
                   >
+                    {/* Avatar: cirkel op desktop, plain tekst op mobiel */}
                     <div
-                      className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-semibold shrink-0"
+                      className="hidden sm:flex w-7 h-7 rounded-full items-center justify-center text-[10px] font-semibold shrink-0"
                       style={{ backgroundColor: bg, color: fg }}
                     >
                       {afk}
                     </div>
+                    <span className="sm:hidden text-[10px] text-gray-400 shrink-0">{afk}</span>
+
                     <div className="flex-1 min-w-0">
                       <div className="text-xs font-semibold text-gray-900 truncate">{project.omschrijving}</div>
                       {project.opdrachtgever && (
-                        <div className="text-[10px] text-gray-400 truncate">{project.opdrachtgever}</div>
+                        <div className="hidden sm:block text-[10px] text-gray-400 truncate">{project.opdrachtgever}</div>
                       )}
                     </div>
                   </div>
 
-                  {/* Aanneemsom + duur chip */}
-                  <div className="flex flex-col items-end shrink-0 gap-0.5">
+                  {/* Aanneemsom + duur chip — verborgen op mobiel */}
+                  <div className="hidden sm:flex flex-col items-end shrink-0 gap-0.5">
                     {project.aanneemsom && (
-                      <span className="hidden sm:inline text-xs font-medium text-gray-600">
+                      <span className="text-xs font-medium text-gray-600">
                         {compactBedrag(Number(project.aanneemsom))}
                       </span>
                     )}
@@ -636,10 +637,9 @@ export default function Prognose() {
               style={{ height: ROW_H }}
             >
               <div
-                className="sticky left-0 bg-gray-50 border-r border-gray-100 flex items-center px-3 shrink-0"
-                style={{ width: NAAM_B }}
+                className="sticky left-0 bg-gray-50 border-r border-gray-100 flex items-center px-3 shrink-0 w-36 sm:w-[280px]"
               >
-                <span className="text-xs font-semibold text-gray-500">Aanneemsom / week</span>
+                <span className="text-xs font-semibold text-gray-500 hidden sm:inline">Aanneemsom / week</span>
               </div>
               {totaalPerWeek.map((som, i) => (
                 <div
