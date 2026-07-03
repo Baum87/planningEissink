@@ -178,14 +178,17 @@ Volgorde is bewust: database eerst, dan service, dan UI.
 
 ## Morgen oppakken
 
-- [ ] **Vakanties en feestdagen tonen in prognose-tijdlijn**
-      Weekblokken met bouwvak of feestdagen visueel markeren (bijv. lichtgrijs of arcering in de weekkop).
-      Data komen uit de bestaande `periodes`-tabel. Overweeg: alleen bouwvakweken tonen, of ook losse feestdagen.
+- [x] **Vakanties en feestdagen tonen in prognose-tijdlijn**
+      Bouwvak: bg-amber-100 in weekkop + bg-amber-50 in cellen, label "BOUWVAK". Feestdagen: blauw stipje + tooltip.
+      Stijl consistent met Planning-sectie. Migratie 021 uitgevoerd op productie.
 
-- [ ] **Projecten zonder startdatum**
-      Momenteel vereist de prognose een `start_datum`. Projecten in een vroeg stadium hebben soms nog geen datum.
-      Optie: `start_datum` nullable maken + aparte sectie onderaan de tijdlijn voor "nog niet ingepland".
-      Vereist migratie (CHECK versoepelen) en UI-aanpassing in PrognoseModal en Prognose.jsx.
+- [x] **Per project: loopt door in bouwvak (toggle)**
+      Toggle in PrognoseModal. Toggle uit (default): duur_weken = werkweken, balk verdwijnt in bouwvak, einddatum schuift op.
+      Toggle aan: kalenderweken, balk doorlopend. Drag snapt automatisch naar week na bouwvak. Migratie 021 uitgevoerd.
+
+- [x] **Projecten zonder startdatum**
+      start_datum en duur_weken optioneel (migratie 022). Projecten zonder datum verschijnen als rij zonder balk,
+      gesorteerd op PL. Datum wissen in modal werkt. Migraties 021 + 022 uitgevoerd op productie.
 
 - [ ] **Tab-herstel na paginaverversing (app-breed)**
       Bij F5/refresh springt de app altijd terug naar de Planning-tab. Actieve tab opslaan in `localStorage`
