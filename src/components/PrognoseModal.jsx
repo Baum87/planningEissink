@@ -38,7 +38,7 @@ export default function PrognoseModal({
   const [aanneemsom, setAanneemsom]           = useState(
     project?.aanneemsom != null ? String(Math.round(Number(project.aanneemsom))) : ''
   )
-  const [startD, setStartD]     = useState(project?.start_datum ?? startDatum ?? vandaagMaandag())
+  const [startD, setStartD]       = useState(project?.start_datum ?? startDatum ?? '')
   const [duurWeken, setDuurWeken] = useState(project?.duur_weken != null ? String(project.duur_weken) : '')
   const [kleur, setKleur]         = useState(project?.kleur ?? autoKleur)
   const [doorBouwvak, setDoorBouwvak] = useState(project?.door_bouwvak ?? false)
@@ -64,7 +64,7 @@ export default function PrognoseModal({
   const [inOpdrachtConfirm, setInOpdrachtConfirm] = useState(false)
 
   function handleStartDatum(val) {
-    if (!val) return
+    if (!val) { setStartD(''); return }
     setStartD(naarStr(getMaandag(new Date(val + 'T00:00:00'))))
   }
 
@@ -93,7 +93,7 @@ export default function PrognoseModal({
   async function handleOpslaan(e) {
     e.preventDefault()
     if (!omschrijving.trim()) { setFout('Omschrijving is verplicht'); return }
-    if (!duurWeken || Number(duurWeken) < 1) { setFout('Duur moet minimaal 1 week zijn'); return }
+    if (duurWeken && Number(duurWeken) < 1) { setFout('Duur moet minimaal 1 week zijn'); return }
     setBezig(true); setFout(null)
     const velden = {
       omschrijving:     omschrijving.trim(),
@@ -102,8 +102,8 @@ export default function PrognoseModal({
       projectleider_id: projectleiderId || null,
       status,
       aanneemsom:       aanneemsom !== '' ? Number(aanneemsom) : null,
-      start_datum:      startD,
-      duur_weken:       Number(duurWeken),
+      start_datum:      startD || null,
+      duur_weken:       duurWeken ? Number(duurWeken) : null,
       kleur,
       door_bouwvak:     doorBouwvak,
     }
@@ -286,7 +286,7 @@ export default function PrognoseModal({
           {/* Startweek + Duur — preview op eigen regel zodat inputs altijd gelijk staan */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-500">Startweek</label>
+              <label className="block text-xs font-medium text-gray-500">Startweek <span className="font-normal text-gray-400">(optioneel)</span></label>
               <p className="text-[10px] text-gray-400 mb-1.5">{startWeekLabel}</p>
               <input
                 type="date"
@@ -296,7 +296,7 @@ export default function PrognoseModal({
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-500">Duur (weken)</label>
+              <label className="block text-xs font-medium text-gray-500">Duur (weken) <span className="font-normal text-gray-400">(optioneel)</span></label>
               <p className="text-[10px] text-gray-400 mb-1.5">t/m {eindWeekLabel}</p>
               <input
                 type="number"

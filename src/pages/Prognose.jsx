@@ -42,6 +42,7 @@ function weekOverlaptPeriode(weekStart, periode) {
 }
 
 function overlapt(project, weekStart, bouwvakSet = new Set()) {
+  if (!project.start_datum || !project.duur_weken) return false
   const pStart = new Date(project.start_datum + 'T00:00:00')
   const wEind  = new Date(weekStart)
   wEind.setDate(wEind.getDate() + 7)
@@ -125,6 +126,8 @@ export default function Prognose() {
       const afkA = a.projectleider?.afkorting ?? 'zzz'
       const afkB = b.projectleider?.afkorting ?? 'zzz'
       if (afkA !== afkB) return afkA.localeCompare(afkB)
+      // Binnen zelfde PL: projecten met startdatum voor projecten zonder
+      if (!!a.start_datum !== !!b.start_datum) return a.start_datum ? -1 : 1
       return a.omschrijving.localeCompare(b.omschrijving)
     })
   }, [projecten, toonPotentieel, filterPl])
@@ -468,7 +471,7 @@ export default function Prognose() {
             const kleur = projKleur(project)
 
             const isDragging = drag?.project.id === project.id
-            const effectiefProject = isDragging && drag.weekDelta !== 0
+            const effectiefProject = isDragging && drag.weekDelta !== 0 && project.start_datum
               ? (() => {
                   const d = new Date(project.start_datum + 'T00:00:00')
                   d.setDate(d.getDate() + drag.weekDelta * 7)
@@ -555,7 +558,7 @@ export default function Prognose() {
                             : 'border-transparent text-gray-400 cursor-default'
                         }`}
                       >
-                        {project.duur_weken}w
+                        {project.duur_weken != null ? `${project.duur_weken}w` : '—'}
                       </button>
                     )}
                   </div>

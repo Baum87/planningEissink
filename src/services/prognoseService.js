@@ -8,9 +8,8 @@ export async function getPrognoseProjecten(van, tot) {
     .select(PROJECTLEIDER_SELECT)
     .order('start_datum', { ascending: true })
 
-  // Gooit projecten weg die sowieso na het zichtbare venster beginnen.
-  // Precieze overlap-check (start_datum + duur_weken * 7 > van) doet de aanroeper.
-  if (tot) query = query.lte('start_datum', tot)
+  // Projecten zonder startdatum altijd ophalen; projecten met startdatum alleen als ze in/voor het venster vallen.
+  if (tot) query = query.or(`start_datum.lte.${tot},start_datum.is.null`)
 
   const { data, error } = await query
   if (error) throw error
