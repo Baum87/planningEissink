@@ -1,5 +1,4 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
-import { KLEURENPALET } from '../lib/kleurenpalet'
 import { getMaandag, naarStr, isoWeek } from '../lib/datum'
 import { useProfielen, usePeriodes } from '../hooks/queries'
 
@@ -57,7 +56,6 @@ export default function PrognoseModal({
     if (pl?.avatar_kleur) setKleur(pl.avatar_kleur)
   }, [projectleiderId])
 
-  const [kiesKleur, setKiesKleur]               = useState(false)
   const [bezig, setBezig]                       = useState(false)
   const [fout, setFout]                         = useState(null)
   const [verwijderConfirm, setVerwijderConfirm] = useState(false)
@@ -323,38 +321,6 @@ export default function PrognoseModal({
               <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all duration-200 ${doorBouwvak ? 'left-[18px]' : 'left-0.5'}`} />
             </button>
           </label>
-
-          {/* Kleur — chip toont huidige kleur, "Wijzig" klapt swatches uit */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-xs font-medium text-gray-500">Kleur</label>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded-full border border-gray-200" style={{ backgroundColor: kleur }} />
-                <button
-                  type="button"
-                  onClick={() => setKiesKleur((v) => !v)}
-                  className="text-xs text-gray-400 hover:text-gray-700 transition-colors"
-                >
-                  {kiesKleur ? 'Verberg' : 'Wijzig'}
-                </button>
-              </div>
-            </div>
-            {kiesKleur && (
-              <div className="flex flex-wrap gap-1.5">
-                {KLEURENPALET.map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => setKleur(c)}
-                    className={`w-5 h-5 rounded-full transition-transform ${
-                      kleur === c ? 'ring-2 ring-offset-1 ring-gray-500 scale-110' : ''
-                    }`}
-                    style={{ backgroundColor: c }}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
 
           {/* Fout */}
           {fout && (
