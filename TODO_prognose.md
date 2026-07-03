@@ -190,11 +190,6 @@ Volgorde is bewust: database eerst, dan service, dan UI.
       start_datum en duur_weken optioneel (migratie 022). Projecten zonder datum verschijnen als rij zonder balk,
       gesorteerd op PL. Datum wissen in modal werkt. Migraties 021 + 022 uitgevoerd op productie.
 
-- [ ] **Tab-herstel na paginaverversing (app-breed)**
-      Bij F5/refresh springt de app altijd terug naar de Planning-tab. Actieve tab opslaan in `localStorage`
-      en herstellen bij laden. Aanpassing in App.jsx (`useState` voor `activeTab` uitbreiden met localStorage-sync).
-      Geldt voor alle tabs, niet alleen Prognose.
-
 ---
 
 ## Bewust uitgesteld
@@ -212,15 +207,5 @@ Volgorde is bewust: database eerst, dan service, dan UI.
 - Margeberekening, kostprijs per mandag
 - Vergelijking raming vs. werkelijke planning
 - Automatische gat-signalering
-- **Export — Optie 1: Browser print (geïmplementeerd)**
-  `@media print` CSS: toolbar verborgen, scrollcontainer opgeheven, A0 liggend, kleuren bewaard.
-
-- **Export — Optie 2: html2canvas + jsPDF**
-  Downloadknop genereert PDF-bestand zonder printdialoog. Tekst wordt raster (niet doorzoekbaar).
-  Geschikt als gebruiker liever een bestand download dan print.
-
-- **Export — Optie 3: @react-pdf/renderer**
-  Tijdlijn herbouwen als vector-PDF. Tekst doorzoekbaar, professioneel resultaat.
-  Significant werk — alleen zinvol bij behoefte aan merkgebonden of archiveerbare exports.
 - Referentielijn beschikbare capaciteit
 - Mobiele weergave Prognose
