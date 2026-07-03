@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { KLEURENPALET } from '../lib/kleurenpalet'
 import { getMaandag, naarStr, isoWeek } from '../lib/datum'
-import { useProfielen } from '../hooks/queries'
+import { useProfielen, usePeriodes } from '../hooks/queries'
 
 function vandaagMaandag() {
   return naarStr(getMaandag(new Date()))
@@ -18,6 +18,17 @@ export default function PrognoseModal({
 }) {
   const isBewerk = !!project
   const { data: profielen = [] } = useProfielen()
+  const { data: periodes = [] } = usePeriodes()
+
+  const bouwvakSet = useMemo(() => {
+    const set = new Set()
+    periodes.filter(p => p.type === 'bouwvak').forEach(p => {
+      const cur = getMaandag(new Date(p.datum_van + 'T00:00:00'))
+      const tot = new Date(p.datum_tot + 'T00:00:00')
+      while (cur <= tot) { set.add(naarStr(cur)); cur.setDate(cur.getDate() + 7) }
+    })
+    return set
+  }, [periodes])
 
   const [omschrijving, setOmschrijving]       = useState(project?.omschrijving ?? '')
   const [projectnummer, setProjectnummer]     = useState(project?.projectnummer ?? '')
@@ -29,7 +40,8 @@ export default function PrognoseModal({
   )
   const [startD, setStartD]     = useState(project?.start_datum ?? startDatum ?? vandaagMaandag())
   const [duurWeken, setDuurWeken] = useState(project?.duur_weken != null ? String(project.duur_weken) : '')
-  const [kleur, setKleur]       = useState(project?.kleur ?? autoKleur)
+  const [kleur, setKleur]         = useState(project?.kleur ?? autoKleur)
+  const [doorBouwvak, setDoorBouwvak] = useState(project?.door_bouwvak ?? false)
 
   useEffect(() => {
     function handleKey(e) { if (e.key === 'Escape') onClose() }
@@ -61,11 +73,22 @@ export default function PrognoseModal({
     : '—'
 
   const eindWeekLabel = useMemo(() => {
-    if (!startD || !duurWeken) return '—'
-    const d = new Date(startD + 'T00:00:00')
-    d.setDate(d.getDate() + Number(duurWeken) * 7 - 1)
-    return `Wk ${isoWeek(d)} · ${d.getFullYear()}`
-  }, [startD, duurWeken])
+    const duur = Number(duurWeken)
+    if (!startD || !duur || duur < 1) return '—'
+    if (doorBouwvak) {
+      const d = new Date(startD + 'T00:00:00')
+      d.setDate(d.getDate() + duur * 7 - 1)
+      return `Wk ${isoWeek(d)} · ${d.getFullYear()}`
+    }
+    // Werkweken: tel duur weken over, sla bouwvak-weken over
+    let teller = 0
+    const cur = getMaandag(new Date(startD + 'T00:00:00'))
+    while (teller < duur) {
+      if (!bouwvakSet.has(naarStr(cur))) teller++
+      if (teller < duur) cur.setDate(cur.getDate() + 7)
+    }
+    return `Wk ${isoWeek(cur)} · ${cur.getFullYear()}`
+  }, [startD, duurWeken, doorBouwvak, bouwvakSet])
 
   async function handleOpslaan(e) {
     e.preventDefault()
@@ -82,6 +105,7 @@ export default function PrognoseModal({
       start_datum:      startD,
       duur_weken:       Number(duurWeken),
       kleur,
+      door_bouwvak:     doorBouwvak,
     }
     try {
       await onSave(velden)
@@ -285,6 +309,20 @@ export default function PrognoseModal({
               />
             </div>
           </div>
+
+          {/* Bouwvak toggle */}
+          <label className="flex items-center justify-between cursor-pointer select-none">
+            <span className="text-xs font-medium text-gray-500">Loopt door in bouwvak</span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={doorBouwvak}
+              onClick={() => setDoorBouwvak(v => !v)}
+              className={`relative w-9 h-5 rounded-full transition-colors focus:outline-none ${doorBouwvak ? 'bg-gray-800' : 'bg-gray-200'}`}
+            >
+              <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all duration-200 ${doorBouwvak ? 'left-[18px]' : 'left-0.5'}`} />
+            </button>
+          </label>
 
           {/* Kleur — chip toont huidige kleur, "Wijzig" klapt swatches uit */}
           <div>

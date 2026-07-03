@@ -41,13 +41,30 @@ function weekOverlaptPeriode(weekStart, periode) {
   return pVan < wEind && pTot > weekStart
 }
 
-function overlapt(project, weekStart) {
+function overlapt(project, weekStart, bouwvakSet = new Set()) {
   const pStart = new Date(project.start_datum + 'T00:00:00')
-  const pEind  = new Date(pStart)
-  pEind.setDate(pEind.getDate() + project.duur_weken * 7)
-  const wEind = new Date(weekStart)
+  const wEind  = new Date(weekStart)
   wEind.setDate(wEind.getDate() + 7)
-  return pStart < wEind && pEind > weekStart
+  if (pStart >= wEind) return false
+
+  if (project.door_bouwvak) {
+    const pEind = new Date(pStart)
+    pEind.setDate(pEind.getDate() + project.duur_weken * 7)
+    return pEind > weekStart
+  }
+
+  // Werkweken: geen balk in bouwvak-week
+  const weekStr = naarStr(weekStart)
+  if (bouwvakSet.has(weekStr)) return false
+
+  // Tel niet-bouwvak-weken van projectstart tot deze week
+  let werkWekenVoor = 0
+  const cur = new Date(pStart)
+  while (naarStr(cur) !== weekStr) {
+    if (!bouwvakSet.has(naarStr(cur))) werkWekenVoor++
+    cur.setDate(cur.getDate() + 7)
+  }
+  return werkWekenVoor < project.duur_weken
 }
 
 // ─── Prognose ─────────────────────────────────────────────────────────────────
@@ -121,14 +138,24 @@ export default function Prognose() {
     [weken, periodes]
   )
 
+  const bouwvakWeekenSet = useMemo(() => {
+    const set = new Set()
+    periodes.filter(p => p.type === 'bouwvak').forEach(p => {
+      const cur = getMaandag(new Date(p.datum_van + 'T00:00:00'))
+      const tot = new Date(p.datum_tot + 'T00:00:00')
+      while (cur <= tot) { set.add(naarStr(cur)); cur.setDate(cur.getDate() + 7) }
+    })
+    return set
+  }, [periodes])
+
   const totaalPerWeek = useMemo(() =>
     weken.map((wk) =>
       rijen.reduce((som, p) => {
-        if (!p.aanneemsom || !overlapt(p, wk)) return som
+        if (!p.aanneemsom || !overlapt(p, wk, bouwvakWeekenSet)) return som
         return som + Number(p.aanneemsom) / p.duur_weken
       }, 0)
     ),
-    [rijen, weken]
+    [rijen, weken, bouwvakWeekenSet]
   )
 
   function navigeer(delta) {
@@ -167,9 +194,15 @@ export default function Prognose() {
         wasDragged.current = true
         const d = new Date(drag.project.start_datum + 'T00:00:00')
         d.setDate(d.getDate() + drag.weekDelta * 7)
-        const nieuweStart = naarStr(getMaandag(d))
+        const nieuweStartDate = getMaandag(d)
+        // Snap voorbij bouwvak als project niet doorloopt
+        if (!drag.project.door_bouwvak) {
+          while (bouwvakWeekenSet.has(naarStr(nieuweStartDate))) {
+            nieuweStartDate.setDate(nieuweStartDate.getDate() + 7)
+          }
+        }
         try {
-          await updatePrognoseProject(drag.project.id, { start_datum: nieuweStart })
+          await updatePrognoseProject(drag.project.id, { start_datum: naarStr(nieuweStartDate) })
           await queryClient.invalidateQueries({ queryKey: ['prognose-projecten'] })
         } catch {
           // project springt terug naar originele positie via query invalidation
@@ -190,7 +223,7 @@ export default function Prognose() {
       window.removeEventListener('pointerup', handlePointerUp)
       window.removeEventListener('keydown', handleKeyDown)
     }
-  }, [drag])
+  }, [drag, bouwvakWeekenSet])
 
   async function handleDuurOpslaan() {
     if (!editDuur) return
@@ -439,7 +472,13 @@ export default function Prognose() {
               ? (() => {
                   const d = new Date(project.start_datum + 'T00:00:00')
                   d.setDate(d.getDate() + drag.weekDelta * 7)
-                  return { ...project, start_datum: naarStr(getMaandag(d)) }
+                  const snapDate = getMaandag(d)
+                  if (!project.door_bouwvak) {
+                    while (bouwvakWeekenSet.has(naarStr(snapDate))) {
+                      snapDate.setDate(snapDate.getDate() + 7)
+                    }
+                  }
+                  return { ...project, start_datum: naarStr(snapDate) }
                 })()
               : project
 
@@ -451,7 +490,7 @@ export default function Prognose() {
               >
                 {/* Linker infocolom */}
                 <div
-                  className="sticky left-0 z-10 bg-white group-hover:bg-gray-50/50 border-r border-gray-100 flex items-center gap-2 px-3 shrink-0 select-none"
+                  className="sticky left-0 z-10 bg-white group-hover:bg-gray-50 border-r border-gray-100 flex items-center gap-2 px-3 shrink-0 select-none"
                   style={{ width: NAAM_B }}
                 >
                   {/* Drag + modal zone: avatar + naam */}
@@ -524,7 +563,7 @@ export default function Prognose() {
 
                 {/* Week cellen */}
                 {weken.map((weekStart, i) => {
-                  const raakt = overlapt(effectiefProject, weekStart)
+                  const raakt = overlapt(effectiefProject, weekStart, bouwvakWeekenSet)
                   const info  = weekInfo[i]
                   return (
                     <div
