@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useAuth, kanPrognose } from '../context/AuthContext'
 import { useTenant } from '../context/TenantContext'
-import { usePrognoseProjecten } from '../hooks/queries'
+import { usePrognoseProjecten, usePeriodes } from '../hooks/queries'
 import { projKleur, minstGebruikteKleur } from '../lib/kleurenpalet'
 import { avatarKleur } from '../lib/avatar'
 import { getMaandag, naarStr, isoWeek, plusDagen } from '../lib/datum'
@@ -30,6 +30,15 @@ function compactBedrag(val) {
   if (val >= 1_000_000) return `€${(val / 1_000_000).toFixed(1)}M`
   if (val >= 1_000)     return `€${Math.round(val / 1_000)}k`
   return `€${Math.round(val)}`
+}
+
+function weekOverlaptPeriode(weekStart, periode) {
+  const pVan  = new Date(periode.datum_van + 'T00:00:00')
+  const pTot  = new Date(periode.datum_tot + 'T00:00:00')
+  pTot.setDate(pTot.getDate() + 1) // datum_tot is inclusief
+  const wEind = new Date(weekStart)
+  wEind.setDate(wEind.getDate() + 7)
+  return pVan < wEind && pTot > weekStart
 }
 
 function overlapt(project, weekStart) {
@@ -61,6 +70,7 @@ export default function Prognose() {
   const van = naarStr(startDatum)
   const tot = naarStr(plusDagen(startDatum, WEKEN * 7))
   const { data: projecten = [], isLoading, error } = usePrognoseProjecten(van, tot)
+  const { data: periodes = [] } = usePeriodes()
 
   const weken = useMemo(
     () => Array.from({ length: WEKEN }, (_, i) => {
@@ -101,6 +111,15 @@ export default function Prognose() {
       return a.omschrijving.localeCompare(b.omschrijving)
     })
   }, [projecten, toonPotentieel, filterPl])
+
+  const weekInfo = useMemo(() =>
+    weken.map((weekStart) => {
+      const bouwvak   = periodes.filter(p => p.type === 'bouwvak'   && weekOverlaptPeriode(weekStart, p))
+      const feestdagen = periodes.filter(p => p.type !== 'bouwvak'  && weekOverlaptPeriode(weekStart, p))
+      return { isBouwvak: bouwvak.length > 0, feestdagen }
+    }),
+    [weken, periodes]
+  )
 
   const totaalPerWeek = useMemo(() =>
     weken.map((wk) =>
@@ -366,16 +385,36 @@ export default function Prognose() {
             >
               <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Project</span>
             </div>
-            {weken.map((d, i) => (
-              <div
-                key={i}
-                className="flex flex-col items-center justify-center border-l border-gray-100 shrink-0"
-                style={{ width: WEEK_B }}
-              >
-                <span className="text-[10px] text-gray-400 leading-none">{d.getFullYear()}</span>
-                <span className="text-[11px] font-semibold text-gray-600 leading-none mt-0.5">Wk {isoWeek(d)}</span>
-              </div>
-            ))}
+            {weken.map((d, i) => {
+              const info = weekInfo[i]
+              return (
+                <div
+                  key={i}
+                  className={`flex flex-col items-center justify-center border-l border-gray-100 shrink-0 ${info?.isBouwvak ? 'bg-amber-100' : ''}`}
+                  style={{ width: WEEK_B }}
+                >
+                  {info?.isBouwvak ? (
+                    <>
+                      <span className="text-[10px] text-amber-700 font-medium leading-none uppercase tracking-wide">Bouwvak</span>
+                      <span className="text-[11px] font-semibold text-gray-600 leading-none mt-0.5">Wk {isoWeek(d)}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-[10px] text-gray-400 leading-none">{d.getFullYear()}</span>
+                      <span className="text-[11px] font-semibold text-gray-600 leading-none mt-0.5 flex items-center gap-0.5">
+                        Wk {isoWeek(d)}
+                        {info?.feestdagen.length > 0 && (
+                          <span
+                            title={info.feestdagen.map(f => f.naam).join(', ')}
+                            className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0"
+                          />
+                        )}
+                      </span>
+                    </>
+                  )}
+                </div>
+              )
+            })}
           </div>
 
           {/* Lege staat */}
@@ -486,10 +525,11 @@ export default function Prognose() {
                 {/* Week cellen */}
                 {weken.map((weekStart, i) => {
                   const raakt = overlapt(effectiefProject, weekStart)
+                  const info  = weekInfo[i]
                   return (
                     <div
                       key={i}
-                      className="border-l border-gray-100 shrink-0 flex items-center"
+                      className={`border-l border-gray-100 shrink-0 flex items-center ${info?.isBouwvak ? 'bg-amber-50' : ''}`}
                       style={{ width: WEEK_B, height: ROW_H, cursor: !kanWritten ? 'default' : isDragging ? 'grabbing' : raakt ? 'grab' : 'default' }}
                       onPointerDown={(e) => { if (kanWritten && raakt) handleBarPointerDown(e, project) }}
                     >
@@ -533,7 +573,7 @@ export default function Prognose() {
               {totaalPerWeek.map((som, i) => (
                 <div
                   key={i}
-                  className="border-l border-gray-100 shrink-0 flex items-center justify-center"
+                  className={`border-l border-gray-100 shrink-0 flex items-center justify-center ${weekInfo[i]?.isBouwvak ? 'bg-amber-50' : ''}`}
                   style={{ width: WEEK_B }}
                 >
                   {som > 0 && (
