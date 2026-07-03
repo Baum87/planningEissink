@@ -437,7 +437,7 @@ export default function Prognose() {
         className="border border-gray-200 rounded-xl overflow-auto prognose-scroll-container"
         style={{ maxHeight: 'calc(100vh - 160px)', userSelect: drag ? 'none' : 'auto' }}
       >
-        <div style={{ minWidth: NAAM_B + WEKEN * WEEK_B }}>
+        <div className="min-w-[2976px] sm:min-w-[3850px]">
 
           {/* Week-header — sticky binnen de scrollbare container */}
           <div
@@ -445,7 +445,7 @@ export default function Prognose() {
             style={{ height: HEADER_H }}
           >
             <div
-              className="sticky left-0 z-30 bg-gray-50 border-r border-gray-100 shrink-0 flex items-center px-4 w-36 sm:w-[280px]"
+              className="sticky left-0 z-30 bg-gray-50 border-r border-gray-100 shrink-0 flex items-center px-4 w-[120px] sm:w-[280px]"
             >
               <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Project</span>
             </div>
@@ -454,8 +454,7 @@ export default function Prognose() {
               return (
                 <div
                   key={i}
-                  className={`flex flex-col items-center justify-center border-l border-gray-100 shrink-0 ${info?.isBouwvak ? 'bg-amber-100' : ''}`}
-                  style={{ width: WEEK_B }}
+                  className={`flex flex-col items-center justify-center border-l border-gray-100 shrink-0 w-[68px] sm:w-[85px] ${info?.isBouwvak ? 'bg-amber-100' : ''}`}
                 >
                   {info?.isBouwvak ? (
                     <>
@@ -521,7 +520,7 @@ export default function Prognose() {
               >
                 {/* Linker infocolom */}
                 <div
-                  className="sticky left-0 z-10 bg-white group-hover:bg-gray-50 border-r border-gray-100 flex items-center gap-2 px-3 shrink-0 select-none w-36 sm:w-[280px]"
+                  className="sticky left-0 z-10 bg-white group-hover:bg-gray-50 border-r border-gray-100 flex items-center gap-2 px-3 shrink-0 select-none w-[120px] sm:w-[280px]"
                 >
                   {/* Drag + modal zone: avatar + naam */}
                   <div
@@ -601,8 +600,8 @@ export default function Prognose() {
                   return (
                     <div
                       key={i}
-                      className={`border-l border-gray-100 shrink-0 flex items-center ${info?.isBouwvak ? 'bg-amber-50' : ''}`}
-                      style={{ width: WEEK_B, height: ROW_H, cursor: !kanWritten ? 'default' : isDragging ? 'grabbing' : raakt ? 'grab' : 'default' }}
+                      className={`border-l border-gray-100 shrink-0 flex items-center w-[68px] sm:w-[85px] ${info?.isBouwvak ? 'bg-amber-50' : ''}`}
+                      style={{ height: ROW_H, cursor: !kanWritten ? 'default' : isDragging ? 'grabbing' : raakt ? 'grab' : 'default' }}
                       onPointerDown={(e) => { if (kanWritten && raakt) handleBarPointerDown(e, project) }}
                     >
                       {raakt && (
@@ -637,15 +636,14 @@ export default function Prognose() {
               style={{ height: ROW_H }}
             >
               <div
-                className="sticky left-0 bg-gray-50 border-r border-gray-100 flex items-center px-3 shrink-0 w-36 sm:w-[280px]"
+                className="sticky left-0 bg-gray-50 border-r border-gray-100 flex items-center px-3 shrink-0 w-[120px] sm:w-[280px]"
               >
                 <span className="text-xs font-semibold text-gray-500 hidden sm:inline">Aanneemsom / week</span>
               </div>
               {totaalPerWeek.map((som, i) => (
                 <div
                   key={i}
-                  className={`border-l border-gray-100 shrink-0 flex items-center justify-center ${weekInfo[i]?.isBouwvak ? 'bg-amber-50' : ''}`}
-                  style={{ width: WEEK_B }}
+                  className={`border-l border-gray-100 shrink-0 flex items-center justify-center w-[68px] sm:w-[85px] ${weekInfo[i]?.isBouwvak ? 'bg-amber-50' : ''}`}
                 >
                   {som > 0 && (
                     <span className="text-[10px] font-medium text-gray-600">{compactBedrag(som)}</span>
