@@ -112,6 +112,7 @@ Bijgehouden naast CONTEXT.md — technische context staat daar.
 - [ ] **Referentielijn beschikbare capaciteit**
 
 - [ ] **Mobiele weergave Prognose** — volwaardige lijstweergave op mobiel als aparte sprint
+- [ ] **Weeknummers in datumkiezer Prognose** *(optioneel)* — react-datepicker met `showWeekNumbers`. Alleen UI-wijziging in PrognoseModal.jsx, geen database- of servicelaag-impact.
 
 ---
 

@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useAuth, kanPrognose } from '../context/AuthContext'
 import { useTenant } from '../context/TenantContext'
 import { usePrognoseProjecten, usePeriodes } from '../hooks/queries'
-import { projKleur, minstGebruikteKleur } from '../lib/kleurenpalet'
+import { projKleur } from '../lib/kleurenpalet'
 import { avatarKleur } from '../lib/avatar'
 import { getMaandag, naarStr, isoWeek, plusDagen } from '../lib/datum'
 import {
@@ -269,7 +269,6 @@ export default function Prognose() {
     setModal({
       type: 'nieuw',
       startDatum: startD,
-      autoKleur: minstGebruikteKleur(projecten),
     })
   }
 
@@ -507,7 +506,7 @@ export default function Prognose() {
             // avatarKleur vereist een niet-lege string — 'Z' als fallback bij ontbrekende PL
             const [bg, fg] = avatarKleur(pl?.weergave_naam || 'Z', pl?.avatar_kleur)
             const afk   = pl?.afkorting ?? '—'
-            const kleur = projKleur(project)
+            const kleur = projKleur(project, pl)
 
             const isDragging = drag?.project.id === project.id
             const effectiefProject = isDragging && drag.weekDelta !== 0 && project.start_datum
@@ -673,7 +672,6 @@ export default function Prognose() {
         <PrognoseModal
           project={modal.type === 'bewerk' ? modal.project : null}
           startDatum={modal.startDatum}
-          autoKleur={modal.autoKleur}
           onSave={handleSave}
           onVerwijder={handleVerwijder}
           onInOpdracht={handleInOpdracht}

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { getMaandag, naarStr, isoWeek } from '../lib/datum'
 import { useProfielen, usePeriodes } from '../hooks/queries'
 
@@ -9,7 +9,6 @@ function vandaagMaandag() {
 export default function PrognoseModal({
   project,
   startDatum,
-  autoKleur,
   onSave,
   onVerwijder,
   onInOpdracht,
@@ -39,7 +38,6 @@ export default function PrognoseModal({
   )
   const [startD, setStartD]       = useState(project?.start_datum ?? startDatum ?? '')
   const [duurWeken, setDuurWeken] = useState(project?.duur_weken != null ? String(project.duur_weken) : '')
-  const [kleur, setKleur]         = useState(project?.kleur ?? autoKleur)
   const [doorBouwvak, setDoorBouwvak] = useState(project?.door_bouwvak ?? false)
 
   useEffect(() => {
@@ -47,14 +45,6 @@ export default function PrognoseModal({
     document.addEventListener('keydown', handleKey)
     return () => document.removeEventListener('keydown', handleKey)
   }, [])
-
-  // Kleur meebeweegt met PL — sla initiële mount over zodat bestaande kleur niet wordt overschreven
-  const isInitialMount = useRef(true)
-  useEffect(() => {
-    if (isInitialMount.current) { isInitialMount.current = false; return }
-    const pl = profielen.find((p) => p.id === projectleiderId)
-    if (pl?.avatar_kleur) setKleur(pl.avatar_kleur)
-  }, [projectleiderId])
 
   const [bezig, setBezig]                       = useState(false)
   const [fout, setFout]                         = useState(null)
@@ -102,7 +92,6 @@ export default function PrognoseModal({
       aanneemsom:       aanneemsom !== '' ? Number(aanneemsom) : null,
       start_datum:      startD || null,
       duur_weken:       duurWeken ? Number(duurWeken) : null,
-      kleur,
       door_bouwvak:     doorBouwvak,
     }
     try {

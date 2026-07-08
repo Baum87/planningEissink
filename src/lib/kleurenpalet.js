@@ -75,11 +75,10 @@ function fgVanBg(hex) {
   return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.55 ? '#1a202c' : '#ffffff'
 }
 
-// Accepteert een project-object { id, kleur? }.
-// Als kleur gevuld is → gebruik die kleur.
-// Anders → deterministische hash op id als fallback.
-export function projKleur(project) {
-  const hex = project?.kleur ?? null
+// Accepteert een project-object { id, kleur? } en optioneel een PL-profiel.
+// Prioriteit: pl.avatar_kleur → project.kleur → hash(id) fallback.
+export function projKleur(project, pl = null) {
+  const hex = pl?.avatar_kleur ?? project?.kleur ?? null
   if (hex) return { bg: hex, fg: fgVanBg(hex) }
   const id = project?.id ?? ''
   let h = 0
