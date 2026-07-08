@@ -5,7 +5,7 @@ import { getProjecten } from '../services/projectenService'
 import { getPeriodes } from '../services/periodesService'
 import { getProfielen } from '../services/gebruikersbeheerService'
 import { getExpertises } from '../services/expertisesService'
-import { getPrognoseProjecten } from '../services/prognoseService'
+import { getPrognoseProjecten, getPrognoseBezetting } from '../services/prognoseService'
 
 export const useProjecten = (opties = {}) =>
   useQuery({
@@ -69,4 +69,11 @@ export const usePrognoseProjecten = (van, tot) =>
   useQuery({
     queryKey: ['prognose-projecten', van, tot],
     queryFn: () => getPrognoseProjecten(van, tot),
+  })
+
+export const usePrognoseBezetting = (projectIds) =>
+  useQuery({
+    queryKey: ['prognose-bezetting', projectIds],
+    queryFn: () => getPrognoseBezetting(projectIds),
+    enabled: projectIds.length > 0,
   })

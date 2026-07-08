@@ -27,12 +27,12 @@ Geen migratie: `bezetting_gemiddeld numeric(5,1)` bestaat al op
 `prognose_projecten` (zie migratie 018), maar is nog niet invoerbaar en
 wordt nergens getoond.
 
-- [ ] **Invoerveld in PrognoseModal.jsx**
+- [x] **Invoerveld in PrognoseModal.jsx**
       Nieuw veld "Gemiddeld aantal monteurs" (number input, optioneel,
       analoog aan het bestaande Aanneemsom-veld qua styling). State +
       opnemen in `velden` object bij `handleOpslaan`.
 
-- [ ] **Tonen in Prognose.jsx — week-cellen**
+- [x] **Tonen in Prognose.jsx — week-cellen**
       Subtiele regel boven de bestaande gekleurde balk (binnen dezelfde
       week-cel), alleen als `project.bezetting_gemiddeld` niet null is
       én de week overlapt (`overlapt()` is al true). Kleine, gedempte
@@ -40,12 +40,12 @@ wordt nergens getoond.
       (`fontSize: 9, color: rgba(0,0,0,0.5)`), maar op een eigen regel
       boven de balk i.p.v. erin.
 
-- [ ] **Toggle-knop "Bezetting"**
+- [x] **Toggle-knop "Bezetting"**
       Nieuwe state `toonBezetting` naast bestaande `toonWeekbedrag`,
       zelfde toggle-component/stijl in de toolbar. Layer alleen renderen
       als toggle aan staat.
 
-- [ ] **Rijhoogte aanpassen**
+- [x] **Rijhoogte aanpassen**
       `ROW_H` is nu een vaste constante (48). Extra regel boven de balk
       heeft ruimte nodig — reserveer dit alleen als `toonBezetting` aan
       staat (bv. `ROW_H = toonBezetting ? 60 : 48`), zodat de grid
@@ -53,11 +53,14 @@ wordt nergens getoond.
       totaalregel-hoogte hoeven niet mee te schalen (geen bezetting-
       content daar in Niveau 1).
 
+      _Klaar (commit e47ef5c). Lint + build gecontroleerd, geen nieuwe
+      issues. Visuele check door gebruiker bevestigd akkoord._
+
 ---
 
 ## Niveau 2 — per-week override (nieuwe subtabel)
 
-- [ ] **Migratie `024_prognose_bezetting.sql`**
+- [x] **Migratie `024_prognose_bezetting.sql`**
       Nieuwe tabel, zelfde RLS/audit-patroon als `prognose_projecten`
       (migraties 018 + 019). `week_offset` (relatief t.o.v.
       `start_datum` van het project) i.p.v. een absolute datum — zodat
@@ -82,7 +85,10 @@ wordt nergens getoond.
       - Grant select/insert/update/delete aan `authenticated`.
       - Index op `(tenant_id, prognose_project_id)`.
 
-- [ ] **Service-laag in prognoseService.js**
+      _Klaar. Migratie is nog NIET uitgevoerd op de database — dat doe
+      je zelf via de Supabase SQL Editor, zoals bij de vorige migraties._
+
+- [x] **Service-laag in prognoseService.js**
       - `getPrognoseBezetting(projectIds)` — één query, gefilterd op
         `prognose_project_id in (...)`. Geen datumfilter nodig: de
         project-ids komen al uit de reeds opgehaalde `rijen`
@@ -90,14 +96,14 @@ wordt nergens getoond.
       - `upsertPrognoseBezetting(prognose_project_id, week_offset, velden)`
         — insert-of-update op de unique constraint.
 
-- [ ] **Ophalen + lookup in Prognose.jsx**
+- [x] **Ophalen + lookup in Prognose.jsx**
       Nieuwe hook (`usePrognoseBezetting` in hooks/queries.js) parallel
       aan `usePrognoseProjecten`, gevoed met de project-ids uit `rijen`.
       Client-side omzetten naar een Map met key
       `` `${project_id}|${week_offset}` `` — zelfde patroon als
       `bouwvakWeekenSet`.
 
-- [ ] **Cel-inhoud bepalen**
+- [x] **Cel-inhoud bepalen**
       Per cel eerst de offset berekenen t.o.v. het project:
       `Math.round((weekStart - project.start_datum) / (7 dagen))`.
       Toon override uit de Map voor die offset als die bestaat, anders
@@ -105,28 +111,25 @@ wordt nergens getoond.
       niets. Tekstveld heeft geen fallback — alleen tonen als er een
       override met tekst is.
 
-- [ ] **Klik-om-te-bewerken**
-      Hergebruik de bestaande drag-detectie (`wasDragged` /
-      `drag.weekDelta`): een `onPointerDown` + `onPointerUp` op een
-      week-cel zonder beweging (`weekDelta === 0`) opent een klein
-      inline-formuliertje voor die specifieke (project, week_offset) —
-      twee velden: aantal monteurs (getal) + tekst, beide optioneel.
-      Prefill: override-waarde indien aanwezig, anders het Niveau-1-
-      gemiddelde als suggestie voor het getal (leeg voor tekst).
-      Opslaan via `onBlur`/Enter, annuleren via Escape — zelfde
-      patroon als de bestaande `editDuur`-chip.
-      Belangrijk: dit mag de bestaande sleep-interactie (project
-      verplaatsen) niet breken — alleen "klik zonder bewegen" triggert
-      de editor, "klik + bewegen" blijft slepen.
+- [x] **Klik-om-te-bewerken**
+      Geïmplementeerd als een klein absoluut gepositioneerd
+      popover-formuliertje boven de cel (i.p.v. inline in de 85px-brede
+      cel, dat was te krap voor twee velden). Hergebruikt de bestaande
+      `wasDragged`-ref: `onClick` op de week-cel controleert eerst of
+      er net gesleept is (consumeert de vlag, zelfde patroon als de
+      naam-kolom), en opent anders de editor. Opslaan via blur op de
+      popover-container (niet per input, zodat wisselen tussen de twee
+      velden niet voortijdig opslaat) of Enter, annuleren via Escape.
+      Sleep-interactie blijft ongewijzigd werken.
 
 - [ ] **Validatie**
-      Testen: cel met alleen override-getal, cel met alleen tekst, cel
-      met beide, cel zonder project.bezetting_gemiddeld én zonder
-      override (moet leeg blijven), toggle aan/uit, slepen van een
-      project met bestaande overrides (moet automatisch meeschuiven
-      dankzij `week_offset` — expliciet handmatig testen om te
-      bevestigen dat er geen edge case over het hoofd is gezien, met
-      name rond bouwvak-weken bij niet-doorlopende projecten).
+      Nog te doen door gebruiker (vereist database-migratie + login):
+      cel met alleen override-getal, cel met alleen tekst, cel met
+      beide, cel zonder project.bezetting_gemiddeld én zonder override
+      (moet leeg blijven), toggle aan/uit, slepen van een project met
+      bestaande overrides (moet automatisch meeschuiven dankzij
+      `week_offset`), met name rond bouwvak-weken bij niet-doorlopende
+      projecten.
 
 ---
 

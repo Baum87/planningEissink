@@ -52,3 +52,35 @@ export async function setInOpdracht(id) {
   if (error) throw error
   return data
 }
+
+// ─── Bezetting (Niveau 2 — per-week override) ────────────────────────────
+
+export async function getPrognoseBezetting(projectIds) {
+  if (!projectIds || projectIds.length === 0) return []
+  const { data, error } = await supabase
+    .from('prognose_bezetting')
+    .select('*')
+    .in('prognose_project_id', projectIds)
+  if (error) throw error
+  return data
+}
+
+export async function upsertPrognoseBezetting(prognoseProjectId, weekOffset, velden) {
+  const tenant_id = await getTenantId()
+  const { data, error } = await supabase
+    .from('prognose_bezetting')
+    .upsert(
+      {
+        prognose_project_id: prognoseProjectId,
+        week_offset: weekOffset,
+        tenant_id,
+        ...velden,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'prognose_project_id,week_offset' }
+    )
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}

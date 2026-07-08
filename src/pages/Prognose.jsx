@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useAuth, kanPrognose } from '../context/AuthContext'
 import { useTenant } from '../context/TenantContext'
-import { usePrognoseProjecten, usePeriodes } from '../hooks/queries'
+import { usePrognoseProjecten, usePrognoseBezetting, usePeriodes } from '../hooks/queries'
 import { projKleur } from '../lib/kleurenpalet'
 import { avatarKleur } from '../lib/avatar'
 import { getMaandag, naarStr, isoWeek, plusDagen } from '../lib/datum'
@@ -11,6 +11,7 @@ import {
   updatePrognoseProject,
   deletePrognoseProject,
   setInOpdracht,
+  upsertPrognoseBezetting,
 } from '../services/prognoseService'
 import PrognoseModal from '../components/PrognoseModal'
 
@@ -68,6 +69,13 @@ function overlapt(project, weekStart, bouwvakSet = new Set()) {
   return werkWekenVoor < project.duur_weken
 }
 
+// Kalenderweken tussen de projectstart en deze week — puur lineair, los van
+// bouwvak-skip-logica. Blijft geldig na drag (start_datum schuift, offset niet).
+function weekOffsetVan(weekStart, startDatum) {
+  const pStart = new Date(startDatum + 'T00:00:00')
+  return Math.round((weekStart - pStart) / (7 * 24 * 3600 * 1000))
+}
+
 // ─── Prognose ─────────────────────────────────────────────────────────────────
 
 export default function Prognose() {
@@ -89,6 +97,7 @@ export default function Prognose() {
   const [modal, setModal] = useState(null)
   const [drag, setDrag] = useState(null) // { project, startX, startScrollLeft, weekDelta }
   const [editDuur, setEditDuur] = useState(null) // { projectId, waarde }
+  const [editBezetting, setEditBezetting] = useState(null) // { projectId, weekOffset, aantalMonteurs, tekst }
   const containerRef = useRef(null)
   const wasDragged = useRef(false)
 
@@ -154,6 +163,15 @@ export default function Prognose() {
       return a.omschrijving.localeCompare(b.omschrijving)
     })
   }, [projecten, toonPotentieel, filterPl, sorteer])
+
+  const rijIds = useMemo(() => rijen.map((p) => p.id), [rijen])
+  const { data: bezettingRows = [] } = usePrognoseBezetting(rijIds)
+
+  const bezettingMap = useMemo(() => {
+    const m = new Map()
+    bezettingRows.forEach((r) => m.set(`${r.prognose_project_id}|${r.week_offset}`, r))
+    return m
+  }, [bezettingRows])
 
   const weekInfo = useMemo(() =>
     weken.map((weekStart) => {
@@ -263,6 +281,35 @@ export default function Prognose() {
       await queryClient.invalidateQueries({ queryKey: ['prognose-projecten'] })
     } catch {
       // project springt terug via query invalidation
+    }
+  }
+
+  // ── Bezetting per week (klik-om-te-bewerken) ────────────────────────────────
+
+  function openBezettingEditor(project, weekOffset) {
+    const bestaand = bezettingMap.get(`${project.id}|${weekOffset}`)
+    setEditBezetting({
+      projectId: project.id,
+      weekOffset,
+      aantalMonteurs: bestaand?.aantal_monteurs != null
+        ? String(bestaand.aantal_monteurs)
+        : (project.bezetting_gemiddeld != null ? String(project.bezetting_gemiddeld) : ''),
+      tekst: bestaand?.tekst ?? '',
+    })
+  }
+
+  async function handleBezettingOpslaan() {
+    if (!editBezetting) return
+    const { projectId, weekOffset, aantalMonteurs, tekst } = editBezetting
+    setEditBezetting(null)
+    try {
+      await upsertPrognoseBezetting(projectId, weekOffset, {
+        aantal_monteurs: aantalMonteurs !== '' ? Number(aantalMonteurs) : null,
+        tekst: tekst.trim() || null,
+      })
+      await queryClient.invalidateQueries({ queryKey: ['prognose-bezetting'] })
+    } catch {
+      // wijziging springt terug via query invalidation
     }
   }
 
@@ -631,23 +678,67 @@ export default function Prognose() {
                 {weken.map((weekStart, i) => {
                   const raakt = overlapt(effectiefProject, weekStart, bouwvakWeekenSet)
                   const info  = weekInfo[i]
-                  const bezetting = toonBezetting && raakt && project.bezetting_gemiddeld != null
-                    ? project.bezetting_gemiddeld
-                    : null
+                  const weekOffset = project.start_datum ? weekOffsetVan(weekStart, project.start_datum) : null
+                  const override = weekOffset != null ? bezettingMap.get(`${project.id}|${weekOffset}`) : null
+                  const monteurs = override?.aantal_monteurs ?? project.bezetting_gemiddeld ?? null
+                  const tekst    = override?.tekst ?? null
+                  const isEditing = editBezetting?.projectId === project.id && editBezetting?.weekOffset === weekOffset
                   return (
                     <div
                       key={i}
-                      className={`border-l border-gray-100 shrink-0 flex flex-col items-center justify-center w-[68px] sm:w-[85px] ${info?.isBouwvak ? 'bg-amber-50' : ''}`}
+                      className={`relative border-l border-gray-100 shrink-0 flex flex-col items-center justify-center w-[68px] sm:w-[85px] ${info?.isBouwvak ? 'bg-amber-50' : ''}`}
                       style={{ height: rowHoogte, cursor: !kanWritten ? 'default' : isDragging ? 'grabbing' : raakt ? 'grab' : 'default' }}
                       onPointerDown={(e) => { if (kanWritten && raakt) handleBarPointerDown(e, project) }}
+                      onClick={() => {
+                        if (wasDragged.current) { wasDragged.current = false; return }
+                        if (kanWritten && raakt && toonBezetting) openBezettingEditor(project, weekOffset)
+                      }}
                     >
-                      {bezetting != null && (
+                      {toonBezetting && raakt && (monteurs != null || tekst) && (
                         <span
-                          className="text-gray-400"
+                          className="text-gray-400 truncate max-w-full px-0.5"
                           style={{ fontSize: 9, lineHeight: 1, marginBottom: 2 }}
+                          title={[monteurs != null ? `${monteurs}p` : null, tekst].filter(Boolean).join(' · ')}
                         >
-                          {bezetting}p
+                          {[monteurs != null ? `${monteurs}p` : null, tekst].filter(Boolean).join(' · ')}
                         </span>
+                      )}
+                      {isEditing && (
+                        <div
+                          className="absolute z-40 top-0 left-0 bg-white border border-gray-300 rounded-lg shadow-lg p-1.5 flex flex-col gap-1"
+                          style={{ width: 110 }}
+                          onPointerDown={(e) => e.stopPropagation()}
+                          onClick={(e) => e.stopPropagation()}
+                          onBlur={(e) => {
+                            if (!e.currentTarget.contains(e.relatedTarget)) handleBezettingOpslaan()
+                          }}
+                        >
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.5"
+                            autoFocus
+                            value={editBezetting.aantalMonteurs}
+                            onChange={(e) => setEditBezetting((d) => ({ ...d, aantalMonteurs: e.target.value }))}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleBezettingOpslaan()
+                              if (e.key === 'Escape') setEditBezetting(null)
+                            }}
+                            placeholder="Aantal"
+                            className="w-full px-1.5 py-1 text-xs border border-gray-200 rounded outline-none focus:border-gray-400"
+                          />
+                          <input
+                            type="text"
+                            value={editBezetting.tekst}
+                            onChange={(e) => setEditBezetting((d) => ({ ...d, tekst: e.target.value }))}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleBezettingOpslaan()
+                              if (e.key === 'Escape') setEditBezetting(null)
+                            }}
+                            placeholder="Team/tekst"
+                            className="w-full px-1.5 py-1 text-xs border border-gray-200 rounded outline-none focus:border-gray-400"
+                          />
+                        </div>
                       )}
                       {raakt && (
                         <div
