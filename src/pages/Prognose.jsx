@@ -202,7 +202,18 @@ export default function Prognose() {
     [rijen, weken, bouwvakWeekenSet]
   )
 
-  const rowHoogte = toonBezetting ? ROW_H + 12 : ROW_H
+  const totaalMonteursPerWeek = useMemo(() =>
+    weken.map((wk) =>
+      rijen.reduce((som, p) => {
+        if (!p.start_datum || !overlapt(p, wk, bouwvakWeekenSet)) return som
+        const offset   = weekOffsetVan(wk, p.start_datum)
+        const override = bezettingMap.get(`${p.id}|${offset}`)
+        const monteurs = override?.aantal_monteurs ?? p.bezetting_gemiddeld ?? null
+        return monteurs != null ? som + Number(monteurs) : som
+      }, 0)
+    ),
+    [rijen, weken, bouwvakWeekenSet, bezettingMap]
+  )
 
   function navigeer(delta) {
     setStartDatum((d) => {
@@ -597,7 +608,7 @@ export default function Prognose() {
               <div
                 key={project.id}
                 className={`flex border-b border-gray-100 hover:bg-gray-50/50 group ${isDragging ? 'opacity-75' : ''}`}
-                style={{ height: rowHoogte }}
+                style={{ height: ROW_H }}
               >
                 {/* Linker infocolom */}
                 <div
@@ -682,26 +693,43 @@ export default function Prognose() {
                   const override = weekOffset != null ? bezettingMap.get(`${project.id}|${weekOffset}`) : null
                   const monteurs = override?.aantal_monteurs ?? project.bezetting_gemiddeld ?? null
                   const tekst    = override?.tekst ?? null
+                  const heeftBezetting = monteurs != null || tekst
+                  const bezettingBewerkbaar = toonBezetting && raakt && kanWritten
                   const isEditing = editBezetting?.projectId === project.id && editBezetting?.weekOffset === weekOffset
                   return (
                     <div
                       key={i}
-                      className={`relative border-l border-gray-100 shrink-0 flex flex-col items-center justify-center w-[68px] sm:w-[85px] ${info?.isBouwvak ? 'bg-amber-50' : ''}`}
-                      style={{ height: rowHoogte, cursor: !kanWritten ? 'default' : isDragging ? 'grabbing' : raakt ? 'grab' : 'default' }}
+                      className={`relative border-l border-gray-100 shrink-0 flex flex-col items-center justify-center w-[68px] sm:w-[85px] ${info?.isBouwvak ? 'bg-amber-50' : ''} ${bezettingBewerkbaar && !heeftBezetting ? 'hover:bg-gray-50' : ''}`}
+                      style={{ height: ROW_H, cursor: !kanWritten ? 'default' : isDragging ? 'grabbing' : bezettingBewerkbaar ? 'pointer' : 'default' }}
                       onPointerDown={(e) => { if (kanWritten && raakt) handleBarPointerDown(e, project) }}
                       onClick={() => {
                         if (wasDragged.current) { wasDragged.current = false; return }
-                        if (kanWritten && raakt && toonBezetting) openBezettingEditor(project, weekOffset)
+                        if (bezettingBewerkbaar) openBezettingEditor(project, weekOffset)
                       }}
                     >
-                      {toonBezetting && raakt && (monteurs != null || tekst) && (
-                        <span
-                          className="text-gray-400 truncate max-w-full px-0.5"
-                          style={{ fontSize: 9, lineHeight: 1, marginBottom: 2 }}
-                          title={[monteurs != null ? `${monteurs}p` : null, tekst].filter(Boolean).join(' · ')}
+                      {toonBezetting && raakt && (
+                        <div
+                          className="flex items-center gap-0.5 w-full px-0.5"
+                          style={{ height: 16, marginBottom: 2 }}
                         >
-                          {[monteurs != null ? `${monteurs}p` : null, tekst].filter(Boolean).join(' · ')}
-                        </span>
+                          {monteurs != null && (
+                            <span
+                              className="flex-1 flex items-center justify-center min-w-0 text-gray-600 bg-gray-50 border border-gray-200 rounded-sm px-1"
+                              style={{ fontSize: 10, lineHeight: 1, height: 16 }}
+                            >
+                              {monteurs}p
+                            </span>
+                          )}
+                          {tekst && (
+                            <span
+                              className="flex-1 flex items-center justify-center min-w-0 truncate text-gray-600 bg-gray-50 border border-gray-200 rounded-sm px-1"
+                              style={{ fontSize: 10, lineHeight: 1, height: 16 }}
+                              title={tekst}
+                            >
+                              {tekst}
+                            </span>
+                          )}
+                        </div>
                       )}
                       {isEditing && (
                         <div
@@ -746,6 +774,7 @@ export default function Prognose() {
                           style={{
                             height: 20,
                             backgroundColor: kleur.bg,
+                            cursor: !kanWritten ? 'default' : isDragging ? 'grabbing' : 'grab',
                             ...(project.status === 'potentieel' ? {
                               backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(255,255,255,0.5) 4px, rgba(255,255,255,0.5) 8px)',
                             } : {}),
@@ -783,6 +812,30 @@ export default function Prognose() {
                 >
                   {som > 0 && (
                     <span className="text-[10px] font-medium text-gray-600">{compactBedrag(som)}</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Totaalregel — monteurs, alleen zichtbaar met de Bezetting-toggle */}
+          {rijen.length > 0 && toonBezetting && (
+            <div
+              className="flex bg-gray-50 border-t border-gray-200"
+              style={{ height: ROW_H }}
+            >
+              <div
+                className="sticky left-0 bg-gray-50 border-r border-gray-100 flex items-center px-3 shrink-0 w-[120px] sm:w-[280px]"
+              >
+                <span className="text-xs font-semibold text-gray-500 hidden sm:inline">Monteurs / week</span>
+              </div>
+              {totaalMonteursPerWeek.map((som, i) => (
+                <div
+                  key={i}
+                  className={`border-l border-gray-100 shrink-0 flex items-center justify-center w-[68px] sm:w-[85px] ${weekInfo[i]?.isBouwvak ? 'bg-amber-50' : ''}`}
+                >
+                  {som > 0 && (
+                    <span className="text-[10px] font-medium text-gray-600">{som}</span>
                   )}
                 </div>
               ))}
