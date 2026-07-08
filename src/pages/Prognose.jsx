@@ -83,6 +83,7 @@ export default function Prognose() {
   })
   const [toonPotentieel, setToonPotentieel] = useState(true)
   const [toonWeekbedrag, setToonWeekbedrag] = useState(true)
+  const [toonBezetting, setToonBezetting] = useState(false)
   const [filterPl, setFilterPl] = useState('')
   const [sorteer, setSorteer] = useState('pl')
   const [modal, setModal] = useState(null)
@@ -182,6 +183,8 @@ export default function Prognose() {
     ),
     [rijen, weken, bouwvakWeekenSet]
   )
+
+  const rowHoogte = toonBezetting ? ROW_H + 12 : ROW_H
 
   function navigeer(delta) {
     setStartDatum((d) => {
@@ -410,6 +413,26 @@ export default function Prognose() {
             </button>
           </label>
 
+          {/* Toggle Bezetting — verborgen op mobiel */}
+          <label className="hidden sm:flex items-center gap-2 cursor-pointer select-none">
+            <span className="text-sm text-gray-500">Bezetting</span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={toonBezetting}
+              onClick={() => setToonBezetting((v) => !v)}
+              className={`relative w-9 h-5 rounded-full transition-colors focus:outline-none ${
+                toonBezetting ? 'bg-gray-800' : 'bg-gray-200'
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all duration-200 ${
+                  toonBezetting ? 'left-[18px]' : 'left-0.5'
+                }`}
+              />
+            </button>
+          </label>
+
           {/* Afdrukken — verborgen op mobiel */}
           <button
             onClick={() => window.print()}
@@ -527,7 +550,7 @@ export default function Prognose() {
               <div
                 key={project.id}
                 className={`flex border-b border-gray-100 hover:bg-gray-50/50 group ${isDragging ? 'opacity-75' : ''}`}
-                style={{ height: ROW_H }}
+                style={{ height: rowHoogte }}
               >
                 {/* Linker infocolom */}
                 <div
@@ -608,13 +631,24 @@ export default function Prognose() {
                 {weken.map((weekStart, i) => {
                   const raakt = overlapt(effectiefProject, weekStart, bouwvakWeekenSet)
                   const info  = weekInfo[i]
+                  const bezetting = toonBezetting && raakt && project.bezetting_gemiddeld != null
+                    ? project.bezetting_gemiddeld
+                    : null
                   return (
                     <div
                       key={i}
-                      className={`border-l border-gray-100 shrink-0 flex items-center w-[68px] sm:w-[85px] ${info?.isBouwvak ? 'bg-amber-50' : ''}`}
-                      style={{ height: ROW_H, cursor: !kanWritten ? 'default' : isDragging ? 'grabbing' : raakt ? 'grab' : 'default' }}
+                      className={`border-l border-gray-100 shrink-0 flex flex-col items-center justify-center w-[68px] sm:w-[85px] ${info?.isBouwvak ? 'bg-amber-50' : ''}`}
+                      style={{ height: rowHoogte, cursor: !kanWritten ? 'default' : isDragging ? 'grabbing' : raakt ? 'grab' : 'default' }}
                       onPointerDown={(e) => { if (kanWritten && raakt) handleBarPointerDown(e, project) }}
                     >
+                      {bezetting != null && (
+                        <span
+                          className="text-gray-400"
+                          style={{ fontSize: 9, lineHeight: 1, marginBottom: 2 }}
+                        >
+                          {bezetting}p
+                        </span>
+                      )}
                       {raakt && (
                         <div
                           className="w-full mx-0.5 rounded-sm flex items-center justify-center"

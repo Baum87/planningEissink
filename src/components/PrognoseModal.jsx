@@ -39,6 +39,9 @@ export default function PrognoseModal({
   const [startD, setStartD]       = useState(project?.start_datum ?? startDatum ?? '')
   const [duurWeken, setDuurWeken] = useState(project?.duur_weken != null ? String(project.duur_weken) : '')
   const [doorBouwvak, setDoorBouwvak] = useState(project?.door_bouwvak ?? false)
+  const [bezettingGemiddeld, setBezettingGemiddeld] = useState(
+    project?.bezetting_gemiddeld != null ? String(project.bezetting_gemiddeld) : ''
+  )
 
   useEffect(() => {
     function handleKey(e) { if (e.key === 'Escape') onClose() }
@@ -93,6 +96,7 @@ export default function PrognoseModal({
       start_datum:      startD || null,
       duur_weken:       duurWeken ? Number(duurWeken) : null,
       door_bouwvak:     doorBouwvak,
+      bezetting_gemiddeld: bezettingGemiddeld !== '' ? Number(bezettingGemiddeld) : null,
     }
     try {
       await onSave(velden)
@@ -295,6 +299,22 @@ export default function PrognoseModal({
                 placeholder="1"
               />
             </div>
+          </div>
+
+          {/* Gemiddelde bezetting */}
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1.5">
+              Gemiddeld aantal monteurs <span className="font-normal text-gray-400">(optioneel)</span>
+            </label>
+            <input
+              type="number"
+              min="0"
+              step="0.5"
+              value={bezettingGemiddeld}
+              onChange={(e) => setBezettingGemiddeld(e.target.value)}
+              className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl outline-none focus:border-gray-400 transition-colors"
+              placeholder="Bijv. 3"
+            />
           </div>
 
           {/* Bouwvak toggle */}
