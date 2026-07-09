@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { useAuth, kanPrognose } from '../context/AuthContext'
 import { useTenant } from '../context/TenantContext'
@@ -76,6 +77,12 @@ function weekOffsetVan(weekStart, startDatum) {
   return Math.round((weekStart - pStart) / (7 * 24 * 3600 * 1000))
 }
 
+function standaardStartDatum() {
+  const d = getMaandag(new Date())
+  d.setDate(d.getDate() - 14)
+  return d
+}
+
 // ─── Prognose ─────────────────────────────────────────────────────────────────
 
 export default function Prognose() {
@@ -84,11 +91,15 @@ export default function Prognose() {
   const queryClient = useQueryClient()
 
   const huidigeMaandag = useMemo(() => naarStr(getMaandag(new Date())), [])
-  const [startDatum, setStartDatum] = useState(() => {
-    const d = getMaandag(new Date())
-    d.setDate(d.getDate() - 14)
-    return d
-  })
+  const [searchParams, setSearchParams] = useSearchParams()
+  const vanParam = searchParams.get('van')
+  const startDatum = useMemo(() => {
+    if (vanParam) {
+      const d = new Date(vanParam + 'T00:00:00')
+      if (!isNaN(d)) return getMaandag(d)
+    }
+    return standaardStartDatum()
+  }, [vanParam])
   const [toonPotentieel, setToonPotentieel] = useState(true)
   const [toonWeekbedrag, setToonWeekbedrag] = useState(true)
   const [toonBezetting, setToonBezetting] = useState(false)
@@ -216,11 +227,21 @@ export default function Prognose() {
   )
 
   function navigeer(delta) {
-    setStartDatum((d) => {
-      const r = new Date(d)
-      r.setDate(r.getDate() + delta * 7)
-      return r
-    })
+    const r = new Date(startDatum)
+    r.setDate(r.getDate() + delta * 7)
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      next.set('van', naarStr(r))
+      return next
+    }, { replace: true })
+  }
+
+  function gaNaarVandaag() {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      next.delete('van')
+      return next
+    }, { replace: true })
   }
 
   // ── Drag ──────────────────────────────────────────────────────────────────
@@ -419,7 +440,7 @@ export default function Prognose() {
             className="w-11 h-11 sm:w-8 sm:h-8 flex items-center justify-center text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors text-lg leading-none"
           >‹</button>
           <button
-            onClick={() => { const d = getMaandag(new Date()); d.setDate(d.getDate() - 14); setStartDatum(d) }}
+            onClick={gaNaarVandaag}
             className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
           >Vandaag</button>
           <button
