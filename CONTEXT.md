@@ -13,7 +13,7 @@ Commercieel aan te bieden aan andere afbouw- en installatiebedrijven.
 - Remco — admin, bouwer en eigenaar van het product
 
 ## Stack
-- Frontend: React + Tailwind CSS
+- Frontend: React + Tailwind CSS + react-router-dom (URL-routing, zie "Routing")
 - Backend/database: Supabase (PostgreSQL)
 - Hosting: Vercel (custom domain: planning.byggr.nl)
 - Auth: Supabase Auth, rollen opgeslagen in raw_app_meta_data
@@ -223,6 +223,31 @@ Modules ook configureerbaar per tenant via modules_config in tenant_instellingen
 Header bevat: tenant-logo + naam, navigatietabs, UpdatesBadge (update-notificatie per rol),
 gebruikersnaam, info-icoon (opent Handleiding modal), uitlogknop.
 Mobiel: hamburger-menu met dezelfde opties in een dropdown.
+
+## Routing
+Elk tabblad heeft een eigen URL (`/planning`, `/overzicht`, `/projecten`,
+`/monteurs`, `/prognose`, `/beheer`, `/statistieken`) via `react-router-dom`
+(`BrowserRouter`). Vervangt de vroegere `activeTab`-state-aanpak — lost F5
+(reset naar Planning), deep links, bookmarken en browser back/forward op.
+
+- `main.jsx`: `<BrowserRouter>` om de hele app.
+- `App.jsx`: `activeTab` is een afgeleide waarde uit `useLocation().pathname`
+  (niet losse state) — bestaande logica die op `activeTab` leunde
+  (HandleidingModal `openSectie`, `<main>`-styling) hoefde niet aangepast.
+  `<Routes>` wordt opgebouwd over `ALLE_TABS` (niet de rol-gefilterde
+  `TABS`), zodat elk pad — ook een verboden — altijd een echte route
+  treft die door `RouteGuard` wordt afgevangen, i.p.v. op de generieke
+  catch-all te vallen.
+- `src/components/RouteGuard.jsx`: blokkeert een route op rol (redirect
+  naar de eerste toegestane tab) zodat een onbevoegde rol een pagina niet
+  via een direct getypte URL kan bereiken — puur UX, de echte
+  databeveiliging blijft RLS.
+- `vercel.json` bevatte al een SPA-fallback-rewrite (`"/(.*)" →
+  "/index.html"`, toegevoegd voor de `/privacy`- en `/disclaimer`-pagina's)
+  — dekte de nieuwe tab-routes toevallig al, geen wijziging nodig.
+- Route-navigatiestate (welke week/periode je bekijkt binnen een tabblad)
+  zit nog niet in de URL — een refresh op bv. Prognose behoudt het tabblad,
+  maar niet de bekeken periode. Zie TODO_deeplinks.md voor de vervolgstap.
 
 ## Prognose-tijdlijn (management)
 

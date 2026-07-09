@@ -84,6 +84,12 @@ Bijgehouden naast CONTEXT.md — technische context staat daar.
 - [ ] **ERP-koppeling via extern_id**
       Webhook patroon via Edge Functions. extern_id staat al in datamodel.
 
+- [ ] **Project deep links (`/projecten/:id`)**
+      Pas relevant zodra ERP-koppeling wordt opgepakt — een extern systeem
+      dat naar een specifiek project wil linken heeft een stabiele URL
+      nodig. Vergt aanpassingen in hoe project-modals werken (nu geen
+      eigen route per project). Geen zelfstandige waarde op dit moment.
+
 ### Prognose Planning
 
 - [ ] **Prognose leesbaar voor planners**
