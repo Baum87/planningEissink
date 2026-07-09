@@ -79,3 +79,97 @@ Bij de volgende grotere refactor-sprint, of zodra de app commercieel uitgerold w
 | Vercel 404 op directe URL's | `vercel.json` rewrite toevoegen vóór deploy |
 | Rolbeveiliging omzeild via URL | Route-guard component die rol checkt vóór render |
 | `onNavigate` prop overal doorgegeven | Stap voor stap vervangen, niet alles tegelijk |
+
+---
+
+## Uitvoeringsplan (Fase 1 — Basisrouting)
+
+Uitgangspunten: werk op een aparte branch (productie/master blijft
+onaangeraakt tot de laatste stap), elke stap lokaal getest vóór de
+volgende begint, laatste stap vóór merge is een Vercel *preview*-deploy
+(niet productie) om het enige risico te testen dat lokaal niet zichtbaar
+is (de SPA-rewrite).
+
+Gecheckt in de huidige code — dit is de exacte impact-omvang:
+- `App.jsx`: `activeTab`-state, `navigeerNaar()`, 4 losse
+  `onClick={() => navigeerNaar(...)}`-aanroepen (tenant-naam desktop/mobiel,
+  desktop-tabs-loop, mobiel hamburger-menu-loop), `ActivePage`-lookup,
+  en twee plekken die op `activeTab`-waarde zelf leunen (HandleidingModal
+  `openSectie`, en de `<main>` className/style-logica voor projecten/monteurs).
+- `Planning.jsx`: enige pagina die de `onNavigate`-prop echt gebruikt
+  (1 plek, regel 901 — "naar projecten"-link vanuit een modal).
+  Alle overige pagina's ontvangen de prop maar gebruiken hem niet.
+
+### Stap 0 — Branch
+- [ ] Branch `feature/routing` vanaf `master`. Niets hierna raakt
+      productie totdat er expliciet gemerged én gepusht wordt.
+
+### Stap 1 — Dependency, geen gedragswijziging
+- [ ] `npm install react-router-dom`
+- [ ] `<BrowserRouter>` om de app in `main.jsx`
+- [ ] Verifiëren: app werkt lokaal nog exact zoals voorheen (routing-lib
+      geïnstalleerd maar nog nergens gebruikt — dit kan dus niets breken).
+- [ ] Commit.
+
+### Stap 2 — Route-guard component (nieuw, geïsoleerd)
+- [ ] Nieuw bestand, bv. `src/components/RouteGuard.jsx`: checkt rol
+      tegen de toegestane rollen van een route, redirect naar de eerste
+      toegestane tab bij onbevoegde toegang.
+      Reden om dit als eigen stap te doen: raakt geen bestaande code,
+      dus onafhankelijk te bouwen en te beredeneren vóór de grote
+      App.jsx-wijziging.
+- [ ] Commit.
+
+### Stap 3 — App.jsx omzetten (kernstap, grootste risico)
+- [ ] `activeTab`-state vervangen door `<Routes>`/`<Route>` per tab,
+      elke rol-beperkte tab gewrapt in `RouteGuard`.
+- [ ] `navigeerNaar()` → `useNavigate()`; alle 4 `onClick`-aanroepen
+      + de `onNaarProjecten`-call in `Planning.jsx` aangepast.
+- [ ] `HandleidingModal openSectie` en de `<main>`-className/style-logica
+      omgezet naar `useLocation()` i.p.v. `activeTab`.
+- [ ] Lokaal uitgebreid testen (`npm run dev`): elke tab, elke rol
+      (admin/planner/gebruiker/management), hamburger-menu mobiel,
+      "naar projecten"-link vanuit Planning-modal, uitloggen/inloggen.
+      Let op: dit test nog NIET het Vercel-rewrite-risico — Vite's
+      dev-server doet SPA-fallback altijd automatisch.
+- [ ] Commit.
+
+### Stap 4 — vercel.json
+- [ ] SPA-fallback rewrite toevoegen. Heeft geen enkel effect vóór
+      deploy — veilig om nu al mee te nemen.
+- [ ] Commit.
+
+### Stap 5 — Productie-achtige lokale build
+- [ ] `npm run build` + `npm run preview` — test tegen een echte build
+      i.p.v. de dev-server, als extra check vóór de eerste deploy.
+
+### Stap 6 — Vercel preview-deploy (nog steeds geen productie)
+- [ ] Branch pushen naar GitHub (niet naar `master`). Vercel maakt
+      automatisch een Preview Deployment op een tijdelijke URL.
+- [ ] Op die preview-URL specifiek testen: direct een niet-Planning-pad
+      intypen (bv. `/prognose`) én verversen. Dit is het enige scenario
+      dat zonder de `vercel.json`-rewrite 404 geeft, en het enige
+      moment in dit hele plan dat dat risico echt zichtbaar wordt.
+
+### Stap 7 — Merge + push naar master (de enige productie-raakvlak-stap)
+- [ ] Pas uitvoeren als stap 6 volledig goed is. Dit is de "korte
+      deploy" — Vercel deployt automatisch bij de push naar `master`.
+
+### Stap 8 — Directe check ná deploy
+- [ ] Meteen na de deploy: alle tabs, refresh op een niet-Planning-tab,
+      mobiel hamburger-menu, uitloggen/inloggen-redirect — op de
+      echte productie-URL (`planning.byggr.nl`).
+
+---
+
+## Rollback-strategie
+
+| Situatie | Actie | Snelheid |
+|---|---|---|
+| Iets klopt niet vóór stap 7 (op de branch) | Niets — branch raakt master nooit aan. Branch aanpassen of weggooien. | Direct, geen risico |
+| Iets klopt niet ná stap 7, net gedeployed | Vercel-dashboard → vorige deployment (van vóór de merge) met één klik "Promoten naar Productie". Geen git-actie nodig. | Seconden |
+| Probleem dieper/later ontdekt | `git revert` op de merge-commit, opnieuw pushen. | Minuten |
+
+Het meeste risico zit dus puur tussen stap 7 en stap 8 — daarvóór is
+alles vrijblijvend op de branch, en zelfs ná de deploy is de terugweg
+één klik in Vercel, geen noodprocedure.
