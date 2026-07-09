@@ -169,8 +169,14 @@ Gecheckt in de huidige code — dit is de exacte impact-omvang:
       `/index.html`. Geen wijziging nodig, geen commit nodig.
 
 ### Stap 5 — Productie-achtige lokale build
-- [ ] `npm run build` + `npm run preview` — test tegen een echte build
-      i.p.v. de dev-server, als extra check vóór de eerste deploy.
+- [x] `npm run build` — slaagt, geen fouten.
+- [x] `npm run preview` + curl op `/` en `/prognose` — beide 200,
+      zelfde `index.html` geserveerd. Bevestigt dat de React-app zelf
+      correct opstart vanaf een diep pad.
+      **Belangrijke kanttekening:** dit test Vite's eigen automatische
+      SPA-fallback (`appType: 'spa'`), niet Vercel's rewrite-config uit
+      `vercel.json` — dat zijn twee losse mechanismen. Dit bevestigt dus
+      de app-kant, niet de Vercel-kant. Stap 6 blijft daarom nodig.
 
 ### Stap 6 — Vercel preview-deploy (nog steeds geen productie)
 - [ ] Branch pushen naar GitHub (niet naar `master`). Vercel maakt
