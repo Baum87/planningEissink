@@ -160,9 +160,13 @@ Gecheckt in de huidige code — dit is de exacte impact-omvang:
 - [x] Commit.
 
 ### Stap 4 — vercel.json
-- [ ] SPA-fallback rewrite toevoegen. Heeft geen enkel effect vóór
-      deploy — veilig om nu al mee te nemen.
-- [ ] Commit.
+- [x] **Bleek al te bestaan.** Toegevoegd in eerdere commits (`99725bf`,
+      `eb01c0a`) voor de `/privacy`- en `/disclaimer`-pagina's. De
+      laatste regel (`"/(.*)" → "/index.html"`) is een catch-all die
+      toevallig al exact de SPA-fallback dekt die wij nodig hebben —
+      Vercel matcht rewrites in volgorde, dus alles wat niet `/privacy`
+      of `/disclaimer` is (dus ook al onze tab-routes) valt door naar
+      `/index.html`. Geen wijziging nodig, geen commit nodig.
 
 ### Stap 5 — Productie-achtige lokale build
 - [ ] `npm run build` + `npm run preview` — test tegen een echte build
