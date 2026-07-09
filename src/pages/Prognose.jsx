@@ -83,6 +83,14 @@ function standaardStartDatum() {
   return d
 }
 
+function parseVanParam(param) {
+  if (param) {
+    const d = new Date(param + 'T00:00:00')
+    if (!isNaN(d)) return getMaandag(d)
+  }
+  return standaardStartDatum()
+}
+
 // ─── Prognose ─────────────────────────────────────────────────────────────────
 
 export default function Prognose() {
@@ -93,13 +101,7 @@ export default function Prognose() {
   const huidigeMaandag = useMemo(() => naarStr(getMaandag(new Date())), [])
   const [searchParams, setSearchParams] = useSearchParams()
   const vanParam = searchParams.get('van')
-  const startDatum = useMemo(() => {
-    if (vanParam) {
-      const d = new Date(vanParam + 'T00:00:00')
-      if (!isNaN(d)) return getMaandag(d)
-    }
-    return standaardStartDatum()
-  }, [vanParam])
+  const startDatum = useMemo(() => parseVanParam(vanParam), [vanParam])
   const [toonPotentieel, setToonPotentieel] = useState(true)
   const [toonWeekbedrag, setToonWeekbedrag] = useState(true)
   const [toonBezetting, setToonBezetting] = useState(false)
@@ -227,9 +229,9 @@ export default function Prognose() {
   )
 
   function navigeer(delta) {
-    const r = new Date(startDatum)
-    r.setDate(r.getDate() + delta * 7)
     setSearchParams((prev) => {
+      const r = parseVanParam(prev.get('van'))
+      r.setDate(r.getDate() + delta * 7)
       const next = new URLSearchParams(prev)
       next.set('van', naarStr(r))
       return next

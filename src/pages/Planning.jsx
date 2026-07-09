@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import {
   DndContext, DragOverlay,
   MouseSensor, TouchSensor,
@@ -30,6 +31,14 @@ const DAG_B  = 100
 const ROW_H  = 48
 const WEEK_H = 32
 const DAG_H  = 40
+
+function parseVanParam(param) {
+  if (param) {
+    const d = new Date(param + 'T00:00:00')
+    if (!isNaN(d)) return getMaandag(d)
+  }
+  return getMaandag(new Date())
+}
 
 // ─── Drag & Drop hulpcomponenten ──────────────────────────────────────────────
 
@@ -71,7 +80,27 @@ export default function Planning({ onNavigate }) {
   const vandaag = naarStr(new Date())
   const kanInplannen = heeftVolledigeToegang(rol)
 
-  const [startDatum, setStartDatum] = useState(() => getMaandag(new Date()))
+  const [searchParams, setSearchParams] = useSearchParams()
+  const vanParam = searchParams.get('van')
+  const startDatum = useMemo(() => parseVanParam(vanParam), [vanParam])
+
+  function navigeerRelatief(berekenNieuw) {
+    setSearchParams((prev) => {
+      const basis = parseVanParam(prev.get('van'))
+      const next = new URLSearchParams(prev)
+      next.set('van', naarStr(berekenNieuw(basis)))
+      return next
+    }, { replace: true })
+  }
+
+  function gaNaarVandaag() {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      next.delete('van')
+      return next
+    }, { replace: true })
+  }
+
   const [toonWeekend, setToonWeekend] = useState(false)
   const [toonUitgebreid, setToonUitgebreid] = useState(false)
   const [uitgeklapt, setUitgeklapt] = useState(new Set())
@@ -463,13 +492,13 @@ export default function Planning({ onNavigate }) {
 
         <div className="flex items-center gap-0.5">
           <button
-            onClick={() => setStartDatum((d) => isMobile ? plusWerkdagen(d, -3) : plusDagen(d, -aantalDagen))}
+            onClick={() => navigeerRelatief((basis) => isMobile ? plusWerkdagen(basis, -3) : plusDagen(basis, -aantalDagen))}
             className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors text-lg leading-none"
           >
             ‹
           </button>
           <button
-            onClick={() => setStartDatum(getMaandag(new Date()))}
+            onClick={gaNaarVandaag}
             className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors"
           >
             Vandaag{aantalVandaag > 0 && (
@@ -482,7 +511,7 @@ export default function Planning({ onNavigate }) {
             )}
           </button>
           <button
-            onClick={() => setStartDatum((d) => isMobile ? plusWerkdagen(d, 3) : plusDagen(d, aantalDagen))}
+            onClick={() => navigeerRelatief((basis) => isMobile ? plusWerkdagen(basis, 3) : plusDagen(basis, aantalDagen))}
             className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors text-lg leading-none"
           >
             ›
