@@ -77,9 +77,6 @@ Bijgehouden naast CONTEXT.md — technische context staat daar.
 - [ ] **Query monitoring**
       Supabase dashboard → Logs → Slow queries bijhouden bij groei.
 
-- [ ] **Demo-omgeving**
-      Aparte tenant met seed data voor sales-demo's aan potentiële klanten.
-
 - [ ] **Realtime samenwerking (Supabase Realtime)**
       Meerdere planners tegelijk — nog niet nodig voor Eissink.
       Bij implementatie: `refetchInterval: 60_000` op toewijzingen-query in Planning.jsx verwijderen — Realtime vervangt de polling.
@@ -103,7 +100,6 @@ Bijgehouden naast CONTEXT.md — technische context staat daar.
 
 - [ ] **Referentielijn beschikbare capaciteit**
 
-- [ ] **Mobiele weergave Prognose** — volwaardige lijstweergave op mobiel als aparte sprint
 - [ ] **Weeknummers in datumkiezer Prognose** *(optioneel)* — react-datepicker met `showWeekNumbers`. Alleen UI-wijziging in PrognoseModal.jsx, geen database- of servicelaag-impact.
 
 ---
@@ -147,6 +143,14 @@ Bijgehouden naast CONTEXT.md — technische context staat daar.
       "Persoon toevoegen" knop live. Tabel toont voornaam/achternaam/afkorting apart.
       "Koppel account" knop: via uitnodiging of direct aanmaken met wachtwoord.
       Personen zonder account zijn klikbaar en bewerkbaar.
+
+- [x] **Demo-omgeving**
+      Aparte tenant "Demo Afbouw BV" met seed data (monteurs, projecten, expertises, groepen)
+      voor sales-demo's aan potentiële klanten. Zie supabase/seed.sql. ✓
+
+- [x] **Mobiele weergave Prognose**
+      Responsieve grid (smallere kolommen, verborgen secundaire knoppen op mobiel) voldoende
+      bevonden — geen aparte lijstweergave nodig. ✓
 
 ### Voor eerste betalende klant — uitgevoerd
 
