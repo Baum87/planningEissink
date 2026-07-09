@@ -197,13 +197,27 @@ Gecheckt in de huidige code — dit is de exacte impact-omvang:
       op het echte domein.
 
 ### Stap 7 — Merge + push naar master (de enige productie-raakvlak-stap)
-- [ ] Pas uitvoeren als stap 6 volledig goed is. Dit is de "korte
-      deploy" — Vercel deployt automatisch bij de push naar `master`.
+- [x] `feature/routing` was fast-forward t.o.v. `master` (geen
+      divergentie) — schone merge, geen merge-commit nodig.
+      Gepusht naar `master` (`dc31c05`), Vercel heeft automatisch
+      gedeployed.
 
 ### Stap 8 — Directe check ná deploy
-- [ ] Meteen na de deploy: alle tabs, refresh op een niet-Planning-tab,
-      mobiel hamburger-menu, uitloggen/inloggen-redirect — op de
-      echte productie-URL (`planning.byggr.nl`).
+- [x] Getest op `planning.byggr.nl` door gebruiker:
+      - Alle tabs — werkt.
+      - Verversen op een niet-Planning-tab — werkt, geen 404.
+      - Mobiel hamburger-menu — werkt.
+      - Uitnodiging/wachtwoord-reset-link — **mail komt niet aan op
+        het werk-e-mailadres (Microsoft 365, `eissink.nl`), wél op een
+        privé Outlook-adres.** Los van deze refactor: de mail wordt
+        nooit verzonden/ontvangen, dus de redirect-logica die we
+        vandaag bouwden is hier nog niet eens aan de beurt gekomen.
+        Vermoedelijke oorzaak: strengere spamfiltering/quarantaine bij
+        het Microsoft 365-tenant van Eissink, niet aan de verzendkant
+        (SPF/DKIM/DMARC op `byggr.nl` staat al goed, zie TODO.md).
+        Apart traject, geen blocker voor deze routing-refactor.
+
+**Fase 1 (Basisrouting) is hiermee volledig afgerond en live.**
 
 ---
 
