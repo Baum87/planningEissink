@@ -9,16 +9,8 @@ export function AuthProvider({ children }) {
   const [rol, setRol] = useState(null)
   const [naam, setNaam] = useState(null)
   const [initialen, setInitialen] = useState(null)
-
-  // Detecteer uitnodiging of wachtwoord-reset link — implicit flow via hash, PKCE via query string
-  const [moetWachtwoordInstellen, setMoetWachtwoordInstellen] = useState(() => {
-    const hashParams = new URLSearchParams(window.location.hash.slice(1))
-    const hashType = hashParams.get('type')
-    if (hashType === 'invite' || hashType === 'recovery') return true
-    const queryParams = new URLSearchParams(window.location.search)
-    const queryType = queryParams.get('type')
-    return queryType === 'invite' || queryType === 'recovery'
-  })
+  const [moetWachtwoordInstellen, setMoetWachtwoordInstellen] = useState(false)
+  const [linkFout, setLinkFout] = useState(null)
 
   function verwerkUser(u) {
     setUser(u ?? null)
@@ -28,14 +20,43 @@ export function AuthProvider({ children }) {
   }
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => verwerkUser(user))
+    let subscription
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'PASSWORD_RECOVERY') setMoetWachtwoordInstellen(true)
-      verwerkUser(session?.user)
-    })
+    // Pas ná deze initiële afhandeling gaan we luisteren naar auth-events, zodat een
+    // eventuele nog actieve (stale) sessie nooit tussentijds via onAuthStateChange
+    // wordt teruggezet terwijl de invite/recovery-link nog wordt verwerkt.
+    async function init() {
+      const hashParams = new URLSearchParams(window.location.hash.slice(1))
+      const queryParams = new URLSearchParams(window.location.search)
+      const type = hashParams.get('type') || queryParams.get('type')
+      const code = queryParams.get('code')
 
-    return () => subscription.unsubscribe()
+      if ((type === 'invite' || type === 'recovery') && code) {
+        // Eerst een eventuele al actieve sessie in deze browser opruimen, zodat die
+        // nooit stilzwijgend blijft hangen als de code-wissel hieronder faalt.
+        await supabase.auth.signOut()
+        const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+        window.history.replaceState(null, '', window.location.pathname)
+        if (error) {
+          setLinkFout('Deze link is verlopen of al gebruikt. Vraag een nieuwe uitnodiging of reset-link aan.')
+          setUser(null)
+        } else {
+          verwerkUser(data.session.user)
+          setMoetWachtwoordInstellen(true)
+        }
+      } else {
+        const { data: { user } } = await supabase.auth.getUser()
+        verwerkUser(user)
+      }
+
+      const { data } = supabase.auth.onAuthStateChange((event, session) => {
+        verwerkUser(session?.user)
+      })
+      subscription = data.subscription
+    }
+    init()
+
+    return () => subscription?.unsubscribe()
   }, [])
 
   async function uitloggen() {
@@ -43,7 +64,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, rol, naam, initialen, uitloggen, moetWachtwoordInstellen, setMoetWachtwoordInstellen }}>
+    <AuthContext.Provider value={{ user, rol, naam, initialen, uitloggen, moetWachtwoordInstellen, setMoetWachtwoordInstellen, linkFout }}>
       {children}
     </AuthContext.Provider>
   )

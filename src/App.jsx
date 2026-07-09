@@ -18,9 +18,9 @@ import RouteGuard from './components/RouteGuard'
 const ALLE_TABS = [
   { id: 'planning',     label: 'Planning',     component: Planning,     rollen: null },
   { id: 'overzicht',   label: 'Overzicht',    component: Overzicht,    rollen: null },
-  { id: 'projecten',   label: 'Projecten',    component: Projecten,    rollen: null },
-  { id: 'monteurs',    label: 'Monteurs',     component: Monteurs,     rollen: null },
   { id: 'prognose',    label: 'Prognose',     component: Prognose,     rollen: ['admin', 'management'] },
+  { id: 'projecten',   label: 'Projecten',    component: Projecten,    rollen: null, verbergVoor: ['management'] },
+  { id: 'monteurs',    label: 'Monteurs',     component: Monteurs,     rollen: null, verbergVoor: ['management'] },
   { id: 'beheer',      label: 'Beheer',       component: Beheer,       rollen: ['admin'] },
   { id: 'statistieken',label: 'Statistieken', component: Statistieken, rollen: ['admin'] },
 ]
@@ -44,7 +44,7 @@ function InfoIcon() {
 }
 
 function WachtwoordInstellen() {
-  const { setMoetWachtwoordInstellen } = useAuth()
+  const { user, setMoetWachtwoordInstellen } = useAuth()
   const [wachtwoord, setWachtwoord] = useState('')
   const [bezig, setBezig] = useState(false)
   const [fout, setFout] = useState(null)
@@ -69,7 +69,10 @@ function WachtwoordInstellen() {
         <div className="mb-10 text-center">
           <span className="text-xl font-semibold text-gray-900 tracking-tight">Planning</span>
         </div>
-        <p className="text-sm text-gray-500 text-center mb-6">Kies een wachtwoord om door te gaan.</p>
+        <p className="text-sm text-gray-500 text-center mb-1">Kies een wachtwoord om door te gaan.</p>
+        {user?.email && (
+          <p className="text-xs text-gray-400 text-center mb-6">Voor account: <span className="font-medium">{user.email}</span></p>
+        )}
         <form onSubmit={submit} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1.5">Nieuw wachtwoord</label>
@@ -101,7 +104,7 @@ function WachtwoordInstellen() {
 }
 
 function AppInner() {
-  const { user, rol, naam, uitloggen, moetWachtwoordInstellen } = useAuth()
+  const { user, rol, naam, uitloggen, moetWachtwoordInstellen, linkFout } = useAuth()
   const { tenant, error: tenantError } = useTenant()
   const navigate = useNavigate()
   const location = useLocation()
@@ -115,12 +118,22 @@ function AppInner() {
   }
 
   const TABS = useMemo(
-    () => ALLE_TABS.filter((t) => !t.rollen || t.rollen.includes(rol)),
+    () => ALLE_TABS.filter((t) => (!t.rollen || t.rollen.includes(rol)) && !t.verbergVoor?.includes(rol)),
     [rol]
   )
 
   // Sessie wordt opgehaald — niets tonen om flicker te voorkomen
   if (user === undefined) return null
+
+  // Uitnodiging of reset-link was verlopen, al gebruikt, of de code-wissel is mislukt
+  if (linkFout) return (
+    <div className="min-h-screen bg-white flex items-center justify-center px-4">
+      <div className="max-w-sm w-full text-center">
+        <p className="text-sm font-medium text-gray-900 mb-2">Link ongeldig</p>
+        <p className="text-sm text-gray-500">{linkFout}</p>
+      </div>
+    </div>
+  )
 
   // Recovery/invite: wacht tot PKCE code-exchange klaar is voor het formulier toont
   if (moetWachtwoordInstellen && user === null) return null
