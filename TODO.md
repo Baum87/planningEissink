@@ -93,14 +93,6 @@ Bijgehouden naast CONTEXT.md — technische context staat daar.
       Planner ziet Prognose-tab in read-only — geen knoppen, geen klikbare cellen.
       RLS hoeft niet aan te passen. Alleen `kanPrognose(rol)` aanvullen met read-only variant.
 
-- [ ] **Monteurs in cellen + totaalregel — Niveau 1**
-      `bezetting_gemiddeld` bestaat al in `prognose_projecten`. Invoerveld in PrognoseModal,
-      getal tonen in balkcellen, totaalregel sommeren per week. Geen migratie nodig.
-
-- [ ] **Monteurs in cellen + totaalregel — Niveau 2**
-      Nieuwe `prognose_bezetting` subtabel: per project per week een monteurs_aantal.
-      Vereist migratie, RLS, service en inline grid-editing per cel.
-
 - [ ] **Synchronisatie prognose ↔ operationeel project na koppeling**
 
 - [ ] **Margeberekening en kostprijs per mandag**

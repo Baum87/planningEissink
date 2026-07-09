@@ -281,10 +281,9 @@ Patroon is identiek aan de bestaande `gebruikersbeheer` Edge Function.
 - Klik lege cel → modal opent, startweek voorgevuld op basis van aangeklikte cel
 - Klik bestaande balk → zelfde modal in bewerkstand; startweek en duur aanpasbaar
 - Veldvolgorde: omschrijving*, projectnummer, opdrachtgever, projectleider (dropdown profielen),
-  status (standaard: in_opdracht), aanneemsom, startweek, duur_weken*
+  status (standaard: in_opdracht), aanneemsom, startweek, duur_weken*, gemiddeld aantal monteurs
 - Eindweek automatisch berekend als readonly preview: `start_datum + duur_weken × 7`
 - Kleur: automatisch toegewezen via `minstGebruikteKleur()`, optioneel aan te passen
-- Geen bezettingsvelden — bewust weggelaten
 - Statusovergang naar `in_opdracht`: apart bevestigingsscherm met uitleg dat operationeel project
   aangemaakt wordt
 - `InplanModal` wordt NIET hergebruikt — die is te strak gekoppeld aan monteurs/toewijzingen/werkdagen
@@ -298,28 +297,51 @@ Patroon is identiek aan de bestaande `gebruikersbeheer` Edge Function.
 - `useZoek()` voor filter, `useTenant()` voor prognose_config
 - Modal overlay-patroon (`fixed inset-0 z-50 bg-black/25 rounded-2xl shadow-2xl`)
 
-### Toekomstige uitbreiding: bezetting per week
-Wanneer management per project wil aangeven hoeveel monteurs er per week werken
-(bijv. "week 1–2: 2 monteurs, week 3–4: 4 monteurs, week 5–6: 2 monteurs"),
-komt er een subtabel:
+### Bezetting per week (gebouwd)
+Twee niveaus, opgebouwd op elkaar:
+
+**Niveau 1** — `bezetting_gemiddeld` op `prognose_projecten` (bestond al in
+het schema sinds migratie 018): project-breed gemiddeld aantal monteurs,
+invoerbaar in PrognoseModal.
+
+**Niveau 2** — subtabel `prognose_bezetting` (migratie 024) voor per-week
+overrides:
 
 ```
 prognose_bezetting
   id                   uuid PK
   prognose_project_id  uuid → prognose_projecten (CASCADE DELETE)
-  week_offset          int   -- 0 = startweek, 1 = week daarna, etc.
+  tenant_id            uuid → tenants (CASCADE DELETE)
+  week_offset          int   -- 0 = startweek, 1 = week daarna, etc. Relatief
+                              t.o.v. start_datum (niet een absolute datum),
+                              zodat overrides automatisch meeschuiven als
+                              het project versleept wordt.
   aantal_monteurs      int
+  tekst                text  -- optioneel, bv. team/opmerking
 ```
 
-De cellen tonen dan het getal per week; de totaalregel telt monteurs op over
-alle projecten per week. `bezetting_gemiddeld` op `prognose_projecten` blijft
-als ruwe schatting naast de detailtabel bestaan.
+RLS en audit-trigger volgen 1-op-1 het patroon van `prognose_projecten`
+(migraties 018 + 019).
 
-In v1 is `bezetting_gemiddeld` aanwezig in het schema maar niet invoerbaar
-via de UI. De cellen tonen alleen kleur, de totaalregel alleen aanneemsom.
+Cel-inhoud: override uit `prognose_bezetting` voor die project+week_offset
+indien aanwezig, anders `bezetting_gemiddeld` (Niveau 1) als terugval,
+anders niets — geen "0" of placeholder. Getal en tekst worden als losse
+badges getoond (elk 50% breedte als beide aanwezig zijn), boven de
+gekleurde balk, samen met de balk gecentreerd binnen de vaste rijhoogte.
+
+Bewerken: klik op een week-cel (zonder te slepen — hergebruikt de
+bestaande drag-detectie via `wasDragged`) opent een klein popover-
+formuliertje met twee velden (aantal monteurs, tekst), beide optioneel.
+
+Zichtbaarheid via "Bezetting"-toggle in de toolbar (zelfde patroon als
+"Weekbedrag"), standaard uit. Rijhoogte groeit alleen mee (+16px) als de
+toggle aan staat — geen layout-sprong bij projecten zonder bezettingsdata.
+
+Totaalregel "Monteurs / week" (som van override/gemiddelde over alle
+zichtbare projecten die week) — alleen zichtbaar met de toggle aan, apart
+van de bestaande aanneemsom-totaalregel.
 
 ### Bewust buiten scope (prognose v1)
-- Bezetting per week (subtabel `prognose_bezetting`) — datamodel is er klaar voor
 - Synchronisatie van velden tussen prognose_projecten en projecten na koppeling
 - Margeberekening, kostprijs per mandag, facturatiekoppeling
 - Vergelijking raming vs. werkelijke planning

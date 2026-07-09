@@ -86,7 +86,7 @@ src/
   App.jsx
   main.jsx                      # Sentry initialisatie
 supabase/
-  migrations/                   # 001–018, in volgorde uitvoeren
+  migrations/                   # 001–024, in volgorde uitvoeren
   seed.sql                      # Tenants + demo-data voor nieuwe opzet
   tests/
     rls_smoke_test.sql          # Handmatige RLS verificatie na migraties
@@ -118,8 +118,10 @@ groepen              — naam
 groep_leden          — koppeltabel groepen ↔ monteurs
 toewijzingen         — monteur_id, project_id, datum (datum_van = datum_tot = één werkdag)
 periodes             — bouwvak en feestdagen (worden overgeslagen bij inplannen)
-prognose_projecten   — omschrijving, start_datum, duur_weken, status, aanneemsom, kleur
+prognose_projecten   — omschrijving, start_datum, duur_weken, status, aanneemsom, bezetting_gemiddeld
                        operationeel_project_id (FK projecten) — gevuld na "in opdracht"
+prognose_bezetting   — per-week override op bezetting_gemiddeld: week_offset (relatief t.o.v.
+                       start_datum), aantal_monteurs, tekst (FK prognose_projecten, CASCADE DELETE)
 ```
 
 ### Multi-tenancy en RLS
@@ -154,7 +156,7 @@ Voer de migraties in volgorde uit in de Supabase SQL Editor:
 ```
 supabase/migrations/001_initial_schema.sql
 ...
-supabase/migrations/020_avatar_kleur_profielen.sql
+supabase/migrations/024_prognose_bezetting.sql
 ```
 
 Daarna `supabase/seed.sql` voor de basis tenant-records.
