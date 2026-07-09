@@ -179,12 +179,22 @@ Gecheckt in de huidige code — dit is de exacte impact-omvang:
       de app-kant, niet de Vercel-kant. Stap 6 blijft daarom nodig.
 
 ### Stap 6 — Vercel preview-deploy (nog steeds geen productie)
-- [ ] Branch pushen naar GitHub (niet naar `master`). Vercel maakt
+- [x] Branch gepusht naar GitHub (niet naar `master`) — Vercel maakte
       automatisch een Preview Deployment op een tijdelijke URL.
-- [ ] Op die preview-URL specifiek testen: direct een niet-Planning-pad
-      intypen (bv. `/prognose`) én verversen. Dit is het enige scenario
-      dat zonder de `vercel.json`-rewrite 404 geeft, en het enige
-      moment in dit hele plan dat dat risico echt zichtbaar wordt.
+- [x] Op de preview-URL getest en geslaagd, door gebruiker bevestigd:
+      - Direct diepe paden intypen + verversen (`/prognose`, `/beheer`,
+        `/statistieken`, en de rol-vrije tabs) — geen 404's, dit was
+        het enige scenario dat lokaal niet zichtbaar was.
+      - Browser back/forward tussen tabs.
+      - Rolbeveiliging nogmaals herhaald op de echte deploy.
+      - Normaal in-/uitloggen.
+      - Mobiel/hamburger-menu.
+      Bewust **niet** getest op preview: uitnodiging/wachtwoord-reset-
+      link — die bouwt de redirect-URL met `window.location.origin`,
+      wat op de preview-URL een ander (mogelijk niet-toegestaan)
+      domein is bij Supabase. Dat zou een omgevingsfout opleveren die
+      niets met deze refactor te maken heeft. Test die pas ná de merge,
+      op het echte domein.
 
 ### Stap 7 — Merge + push naar master (de enige productie-raakvlak-stap)
 - [ ] Pas uitvoeren als stap 6 volledig goed is. Dit is de "korte
