@@ -245,9 +245,29 @@ Elk tabblad heeft een eigen URL (`/planning`, `/overzicht`, `/projecten`,
 - `vercel.json` bevatte al een SPA-fallback-rewrite (`"/(.*)" →
   "/index.html"`, toegevoegd voor de `/privacy`- en `/disclaimer`-pagina's)
   — dekte de nieuwe tab-routes toevallig al, geen wijziging nodig.
-- Route-navigatiestate (welke week/periode je bekijkt binnen een tabblad)
-  zit nog niet in de URL — een refresh op bv. Prognose behoudt het tabblad,
-  maar niet de bekeken periode. Zie TODO_deeplinks.md voor de vervolgstap.
+
+### Periode in de URL (Prognose.jsx, Planning.jsx)
+`startDatum` (welke week/periode je bekijkt binnen een tabblad) zit niet in
+losse state maar in de `?van=`-querystring, via `useSearchParams()`. Lost op:
+een refresh behoudt nu ook de bekeken periode (niet alleen het tabblad), en
+een periode is deelbaar/bookmarkbaar.
+
+- Gedeelde `parseVanParam(param)`-helper per pagina: parseert de param naar
+  een Date (gesnapt op maandag via `getMaandag()`), valt terug op de
+  standaardperiode bij een ontbrekende of ongeldige waarde.
+- `startDatum` zelf is een `useMemo` op de rauwe string-param (niet op het
+  Date-object) — voorkomt dat afhankelijke `useMemo`-ketens (`weken` in
+  Prognose.jsx, `alleDagen`/`zDagen` in Planning.jsx) bij elke render
+  onnodig herberekenen, want Date-objecten zijn nooit referentie-gelijk.
+- Navigatie (vorige/volgende) berekent de nieuwe datum *binnen* de
+  `setSearchParams`-updater, op basis van `prev` — niet op basis van de
+  buitenste `startDatum`-variabele. Anders kan snel dubbelklikken een stap
+  laten "verdwijnen" (stale closure); dezelfde garantie die de oude
+  `setState((d) => ...)`-vorm al bood.
+- Alle navigatie gebruikt `{ replace: true }` zodat elke week-stap niet de
+  browser-historie volspamt.
+- "Vandaag" **verwijdert** de param i.p.v. er een vaste datum in te zetten
+  — zo blijft een bookmark altijd de actuele week tonen, ook weken later.
 
 ## Prognose-tijdlijn (management)
 
