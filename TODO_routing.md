@@ -114,6 +114,8 @@ Gecheckt in de huidige code — dit is de exacte impact-omvang:
       compileert schoon, `react-router-dom`-import resolved correct
       (200, geen Vite-foutoverlay). App.jsx gebruikt de router nog
       nergens, dus functioneel een no-op.
+- [x] Handmatig door gebruiker getest op de lokale dev-server (echt
+      inloggen, tabs wisselen, console gecheckt): geen regressie.
 - [x] Commit (`651671a`).
 
 ### Stap 2 — Route-guard component (nieuw, geïsoleerd)
