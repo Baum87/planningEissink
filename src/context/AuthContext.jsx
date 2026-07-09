@@ -30,18 +30,29 @@ export function AuthProvider({ children }) {
       const queryParams = new URLSearchParams(window.location.search)
       const type = hashParams.get('type') || queryParams.get('type')
       const code = queryParams.get('code')
+      const accessToken = hashParams.get('access_token')
+      const refreshToken = hashParams.get('refresh_token')
+      const isUitnodigingOfReset = type === 'invite' || type === 'recovery'
+      const heeftToken = !!code || (!!accessToken && !!refreshToken)
 
-      if ((type === 'invite' || type === 'recovery') && code) {
+      if (isUitnodigingOfReset && heeftToken) {
         // Eerst een eventuele al actieve sessie in deze browser opruimen, zodat die
-        // nooit stilzwijgend blijft hangen als de code-wissel hieronder faalt.
+        // nooit stilzwijgend blijft hangen als het wisselen hieronder faalt.
         await supabase.auth.signOut()
-        const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+
+        // Twee mogelijke linkformaten van Supabase: PKCE (?code=...) of het oudere
+        // implicit-formaat (#access_token=...&refresh_token=...).
+        const { error } = code
+          ? await supabase.auth.exchangeCodeForSession(code)
+          : await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
+
         window.history.replaceState(null, '', window.location.pathname)
         if (error) {
           setLinkFout('Deze link is verlopen of al gebruikt. Vraag een nieuwe uitnodiging of reset-link aan.')
           setUser(null)
         } else {
-          verwerkUser(data.session.user)
+          const { data: { user } } = await supabase.auth.getUser()
+          verwerkUser(user)
           setMoetWachtwoordInstellen(true)
         }
       } else {
