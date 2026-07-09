@@ -101,24 +101,28 @@ Gecheckt in de huidige code — dit is de exacte impact-omvang:
   Alle overige pagina's ontvangen de prop maar gebruiken hem niet.
 
 ### Stap 0 — Branch
-- [ ] Branch `feature/routing` vanaf `master`. Niets hierna raakt
+- [x] Branch `feature/routing` vanaf `master`. Niets hierna raakt
       productie totdat er expliciet gemerged én gepusht wordt.
 
 ### Stap 1 — Dependency, geen gedragswijziging
-- [ ] `npm install react-router-dom`
-- [ ] `<BrowserRouter>` om de app in `main.jsx`
-- [ ] Verifiëren: app werkt lokaal nog exact zoals voorheen (routing-lib
-      geïnstalleerd maar nog nergens gebruikt — dit kan dus niets breken).
-- [ ] Commit.
+- [x] `npm install react-router-dom` — 0 nieuwe vulnerabilities (de 4
+      gerapporteerde zitten in bestaande build-tooling: @babel/core,
+      brace-expansion, vite, ws — niet in react-router-dom zelf).
+- [x] `<BrowserRouter>` om de app in `main.jsx`
+- [x] Geverifieerd: `npm run build` + `npm run lint` — geen nieuwe issues
+      t.o.v. master. Dev-server gestart en `main.jsx` via curl opgevraagd:
+      compileert schoon, `react-router-dom`-import resolved correct
+      (200, geen Vite-foutoverlay). App.jsx gebruikt de router nog
+      nergens, dus functioneel een no-op.
+- [x] Commit (`651671a`).
 
 ### Stap 2 — Route-guard component (nieuw, geïsoleerd)
-- [ ] Nieuw bestand, bv. `src/components/RouteGuard.jsx`: checkt rol
-      tegen de toegestane rollen van een route, redirect naar de eerste
-      toegestane tab bij onbevoegde toegang.
-      Reden om dit als eigen stap te doen: raakt geen bestaande code,
-      dus onafhankelijk te bouwen en te beredeneren vóór de grote
-      App.jsx-wijziging.
-- [ ] Commit.
+- [x] `src/components/RouteGuard.jsx`: checkt rol tegen de toegestane
+      rollen van een route, redirect naar een meegegeven fallback-pad
+      bij onbevoegde toegang.
+- [x] Build + lint schoon. Nog niet functioneel testbaar — component
+      wordt pas in stap 3 in App.jsx ingehaakt.
+- [x] Commit (`72b3914`).
 
 ### Stap 3 — App.jsx omzetten (kernstap, grootste risico)
 - [ ] `activeTab`-state vervangen door `<Routes>`/`<Route>` per tab,
