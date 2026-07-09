@@ -127,18 +127,37 @@ Gecheckt in de huidige code — dit is de exacte impact-omvang:
 - [x] Commit (`72b3914`).
 
 ### Stap 3 — App.jsx omzetten (kernstap, grootste risico)
-- [ ] `activeTab`-state vervangen door `<Routes>`/`<Route>` per tab,
-      elke rol-beperkte tab gewrapt in `RouteGuard`.
-- [ ] `navigeerNaar()` → `useNavigate()`; alle 4 `onClick`-aanroepen
-      + de `onNaarProjecten`-call in `Planning.jsx` aangepast.
-- [ ] `HandleidingModal openSectie` en de `<main>`-className/style-logica
-      omgezet naar `useLocation()` i.p.v. `activeTab`.
-- [ ] Lokaal uitgebreid testen (`npm run dev`): elke tab, elke rol
-      (admin/planner/gebruiker/management), hamburger-menu mobiel,
-      "naar projecten"-link vanuit Planning-modal, uitloggen/inloggen.
-      Let op: dit test nog NIET het Vercel-rewrite-risico — Vite's
-      dev-server doet SPA-fallback altijd automatisch.
-- [ ] Commit.
+- [x] `activeTab`-state vervangen door één afgeleide waarde uit
+      `useLocation().pathname` (i.p.v. losse aanpassingen per plek) —
+      kleinere diff, `HandleidingModal openSectie` en de `<main>`-
+      className/style-logica blijven ongewijzigd werken zonder zelf
+      aangepast te hoeven worden.
+- [x] `<Routes>`/`<Route>` per tab (over `ALLE_TABS`, niet de
+      rol-gefilterde `TABS`, zodat een verboden pad altijd een echte
+      route treft die door `RouteGuard` wordt afgevangen i.p.v. op de
+      catch-all te vallen — explicieter en dus beter uitbreidbaar
+      richting Fase 3).
+- [x] `navigeerNaar()` → `useNavigate()`; alle 4 `onClick`-aanroepen
+      + de `onNaarProjecten`-call in `Planning.jsx` ongewijzigd (zelfde
+      functiesignatuur, alleen de implementatie erachter veranderd).
+- [x] Build + lint schoon (30 problemen, exact de bestaande baseline).
+- [x] Lokaal getest door gebruiker: URL volgt de tabs correct.
+- [x] Rolbeveiliging getest door gebruiker (niet-toegestane rol direct
+      naar `/beheer` of `/prognose` typen) — **werkt correct.**
+- [x] Uitloggen-gedrag getest: URL blijft op het oude pad staan na
+      uitloggen (geen expliciete reset naar `/`) — **bewust zo gelaten,
+      gebruiker akkoord, geen wijziging nodig.**
+- [x] Verbindingen-audit: alle directe `window.location`/`window.history`-
+      aanroepen in de codebase nagelopen (Login.jsx, gebruikersbeheer-
+      Service.js, AuthContext.jsx, App.jsx zelf). Eén fragiliteit
+      gevonden (raw `history.replaceState` in `WachtwoordInstellen` na
+      wachtwoord instellen) — doorgerekend en onschadelijk bevonden
+      zolang niemand `location.search` leest; aandachtspunt voor Fase 2.
+- [ ] **Nog handmatig te testen (aanbevolen, niet blokkerend):**
+      een echte uitnodiging/wachtwoord-reset-link doorlopen. Op basis
+      van codeanalyse ~90% vertrouwen dat dit werkt — niet zelf uit te
+      voeren zonder een echte Supabase-mail/PKCE-flow.
+- [x] Commit.
 
 ### Stap 4 — vercel.json
 - [ ] SPA-fallback rewrite toevoegen. Heeft geen enkel effect vóór

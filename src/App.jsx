@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from './lib/supabase'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { TenantProvider, useTenant } from './context/TenantContext'
@@ -12,6 +13,7 @@ import Statistieken from './pages/Statistieken'
 import UpdatesBadge from './components/UpdatesBadge'
 import Prognose from './pages/Prognose'
 import HandleidingModal from './components/HandleidingModal'
+import RouteGuard from './components/RouteGuard'
 
 const ALLE_TABS = [
   { id: 'planning',     label: 'Planning',     component: Planning,     rollen: null },
@@ -101,12 +103,14 @@ function WachtwoordInstellen() {
 function AppInner() {
   const { user, rol, naam, uitloggen, moetWachtwoordInstellen } = useAuth()
   const { tenant, error: tenantError } = useTenant()
-  const [activeTab, setActiveTab] = useState('planning')
+  const navigate = useNavigate()
+  const location = useLocation()
+  const activeTab = location.pathname.slice(1) || 'planning'
   const [hamburgerOpen, setHamburgerOpen] = useState(false)
   const [handleidingOpen, setHandleidingOpen] = useState(false)
 
   function navigeerNaar(tabId) {
-    setActiveTab(tabId)
+    navigate('/' + tabId)
     setHamburgerOpen(false)
   }
 
@@ -144,7 +148,7 @@ function AppInner() {
     </div>
   )
 
-  const ActivePage = (TABS.find((t) => t.id === activeTab) ?? TABS[0]).component
+  const eersteToegestaneTab = TABS[0]?.id ?? 'planning'
 
   return (
     <div className="min-h-screen bg-white">
@@ -262,7 +266,24 @@ function AppInner() {
         className={`px-6 py-6${activeTab !== 'planning' && activeTab !== 'overzicht' && activeTab !== 'prognose' ? ' max-w-screen-xl mx-auto' : ''}${activeTab === 'projecten' || activeTab === 'monteurs' ? ' flex flex-col overflow-hidden' : ''}`}
         style={activeTab === 'projecten' || activeTab === 'monteurs' ? { height: 'calc(100vh - 57px)' } : undefined}
       >
-        <ActivePage onNavigate={navigeerNaar} />
+        <Routes>
+          <Route path="/" element={<Navigate to={`/${eersteToegestaneTab}`} replace />} />
+          {ALLE_TABS.map((tab) => {
+            const Component = tab.component
+            return (
+              <Route
+                key={tab.id}
+                path={`/${tab.id}`}
+                element={
+                  <RouteGuard toegestaneRollen={tab.rollen} rol={rol} fallbackPad={`/${eersteToegestaneTab}`}>
+                    <Component onNavigate={navigeerNaar} />
+                  </RouteGuard>
+                }
+              />
+            )
+          })}
+          <Route path="*" element={<Navigate to={`/${eersteToegestaneTab}`} replace />} />
+        </Routes>
       </main>
     </div>
   )
