@@ -5,6 +5,7 @@ import { projKleur } from '../lib/kleurenpalet'
 import { profielenUitProjecten } from '../lib/profielen'
 import { getMaandag, plusDagen, naarStr, isoWeek, fDag, fDagNaam, fDatumLang, plusWerkdagen } from '../lib/datum'
 import { useIsMobile } from '../hooks/useIsMobile'
+import { useZoek } from '../hooks/useZoek'
 
 // ─── Constanten ───────────────────────────────────────────────────────────────
 
@@ -27,6 +28,7 @@ export default function Overzicht() {
   const [toonUitgebreid, setToonUitgebreid] = useState(false)
   const [popup, setPopup] = useState(null)
   const [filterProjectleider, setFilterProjectleider] = useState('')
+  const [zoek, setZoek, zoekDeferred] = useZoek()
 
   // ── Datum berekeningen ──────────────────────────────────────────────────────
 
@@ -141,16 +143,21 @@ export default function Overzicht() {
   const zichtbareProjecten = useMemo(() => {
     const dagStrs = new Set(zDagen.map(naarStr))
     const projMap = Object.fromEntries(projecten.map((p) => [p.id, p]))
+    const q = zoekDeferred.trim().toLowerCase()
 
     return [...projectDagMap.entries()]
       .filter(([, dagMap]) => [...dagMap.keys()].some((d) => dagStrs.has(d)))
       .map(([id]) => projMap[id])
       .filter(Boolean)
       .filter((p) => !filterProjectleider || p.projectleider_id === filterProjectleider)
+      .filter((p) => !q ||
+        String(p.werknummer ?? '').toLowerCase().includes(q) ||
+        String(p.omschrijving ?? '').toLowerCase().includes(q)
+      )
       .sort((a, b) =>
         String(a.werknummer ?? '').localeCompare(String(b.werknummer ?? ''), 'nl')
       )
-  }, [projectDagMap, zDagen, projecten, filterProjectleider])
+  }, [projectDagMap, zDagen, projecten, filterProjectleider, zoekDeferred])
 
   const monteursMap = useMemo(
     () => Object.fromEntries(monteurs.map((m) => [m.id, m])),
@@ -168,6 +175,25 @@ export default function Overzicht() {
     <div className="flex flex-col gap-3">
       {/* Toolbar */}
       <div className="flex items-center gap-3 flex-wrap">
+        <input
+          type="search"
+          placeholder="Zoek project…"
+          value={zoek}
+          onChange={(e) => setZoek(e.target.value)}
+          className="w-32 md:w-44 px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors"
+        />
+
+        <select
+          value={filterProjectleider}
+          onChange={(e) => setFilterProjectleider(e.target.value)}
+          className="px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors bg-white text-gray-600"
+        >
+          <option value="">Alle PL</option>
+          {alleProjectleiders.map((pl) => (
+            <option key={pl.id} value={pl.id}>{pl.afkorting}</option>
+          ))}
+        </select>
+
         <div className="flex items-center gap-0.5">
           <button
             onClick={() => setStartDatum((d) => isMobile ? plusWerkdagen(d, -3) : plusDagen(d, -aantalDagen))}
@@ -190,17 +216,6 @@ export default function Overzicht() {
         </div>
 
         <span className="text-sm font-semibold text-gray-700 whitespace-nowrap min-w-[96px]">{periodeLabel}</span>
-
-        <select
-          value={filterProjectleider}
-          onChange={(e) => setFilterProjectleider(e.target.value)}
-          className="px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors bg-white text-gray-600"
-        >
-          <option value="">Alle PL</option>
-          {alleProjectleiders.map((pl) => (
-            <option key={pl.id} value={pl.id}>{pl.afkorting}</option>
-          ))}
-        </select>
 
         <div className="hidden md:flex ml-auto items-center gap-4">
           <label className="hidden md:flex items-center gap-2 cursor-pointer select-none">

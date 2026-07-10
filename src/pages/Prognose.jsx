@@ -15,6 +15,7 @@ import {
   upsertPrognoseBezetting,
 } from '../services/prognoseService'
 import PrognoseModal from '../components/PrognoseModal'
+import { useZoek } from '../hooks/useZoek'
 
 // ─── Constanten ───────────────────────────────────────────────────────────────
 
@@ -106,6 +107,7 @@ export default function Prognose() {
   const [toonWeekbedrag, setToonWeekbedrag] = useState(true)
   const [toonBezetting, setToonBezetting] = useState(false)
   const [filterPl, setFilterPl] = useState('')
+  const [zoek, setZoek, zoekDeferred] = useZoek()
   const [sorteer, setSorteer] = useState('pl')
   const [modal, setModal] = useState(null)
   const [drag, setDrag] = useState(null) // { project, startX, startScrollLeft, weekDelta }
@@ -152,6 +154,12 @@ export default function Prognose() {
       : projecten.filter((p) => p.status !== 'potentieel')
     if (filterPl) gefilterd = gefilterd.filter((p) => p.projectleider_id === filterPl)
 
+    const q = zoekDeferred.trim().toLowerCase()
+    if (q) gefilterd = gefilterd.filter((p) =>
+      String(p.werknummer ?? '').toLowerCase().includes(q) ||
+      String(p.omschrijving ?? '').toLowerCase().includes(q)
+    )
+
     return [...gefilterd].sort((a, b) => {
       if (sorteer === 'datum') {
         // Zonder startdatum onderaan
@@ -175,7 +183,7 @@ export default function Prognose() {
         return a.start_datum.localeCompare(b.start_datum)
       return a.omschrijving.localeCompare(b.omschrijving)
     })
-  }, [projecten, toonPotentieel, filterPl, sorteer])
+  }, [projecten, toonPotentieel, filterPl, zoekDeferred, sorteer])
 
   const rijIds = useMemo(() => rijen.map((p) => p.id), [rijen])
   const { data: bezettingRows = [] } = usePrognoseBezetting(rijIds)
@@ -409,6 +417,15 @@ export default function Prognose() {
 
       {/* ── Toolbar ───────────────────────────────────────────────────────────── */}
       <div className="print:hidden flex items-center gap-3 flex-wrap">
+
+        {/* Zoekveld */}
+        <input
+          type="search"
+          placeholder="Zoek project…"
+          value={zoek}
+          onChange={(e) => setZoek(e.target.value)}
+          className="print:hidden w-32 md:w-44 px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors"
+        />
 
         {/* Sortering — verborgen op mobiel */}
         <select
