@@ -23,6 +23,7 @@ const NAAM_B   = 280
 const WEEK_B   = 85
 const WEKEN    = 42
 const ROW_H    = 48
+const JAAR_H   = 32
 const HEADER_H = 40
 const NAV_STAP = 12
 
@@ -564,10 +565,34 @@ export default function Prognose() {
       >
         <div className="min-w-[2976px] sm:min-w-[3850px]">
 
+          {/* Jaar-header — sticky binnen de scrollbare container */}
+          <div
+            className="sticky top-0 z-20 flex bg-white border-b border-gray-200"
+            style={{ height: JAAR_H }}
+          >
+            <div
+              className="sticky left-0 z-30 bg-white border-r border-gray-100 shrink-0 w-[120px] sm:w-[280px]"
+            />
+            {weken.map((d, i) => {
+              const jaar = d.getFullYear()
+              const nieuwJaar = i === 0 || weken[i - 1].getFullYear() !== jaar
+              return (
+                <div
+                  key={i}
+                  className={`flex items-center px-2 shrink-0 w-[68px] sm:w-[85px] ${nieuwJaar ? 'border-l border-gray-100' : ''}`}
+                >
+                  {nieuwJaar && (
+                    <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">{jaar}</span>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+
           {/* Week-header — sticky binnen de scrollbare container */}
           <div
-            className="sticky top-0 z-20 flex bg-gray-50 border-b border-gray-200"
-            style={{ height: HEADER_H }}
+            className="sticky z-20 flex bg-gray-50 border-b border-gray-200"
+            style={{ top: JAAR_H, height: HEADER_H }}
           >
             <div
               className="sticky left-0 z-30 bg-gray-50 border-r border-gray-100 shrink-0 flex items-center px-4 w-[120px] sm:w-[280px]"
@@ -592,19 +617,16 @@ export default function Prognose() {
                         </span>
                       </>
                     ) : (
-                      <>
-                        <span className="text-[10px] text-gray-400 leading-none">{d.getFullYear()}</span>
-                        <span className={`text-[11px] font-semibold leading-none mt-0.5 flex items-center gap-0.5 ${isHuidigeWeek ? 'text-blue-600' : 'text-gray-600'}`}>
-                          Wk {isoWeek(d)}
-                          {isHuidigeWeek && <span className="w-1 h-1 rounded-full bg-blue-500 shrink-0" />}
-                          {info?.feestdagen.length > 0 && (
-                            <span
-                              title={info.feestdagen.map(f => f.naam).join(', ')}
-                              className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0"
-                            />
-                          )}
-                        </span>
-                      </>
+                      <span className={`text-[11px] font-semibold leading-none flex items-center gap-0.5 ${isHuidigeWeek ? 'text-blue-600' : 'text-gray-600'}`}>
+                        Wk {isoWeek(d)}
+                        {isHuidigeWeek && <span className="w-1 h-1 rounded-full bg-blue-500 shrink-0" />}
+                        {info?.feestdagen.length > 0 && (
+                          <span
+                            title={info.feestdagen.map(f => f.naam).join(', ')}
+                            className="w-1.5 h-1.5 rounded-full bg-blue-400 shrink-0"
+                          />
+                        )}
+                      </span>
                     )
                   })()}
                 </div>
