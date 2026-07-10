@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useAuth, isGebruiker } from '../context/AuthContext'
 import { useMonteurs, useToewijzingen, useProjecten, usePeriodes, useProfielen } from '../hooks/queries'
 import { projKleur } from '../lib/kleurenpalet'
+import { avatarKleur } from '../lib/avatar'
 import { profielenUitProjecten } from '../lib/profielen'
 import { getMaandag, plusDagen, naarStr, isoWeek, fDag, fDagNaam, fDatumLang, plusWerkdagen } from '../lib/datum'
 import { useIsMobile } from '../hooks/useIsMobile'
@@ -29,6 +30,7 @@ export default function Overzicht() {
   const [popup, setPopup] = useState(null)
   const [filterProjectleider, setFilterProjectleider] = useState('')
   const [zoek, setZoek, zoekDeferred] = useZoek()
+  const [sorteer, setSorteer] = useState('nummer')
 
   // ── Datum berekeningen ──────────────────────────────────────────────────────
 
@@ -154,10 +156,20 @@ export default function Overzicht() {
         String(p.werknummer ?? '').toLowerCase().includes(q) ||
         String(p.omschrijving ?? '').toLowerCase().includes(q)
       )
-      .sort((a, b) =>
-        String(a.werknummer ?? '').localeCompare(String(b.werknummer ?? ''), 'nl')
-      )
-  }, [projectDagMap, zDagen, projecten, filterProjectleider, zoekDeferred])
+      .sort((a, b) => {
+        if (sorteer === 'pl') {
+          const afkA = a.projectleider?.afkorting ?? 'zzz'
+          const afkB = b.projectleider?.afkorting ?? 'zzz'
+          if (afkA !== afkB) return afkA.localeCompare(afkB)
+          return String(a.werknummer ?? '').localeCompare(String(b.werknummer ?? ''), 'nl')
+        }
+        if (sorteer === 'naam') {
+          return String(a.omschrijving ?? '').localeCompare(String(b.omschrijving ?? ''), 'nl')
+        }
+        // 'nummer' (default)
+        return String(a.werknummer ?? '').localeCompare(String(b.werknummer ?? ''), 'nl')
+      })
+  }, [projectDagMap, zDagen, projecten, filterProjectleider, zoekDeferred, sorteer])
 
   const monteursMap = useMemo(
     () => Object.fromEntries(monteurs.map((m) => [m.id, m])),
@@ -182,6 +194,16 @@ export default function Overzicht() {
           onChange={(e) => setZoek(e.target.value)}
           className="w-32 md:w-44 px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors"
         />
+
+        <select
+          value={sorteer}
+          onChange={(e) => setSorteer(e.target.value)}
+          className="hidden sm:block px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:border-gray-400 transition-colors bg-white text-gray-600"
+        >
+          <option value="nummer">Sorteer: Projectnummer</option>
+          <option value="pl">Sorteer: Projectleider</option>
+          <option value="naam">Sorteer: Naam project</option>
+        </select>
 
         <select
           value={filterProjectleider}
@@ -342,6 +364,9 @@ export default function Overzicht() {
           {!loading && zichtbareProjecten.map((project) => {
             const kleur  = projKleur(project)
             const dagMap = projectDagMap.get(project.id) ?? new Map()
+            const pl = project.projectleider
+            const [avgBg, avgFg] = avatarKleur(pl?.weergave_naam || 'Z', pl?.avatar_kleur)
+            const afk = pl?.afkorting ?? project.projectleider_initialen ?? '—'
 
             return (
               <div
@@ -351,19 +376,22 @@ export default function Overzicht() {
               >
                 {/* Naam cel */}
                 <div
-                  className="sticky left-0 z-10 bg-white border-r border-gray-100 flex flex-col justify-center px-3 shrink-0"
+                  className="sticky left-0 z-10 bg-white border-r border-gray-100 flex items-center gap-2 px-3 shrink-0"
                   style={{ width: naamBreedte }}
                 >
-                  <div className="text-xs font-semibold text-gray-900 truncate leading-tight">
-                    {project.omschrijving || project.werknummer}
+                  <div
+                    className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0"
+                    style={{ backgroundColor: avgBg, color: avgFg }}
+                  >
+                    {afk}
                   </div>
-                  <div className="text-[10px] text-gray-400 font-mono truncate leading-tight">
-                    {project.werknummer}
-                    {(project.projectleider?.afkorting ?? project.projectleider_initialen) && (
-                      <span className="font-sans">
-                        {' · '}{project.projectleider?.afkorting ?? project.projectleider_initialen}
-                      </span>
-                    )}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-semibold text-gray-900 truncate leading-tight">
+                      {project.omschrijving || project.werknummer}
+                    </div>
+                    <div className="text-[10px] text-gray-400 font-mono truncate leading-tight">
+                      {project.werknummer}
+                    </div>
                   </div>
                 </div>
 
@@ -380,17 +408,17 @@ export default function Overzicht() {
                       <div
                         key={dagStr}
                         onClick={() => setPopup({ project, dag: dagStr })}
-                        className="border-l border-white/40 flex items-center justify-center cursor-pointer hover:opacity-75 transition-opacity"
-                        style={{
-                          flex: 1,
-                          minWidth: dagBreedte,
-                          height: ROW_H,
-                          backgroundColor: kleur.bg,
-                        }}
+                        className="border-l border-gray-100 flex items-center justify-center cursor-pointer hover:opacity-75 transition-opacity"
+                        style={{ flex: 1, minWidth: dagBreedte, height: ROW_H }}
                       >
-                        <span className="text-sm font-semibold" style={{ color: kleur.fg }}>
-                          {aantal}
-                        </span>
+                        <div
+                          className="w-full mx-0 rounded-sm flex items-center justify-center"
+                          style={{ height: 28, backgroundColor: kleur.bg }}
+                        >
+                          <span className="text-sm font-semibold" style={{ color: kleur.fg }}>
+                            {aantal}
+                          </span>
+                        </div>
                       </div>
                     )
                   }
