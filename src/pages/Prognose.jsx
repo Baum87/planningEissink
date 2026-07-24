@@ -834,7 +834,7 @@ export default function Prognose() {
                         <div
                           className="w-full mx-0.5 rounded-sm flex items-center justify-center"
                           style={{
-                            height: 20,
+                            height: 24,
                             backgroundColor: kleur.bg,
                             cursor: !kanWritten ? 'default' : isDragging ? 'grabbing' : 'grab',
                             ...(project.status === 'potentieel' ? {
@@ -843,7 +843,7 @@ export default function Prognose() {
                           }}
                         >
                           {toonWeekbedrag && project.status === 'in_opdracht' && project.aanneemsom && (
-                            <span style={{ fontSize: 9, color: 'rgba(0,0,0,0.5)', lineHeight: 1 }}>
+                            <span style={{ fontSize: 11, color: 'rgba(0,0,0,0.5)', lineHeight: 1 }}>
                               {compactBedrag(Number(project.aanneemsom) / project.duur_weken)}
                             </span>
                           )}

@@ -795,54 +795,56 @@ export default function Planning({ onNavigate }) {
                           id={`cel-${monteur.id}-${dagStr}`}
                           data={{ monteurId: monteur.id, dagStr }}
                           disabled={isWeekend || isHardPeriode}
-                          className="relative border-l border-white/40 flex flex-row overflow-hidden group/cel"
+                          className="relative border-l border-white/40 group/cel"
                           style={{ flex: 1, minWidth: dagBreedte, height: ROW_H }}
                         >
-                          {tvList.map((tv, i) => {
-                            const kleur = projKleur(tv.projecten)
-                            const compact = toonUitgebreid || ((dagBreedte || 90) / tvList.length < 40)
-                            return (
-                              <DraagblokInner
-                                key={tv.id}
-                                id={`tv-${tv.id}`}
-                                data={{ tv, monteurId: monteur.id, dagStr }}
-                                kanSlepen={kanInplannen && !toonUitgebreid}
-                                onClick={() => openModal(monteur, dagStr, tv)}
-                                title={`${tv.projecten?.werknummer} — ${tv.projecten?.omschrijving}`}
-                                className="flex flex-col justify-center overflow-hidden"
-                                style={{
-                                  width: `${100 / tvList.length}%`,
-                                  height: '100%',
-                                  backgroundColor: kleur.bg,
-                                  borderLeft: i > 0 ? '1px solid rgba(255,255,255,0.5)' : undefined,
-                                  padding: compact ? 0 : '4px 6px',
-                                  flexShrink: 0,
-                                }}
-                              >
-                                {!compact && (
-                                  <>
-                                    <div
-                                      className="text-[10px] font-bold leading-tight truncate"
-                                      style={{ color: kleur.fg }}
-                                    >
-                                      {tv.projecten?.omschrijving || tv.projecten?.werknummer}
-                                    </div>
-                                    <div
-                                      className="text-[10px] leading-tight truncate"
-                                      style={{ color: kleur.fg, opacity: 0.72 }}
-                                    >
-                                      {tv.projecten?.werknummer}
-                                      {tv.projecten?.projectleider_initialen && (
-                                        <span>
-                                          {' · '}{tv.projecten.projectleider_initialen}
-                                        </span>
-                                      )}
-                                    </div>
-                                  </>
-                                )}
-                              </DraagblokInner>
-                            )
-                          })}
+                          <div className="absolute inset-x-0 inset-y-[6px] rounded-md overflow-hidden flex flex-row shadow-[inset_0_0_0_1px_rgba(0,0,0,0.04)]">
+                            {tvList.map((tv, i) => {
+                              const kleur = projKleur(tv.projecten)
+                              const compact = toonUitgebreid || ((dagBreedte || 90) / tvList.length < 40)
+                              return (
+                                <DraagblokInner
+                                  key={tv.id}
+                                  id={`tv-${tv.id}`}
+                                  data={{ tv, monteurId: monteur.id, dagStr }}
+                                  kanSlepen={kanInplannen && !toonUitgebreid}
+                                  onClick={() => openModal(monteur, dagStr, tv)}
+                                  title={`${tv.projecten?.werknummer} — ${tv.projecten?.omschrijving}`}
+                                  className="flex flex-col justify-center overflow-hidden"
+                                  style={{
+                                    width: `${100 / tvList.length}%`,
+                                    height: '100%',
+                                    backgroundColor: kleur.bg,
+                                    borderLeft: i > 0 ? '1px solid rgba(255,255,255,0.5)' : undefined,
+                                    padding: compact ? 0 : '4px 6px',
+                                    flexShrink: 0,
+                                  }}
+                                >
+                                  {!compact && (
+                                    <>
+                                      <div
+                                        className="text-[10px] font-bold leading-tight truncate"
+                                        style={{ color: kleur.fg }}
+                                      >
+                                        {tv.projecten?.omschrijving || tv.projecten?.werknummer}
+                                      </div>
+                                      <div
+                                        className="text-[10px] leading-tight truncate"
+                                        style={{ color: kleur.fg, opacity: 0.72 }}
+                                      >
+                                        {tv.projecten?.werknummer}
+                                        {tv.projecten?.projectleider_initialen && (
+                                          <span>
+                                            {' · '}{tv.projecten.projectleider_initialen}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </>
+                                  )}
+                                </DraagblokInner>
+                              )
+                            })}
+                          </div>
                           {kanInplannen && (
                             <button
                               type="button"
